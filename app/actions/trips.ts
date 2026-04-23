@@ -11,6 +11,12 @@ function str(v: FormDataEntryValue | null) {
   return s.length > 0 ? s : null;
 }
 
+function num(v: FormDataEntryValue | null): number | null {
+  const s = typeof v === "string" ? v : "";
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+}
+
 async function uploadCoverIfAny(
   formData: FormData
 ): Promise<string | null | undefined> {
@@ -35,6 +41,9 @@ export async function createTrip(formData: FormData) {
     // ignore cover upload failure — create trip anyway
   }
 
+  const center_lat = num(formData.get("center_lat"));
+  const center_lng = num(formData.get("center_lng"));
+
   const { data, error } = await db
     .from("trips")
     .insert({
@@ -43,6 +52,8 @@ export async function createTrip(formData: FormData) {
       start_date,
       end_date,
       cover_url,
+      center_lat,
+      center_lng,
       created_by: me.id,
     })
     .select("id")
