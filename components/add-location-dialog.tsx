@@ -16,8 +16,10 @@ type Draft = {
   lng: number | null;
   google_place_id?: string;
   google_maps_url?: string;
+  google_photo_urls: string[];
   category: Category;
   note: string;
+  visit_date: string;
 };
 
 const EMPTY: Draft = {
@@ -25,8 +27,10 @@ const EMPTY: Draft = {
   address: "",
   lat: null,
   lng: null,
+  google_photo_urls: [],
   category: "other",
   note: "",
+  visit_date: "",
 };
 
 export function AddLocationButton({ tripId }: { tripId: string }) {
@@ -77,8 +81,12 @@ function AddLocationDialog({
     fd.set("lng", String(draft.lng));
     if (draft.google_place_id) fd.set("google_place_id", draft.google_place_id);
     if (draft.google_maps_url) fd.set("google_maps_url", draft.google_maps_url);
+    if (draft.google_photo_urls.length > 0) {
+      fd.set("google_photo_urls", JSON.stringify(draft.google_photo_urls));
+    }
     fd.set("category", draft.category);
     fd.set("note", draft.note);
+    if (draft.visit_date) fd.set("visit_date", draft.visit_date);
     startTransition(async () => {
       await createLocation(fd);
       onClose();
@@ -135,6 +143,20 @@ function AddLocationDialog({
               {draft.address}
             </div>
           )}
+          {draft.google_photo_urls.length > 0 && (
+            <div className="flex gap-1.5 mt-2 -mx-1 overflow-x-auto">
+              {draft.google_photo_urls.map((u) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={u}
+                  src={u}
+                  alt=""
+                  className="w-16 h-16 object-cover flex-shrink-0"
+                  style={{ borderRadius: "8px" }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -168,6 +190,18 @@ function AddLocationDialog({
             className="field-input"
           />
         </div>
+      </div>
+
+      <div className="mt-5">
+        <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+          tarih
+        </div>
+        <input
+          type="date"
+          value={draft.visit_date}
+          onChange={(e) => setDraft({ ...draft, visit_date: e.target.value })}
+          className="field-input"
+        />
       </div>
 
       <div className="mt-5">
@@ -242,11 +276,30 @@ function PlaceSearch({
   useEffect(() => {
     if (!isLoaded || !inputRef.current) return;
     const ac = new google.maps.places.Autocomplete(inputRef.current, {
-      fields: ["place_id", "name", "formatted_address", "geometry", "url"],
+      fields: [
+        "place_id",
+        "name",
+        "formatted_address",
+        "geometry",
+        "url",
+        "photos",
+      ],
     });
     const listener = ac.addListener("place_changed", () => {
       const p = ac.getPlace();
       if (!p.geometry?.location) return;
+      const photoUrls: string[] =
+        p.photos
+          ?.slice(0, 3)
+          .map((ph) => {
+            try {
+              return ph.getUrl({ maxWidth: 1200 });
+            } catch {
+              return null;
+            }
+          })
+          .filter((u): u is string => typeof u === "string" && u.length > 0) ??
+        [];
       pickRef.current({
         name: p.name ?? "",
         address: p.formatted_address ?? "",
@@ -254,6 +307,7 @@ function PlaceSearch({
         lng: p.geometry.location.lng(),
         google_place_id: p.place_id ?? undefined,
         google_maps_url: p.url ?? undefined,
+        google_photo_urls: photoUrls,
       });
     });
     return () => {

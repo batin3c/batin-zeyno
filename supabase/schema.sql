@@ -40,6 +40,8 @@ create table if not exists locations (
   status text not null default 'want',
   loved_by uuid[] not null default '{}',
   photo_urls text[] not null default '{}',
+  google_photo_urls text[] not null default '{}',
+  visit_date date,
   added_by uuid references members(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -47,6 +49,7 @@ create table if not exists locations (
 
 create index if not exists idx_locations_trip on locations (trip_id);
 create index if not exists idx_locations_created on locations (created_at desc);
+create index if not exists idx_locations_trip_visit_date on locations (trip_id, visit_date nulls last);
 
 create table if not exists app_config (
   key text primary key,

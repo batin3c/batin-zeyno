@@ -51,6 +51,8 @@ export type Location = {
   status: LocationStatus;
   loved_by: string[];
   photo_urls: string[];
+  google_photo_urls: string[];
+  visit_date: string | null;
   added_by: string | null;
   created_at: string;
   updated_at: string;

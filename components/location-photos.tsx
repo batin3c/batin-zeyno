@@ -11,10 +11,12 @@ export function LocationPhotos({
   locationId,
   tripId,
   urls,
+  googleUrls = [],
 }: {
   locationId: string;
   tripId: string;
   urls: string[];
+  googleUrls?: string[];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -43,7 +45,7 @@ export function LocationPhotos({
     startTransition(() => removeLocationPhoto(locationId, tripId, url));
   };
 
-  if (urls.length === 0 && !pending) {
+  if (urls.length === 0 && googleUrls.length === 0 && !pending) {
     return (
       <>
         <button
@@ -75,6 +77,35 @@ foto at
   return (
     <div className="mt-1">
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5">
+        {googleUrls.map((u) => (
+          <div key={u} className="relative flex-shrink-0">
+            <a
+              href={u}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block overflow-hidden"
+              style={{ borderRadius: "10px" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={u}
+                alt=""
+                className="w-24 h-24 object-cover"
+              />
+            </a>
+            <span
+              className="absolute top-1.5 left-1.5 w-5 h-5 flex items-center justify-center text-[0.6rem] font-bold tracking-wider"
+              style={{
+                background: "color-mix(in srgb, var(--text) 75%, transparent)",
+                borderRadius: "999px",
+                color: "var(--bg)",
+              }}
+              title="Google fotoğrafı"
+            >
+              G
+            </span>
+          </div>
+        ))}
         {urls.map((u) => (
           <div key={u} className="relative flex-shrink-0 group">
             <a

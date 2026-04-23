@@ -27,7 +27,8 @@ export default async function TripPage({
     .from("locations")
     .select("*")
     .eq("trip_id", id)
-    .order("created_at", { ascending: false });
+    .order("visit_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
 
   const members = await getMembers();
   const tripTyped = trip as Trip;

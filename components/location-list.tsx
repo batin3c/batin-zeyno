@@ -113,16 +113,23 @@ function LocationEntry({
           {cat?.emoji ?? "📍"}
         </div>
         <div className="flex-1 min-w-0">
-          <h3
-            className="text-[1.05rem] font-medium tracking-tight leading-snug text-[color:var(--text)]"
-            style={{
-              textDecoration: visited ? "line-through" : "none",
-              textDecorationColor: "var(--text-dim)",
-              textDecorationThickness: "1px",
-            }}
-          >
-            {loc.name}
-          </h3>
+          <div className="flex items-baseline gap-2">
+            <h3
+              className="text-[1.05rem] font-medium tracking-tight leading-snug text-[color:var(--text)]"
+              style={{
+                textDecoration: visited ? "line-through" : "none",
+                textDecorationColor: "var(--text-dim)",
+                textDecorationThickness: "1px",
+              }}
+            >
+              {loc.name}
+            </h3>
+            {loc.visit_date && (
+              <span className="label-dim whitespace-nowrap">
+                {formatVisitDate(loc.visit_date)}
+              </span>
+            )}
+          </div>
           {loc.address && (
             <p
               className="text-[0.8rem] mt-0.5 truncate"
@@ -167,6 +174,7 @@ function LocationEntry({
           locationId={loc.id}
           tripId={tripId}
           urls={loc.photo_urls}
+          googleUrls={loc.google_photo_urls}
         />
       </div>
 
@@ -252,4 +260,10 @@ function LocationEntry({
       </div>
     </article>
   );
+}
+
+function formatVisitDate(iso: string): string {
+  return new Date(iso)
+    .toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
+    .toLowerCase();
 }

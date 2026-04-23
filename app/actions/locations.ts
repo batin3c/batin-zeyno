@@ -26,6 +26,17 @@ export async function createLocation(formData: FormData) {
   const lng = num(formData.get("lng"));
   if (!trip_id || !name || lat === null || lng === null) return;
 
+  let google_photo_urls: string[] = [];
+  const rawPhotos = formData.get("google_photo_urls");
+  if (typeof rawPhotos === "string" && rawPhotos.trim().length > 0) {
+    try {
+      const parsed = JSON.parse(rawPhotos);
+      if (Array.isArray(parsed)) {
+        google_photo_urls = parsed.filter((u): u is string => typeof u === "string");
+      }
+    } catch {}
+  }
+
   const { error } = await db.from("locations").insert({
     trip_id,
     name,
@@ -36,6 +47,8 @@ export async function createLocation(formData: FormData) {
     google_maps_url: str(formData.get("google_maps_url")),
     category: (str(formData.get("category")) ?? "other") as Category,
     note: str(formData.get("note")),
+    visit_date: str(formData.get("visit_date")),
+    google_photo_urls,
     status: "want" as LocationStatus,
     added_by: me.id,
   });
@@ -92,14 +105,33 @@ export async function toggleVisited(id: string, tripId: string) {
   await requireCurrentMember();
   const { data: row, error: e1 } = await db
     .from("locations")
-    .select("status")
+    .select("status, visit_date")
     .eq("id", id)
     .single();
   if (e1) throw e1;
   const next: LocationStatus = row?.status === "visited" ? "want" : "visited";
+  const patch: Record<string, unknown> = {
+    status: next,
+    updated_at: new Date().toISOString(),
+  };
+  if (next === "visited" && !row?.visit_date) {
+    patch.visit_date = new Date().toISOString().slice(0, 10);
+  }
+  const { error } = await db.from("locations").update(patch).eq("id", id);
+  if (error) throw error;
+  revalidatePath(`/trips/${tripId}`);
+}
+
+export async function updateVisitDate(
+  id: string,
+  tripId: string,
+  date: string | null
+) {
+  await requireCurrentMember();
+  const clean = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
   const { error } = await db
     .from("locations")
-    .update({ status: next, updated_at: new Date().toISOString() })
+    .update({ visit_date: clean, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
   revalidatePath(`/trips/${tripId}`);
