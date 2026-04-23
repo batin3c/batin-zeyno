@@ -32,6 +32,19 @@ const GlobeCanvas = dynamic(
 
 const TOTAL_COUNTRIES = 195;
 
+function haloCircle(lat: number, lng: number, radiusKm: number): Geometry {
+  const n = 48;
+  const latStep = radiusKm / 111;
+  const lngStep =
+    radiusKm / (111 * Math.cos((lat * Math.PI) / 180) || 1);
+  const coords: number[][] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = (i / n) * 2 * Math.PI;
+    coords.push([lng + Math.sin(t) * lngStep, lat + Math.cos(t) * latStep]);
+  }
+  return { type: "Polygon", coordinates: [coords] };
+}
+
 type Selection =
   | { kind: "country"; code: string }
   | { kind: "city"; id: string }
@@ -95,12 +108,18 @@ export function GlobeClient({
   }, [selection, cities, cityPhotos]);
 
   // load city boundary lazily when city is selected
+  // 1) immediately show a generated halo circle so the area looks painted
+  // 2) in parallel try to fetch the real admin polygon; replace when it arrives
   useEffect(() => {
     if (selection?.kind !== "city") {
       setBoundary(null);
       return;
     }
     const id = selection.id;
+    const city = cities.find((c) => c.id === id);
+    if (city) {
+      setBoundary({ id, geometry: haloCircle(city.lat, city.lng, 35) });
+    }
     let active = true;
     getCityBoundary(id)
       .then((geo) => {
@@ -111,7 +130,7 @@ export function GlobeClient({
     return () => {
       active = false;
     };
-  }, [selection]);
+  }, [selection, cities]);
 
   return (
     <div className="relative">
@@ -120,6 +139,7 @@ export function GlobeClient({
           visitedCodes={visitedCodes}
           cities={cityPoints}
           selectedCityBoundary={boundary}
+          selectedCityId={selection?.kind === "city" ? selection.id : null}
           onSelectCountry={(code) =>
             setSelection({ kind: "country", code })
           }

@@ -37,12 +37,14 @@ export function GlobeCanvas({
   visitedCodes,
   cities,
   selectedCityBoundary,
+  selectedCityId,
   onSelectCountry,
   onSelectCity,
 }: {
   visitedCodes: Set<string>;
   cities: CityPoint[];
   selectedCityBoundary: CityBoundary | null;
+  selectedCityId: string | null;
   onSelectCountry: (code: string) => void;
   onSelectCity: (id: string) => void;
 }) {
@@ -195,7 +197,7 @@ export function GlobeCanvas({
   const polygonStrokeColor = () => BORDER;
 
   const polygonAltitude = (f: object) => {
-    if (isCityBoundary(f)) return 0.028;
+    if (isCityBoundary(f)) return 0.04;
     const feat = f as CF;
     return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.022 : 0.008;
   };
@@ -230,9 +232,13 @@ export function GlobeCanvas({
           pointLat="lat"
           pointLng="lng"
           pointColor={() => CITY_COLOR}
-          pointAltitude={0.035}
-          pointRadius={0.32}
-          pointResolution={12}
+          pointAltitude={(p: object) => {
+            const c = p as CityPoint;
+            // hide selected city's point so boundary polygon takes over
+            return selectedCityId === c.id ? 0 : 0.004;
+          }}
+          pointRadius={0.28}
+          pointResolution={16}
           pointLabel={(p: object) => {
             const c = p as CityPoint;
             return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
