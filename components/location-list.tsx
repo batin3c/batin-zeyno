@@ -40,14 +40,15 @@ export function LocationList({
           }}
         />
         <h3 className="text-[1.2rem] font-medium tracking-tight">
-          henüz yer yok
+          bok gibi boş
         </h3>
         <p
           className="text-[0.9rem] leading-relaxed"
           style={{ color: "var(--text-muted)" }}
         >
-          aşağıdaki <span style={{ color: "var(--text)" }}>yer ekle</span>{" "}
-          düğmesiyle başla — bir link yapıştır, ara veya elle gir.
+          aşağıdan <span style={{ color: "var(--text)" }}>yer at</span> da
+          başlayalım — link yapıştır, ara ya da elle gir. siktir et
+          komplikasyonu.
         </p>
       </div>
     );
@@ -134,7 +135,7 @@ function LocationEntry({
         <button
           onClick={() => startTransition(() => toggleLove(loc.id, tripId))}
           className="btn-icon -mr-1 -mt-1"
-          aria-label="Beğen"
+          aria-label="kalp at"
           style={{
             width: 34,
             height: 34,
@@ -238,12 +239,12 @@ function LocationEntry({
           )}
           <button
             onClick={() => {
-              if (!confirm("Bu yer silinsin mi?")) return;
+              if (!confirm("bu yeri siktir edelim mi?")) return;
               startTransition(() => deleteLocation(loc.id, tripId));
             }}
             className="p-1 opacity-50 hover:opacity-100 transition-opacity"
             style={{ color: "var(--text-dim)" }}
-            aria-label="Sil"
+            aria-label="siktir et"
           >
             <Trash2 size={12} strokeWidth={1.75} />
           </button>

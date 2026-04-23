@@ -133,7 +133,7 @@ export async function addLocationPhoto(
   const tripId = String(formData.get("trip_id") ?? "");
   const file = formData.get("file");
   if (!id || !tripId || !(file instanceof File)) {
-    return { ok: false, error: "Geçersiz istek" };
+    return { ok: false, error: "istek bozuk" };
   }
   try {
     const url = await uploadImage(file, `locations/${id}`);

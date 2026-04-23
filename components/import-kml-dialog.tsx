@@ -59,8 +59,8 @@ function ImportKmlDialog({
           className="text-[0.9rem] leading-relaxed"
           style={{ color: "var(--text-muted)" }}
         >
-          google takeout → maps → saved places (kml) dosyasını yükle. her pin
-          bu tatile otomatik eklenecek.
+          google takeout → maps → saved places (kml). dosyayı at, pinler tatile
+          düşsün aq.
         </p>
 
         <button
@@ -85,7 +85,7 @@ function ImportKmlDialog({
               className="text-[0.95rem] font-medium tracking-tight"
               style={{ color: "var(--text)" }}
             >
-              {file ? file.name : "dosyayı seç"}
+              {file ? file.name : "dosya at"}
             </span>
             {file && (
               <span className="text-[0.75rem]">
@@ -115,7 +115,7 @@ function ImportKmlDialog({
             }}
           >
             {result.ok
-              ? `${result.count} yer eklendi`
+              ? `${result.count} yer düştü`
               : result.error}
           </div>
         )}
@@ -126,7 +126,7 @@ function ImportKmlDialog({
           className="btn-primary w-full"
           style={{ padding: "0.95rem 1.25rem" }}
         >
-          {pending ? "içe aktarılıyor…" : "içe aktar"}
+          {pending ? "yüklüyor aq…" : "yükle aq"}
         </button>
       </div>
     </SimpleDialog>

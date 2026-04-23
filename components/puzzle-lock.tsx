@@ -215,12 +215,12 @@ export function PuzzleLock() {
             className="text-sm anim-fade-in"
             style={{ color: "var(--accent)" }}
           >
-            açılıyor
+aha girdin
           </span>
         )}
         {phase === "idle" && pattern.length === 0 && (
           <span className="text-sm" style={{ color: "var(--text-dim)" }}>
-            şifreyi çiz
+çiz bakalım aq
           </span>
         )}
       </div>
@@ -230,8 +230,8 @@ export function PuzzleLock() {
 
 function wrongLine(n: number): string {
   if (n === 1) return "ıııh, değil";
-  if (n === 2) return "hadi ama";
+  if (n === 2) return "hadi aq";
   if (n === 3) return "sen baze'nin sahibi değilsin galiba";
-  if (n >= 4) return "tamam git artık";
-  return "yanlış";
+  if (n >= 4) return "siktir git artık";
+  return "yanlış lan";
 }

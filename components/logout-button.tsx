@@ -11,8 +11,8 @@ export function LogoutButton() {
       onClick={() => startTransition(() => logout())}
       disabled={pending}
       className="btn-icon disabled:opacity-50"
-      aria-label="Çıkış"
-      title="Çıkış"
+      aria-label="s'tir"
+      title="s'tir"
     >
       <LogOut size={17} strokeWidth={1.5} />
     </button>

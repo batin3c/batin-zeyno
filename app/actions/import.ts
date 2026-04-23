@@ -17,25 +17,25 @@ export async function importKml(formData: FormData): Promise<ImportResult> {
   const file = formData.get("file");
 
   if (!tripId || !(file instanceof File)) {
-    return { ok: false, count: 0, error: "Geçersiz istek" };
+    return { ok: false, count: 0, error: "istek bozuk" };
   }
   if (file.size === 0) {
-    return { ok: false, count: 0, error: "Boş dosya" };
+    return { ok: false, count: 0, error: "dosya boş aq" };
   }
   if (file.size > 10 * 1024 * 1024) {
-    return { ok: false, count: 0, error: "Dosya çok büyük (max 10 MB)" };
+    return { ok: false, count: 0, error: "dosya devasa lan (max 10 MB)" };
   }
 
   let text: string;
   try {
     text = await file.text();
   } catch {
-    return { ok: false, count: 0, error: "Dosya okunamadı" };
+    return { ok: false, count: 0, error: "dosya anlaşılmadı aq" };
   }
 
   const placemarks = parseKml(text);
   if (placemarks.length === 0) {
-    return { ok: false, count: 0, error: "KML'de yer bulunamadı" };
+    return { ok: false, count: 0, error: "kml'de hiç yer yok aq" };
   }
 
   const rows = placemarks.map((p) => ({

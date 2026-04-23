@@ -31,7 +31,7 @@ export function LocationPhotos({
         fd.set("file", file);
         const r = await addLocationPhoto(fd);
         if (!r.ok) {
-          setError(r.error ?? "Yükleme hatası");
+          setError(r.error ?? "yüklenmedi aq");
           break;
         }
       }
@@ -39,7 +39,7 @@ export function LocationPhotos({
   };
 
   const onRemove = (url: string) => {
-    if (!confirm("Fotoğraf silinsin mi?")) return;
+    if (!confirm("foto sikilsin mi?")) return;
     startTransition(() => removeLocationPhoto(locationId, tripId, url));
   };
 
@@ -58,7 +58,7 @@ export function LocationPhotos({
           }
         >
           <Camera size={12} strokeWidth={1.75} />
-          fotoğraf ekle
+foto at
         </button>
         <input
           ref={inputRef}
@@ -99,7 +99,7 @@ export function LocationPhotos({
                 borderRadius: "999px",
                 color: "var(--bg)",
               }}
-              aria-label="Sil"
+              aria-label="siktir et"
             >
               <X size={11} strokeWidth={2} />
             </button>
@@ -115,7 +115,7 @@ export function LocationPhotos({
             color: "var(--text-muted)",
             background: "var(--surface)",
           }}
-          aria-label="Fotoğraf ekle"
+          aria-label="foto at"
         >
           <Camera size={16} strokeWidth={1.5} />
         </button>

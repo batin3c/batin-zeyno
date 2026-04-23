@@ -65,7 +65,7 @@ export function MapView({
         className="p-6 text-sm text-center"
         style={{ color: "var(--text-muted)" }}
       >
-        harita yüklenemedi.
+harita gelmedi aq.
       </div>
     );
   }
@@ -220,7 +220,7 @@ function InfoContent({
             marginBottom: 10,
           }}
         >
-          {addedBy.name.toLowerCase()} ekledi
+          {addedBy.name.toLowerCase()} attı
         </div>
       )}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

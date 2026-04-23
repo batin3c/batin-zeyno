@@ -81,15 +81,15 @@ function EmptyState({ memberName }: { memberName: string }) {
       />
       <div className="flex flex-col gap-1">
         <h3 className="text-[1.4rem] font-medium tracking-tight">
-          selam {memberName.toLowerCase()}
+          naaber {memberName.toLowerCase()}
         </h3>
         <p
           className="text-[0.95rem] leading-relaxed"
           style={{ color: "var(--text-muted)" }}
         >
-          henüz bir rota çizilmemiş. aşağıdaki{" "}
-          <span style={{ color: "var(--text)" }}>yeni tatil</span> düğmesine bas,
-          ilk günlüğü aç.
+          daha hiçbir yere gitmemişiz aq. aşağıdan{" "}
+          <span style={{ color: "var(--text)" }}>yeni tatil</span>&apos;e bas da
+          başlayalım.
         </p>
       </div>
     </div>

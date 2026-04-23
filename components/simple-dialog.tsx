@@ -62,7 +62,7 @@ export function SimpleDialog({
               type="button"
               onClick={onClose}
               className="btn-icon -mr-2 -mt-1"
-              aria-label="Kapat"
+              aria-label="kapat aq"
             >
               <X size={18} strokeWidth={1.75} />
             </button>

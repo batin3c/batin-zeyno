@@ -29,7 +29,7 @@ export function AppHeader({
           <Link
             href={back}
             className="btn-icon -ml-2"
-            aria-label="Geri"
+            aria-label="siktir geri"
           >
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>

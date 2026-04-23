@@ -77,7 +77,7 @@ export function PuzzleSetter({ onDone }: { onDone: () => void }) {
     setPointer(null);
     if (current.length < 3) {
       setCurrent([]);
-      setError("en az 3 nokta");
+      setError("en az 3 nokta lan");
       return;
     }
     if (step === "first") {
@@ -93,7 +93,7 @@ export function PuzzleSetter({ onDone }: { onDone: () => void }) {
           setFirst([]);
           setCurrent([]);
           setStep("first");
-          setError("eşleşmedi, baştan");
+          setError("tutmadı, bir daha");
         }, 1000);
         return;
       }
@@ -119,10 +119,10 @@ export function PuzzleSetter({ onDone }: { onDone: () => void }) {
 
   const label =
     step === "first" ? "yeni deseni çiz" :
-    step === "second" ? "bir daha, onay için" :
-    step === "mismatch" ? "eşleşmedi" :
+    step === "second" ? "bir daha, emin olalım" :
+    step === "mismatch" ? "tutmadı aq" :
     step === "saving" ? "kaydediliyor" :
-    "kaydedildi";
+    "tamam, kaydettim";
 
   return (
     <div className="flex flex-col items-center gap-6 py-2">

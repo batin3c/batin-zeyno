@@ -42,7 +42,7 @@ export function AddLocationButton({ tripId }: { tripId: string }) {
         }}
       >
         <Plus size={16} strokeWidth={2} />
-        yer ekle
+        yer at
       </button>
       {open && (
         <AddLocationDialog tripId={tripId} onClose={() => setOpen(false)} />
@@ -86,7 +86,7 @@ function AddLocationDialog({
   };
 
   return (
-    <SimpleDialog open={true} onClose={onClose} title="yer ekle">
+    <SimpleDialog open={true} onClose={onClose} title="yer at">
       <div
         className="flex p-0.5 mb-5"
         style={{
@@ -189,7 +189,7 @@ function AddLocationDialog({
         className="btn-primary w-full mt-6"
         style={{ padding: "0.95rem 1.25rem" }}
       >
-        {pending ? "ekleniyor…" : ready ? "ekle" : "önce bir konum seç"}
+        {pending ? "atıyor aq…" : ready ? "at" : "önce bir yer seç aq"}
       </button>
     </SimpleDialog>
   );
@@ -268,7 +268,7 @@ function PlaceSearch({
         className="text-[0.9rem] p-4 text-center"
         style={{ color: "var(--text-muted)" }}
       >
-        arama yüklenemedi. API key&apos;i kontrol et.
+        arama sıçtı. api key&apos;e bak.
       </p>
     );
   }
@@ -285,7 +285,7 @@ function PlaceSearch({
         className="text-[0.8rem] mt-3 leading-relaxed"
         style={{ color: "var(--text-muted)" }}
       >
-        google önerilerinden seç — adres ve koordinat otomatik gelir.
+        google zaten söylüyor — adres, koordinat hepsi otomatik. uğraşma.
       </p>
     </div>
   );
@@ -307,7 +307,7 @@ function LinkInput({
     try {
       const r = await resolveShareUrl(url.trim());
       if (!r) {
-        setError("link çözülemedi. URL'i kontrol et.");
+        setError("link anlaşılmadı aq. doğru mu yapıştırdın?");
         return;
       }
       onResolved({
@@ -317,7 +317,7 @@ function LinkInput({
         google_maps_url: url.trim(),
       });
     } catch {
-      setError("bir şeyler ters gitti.");
+      setError("bir şeyler yamuk oldu aq.");
     } finally {
       setLoading(false);
     }

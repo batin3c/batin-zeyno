@@ -23,7 +23,7 @@ export async function updateMemberAvatar(
   const id = String(formData.get("id") ?? "");
   const file = formData.get("file");
   if (!id || !(file instanceof File)) {
-    return { ok: false, error: "Geçersiz istek" };
+    return { ok: false, error: "istek bozuk" };
   }
   try {
     const { data: row } = await db
@@ -56,10 +56,10 @@ export async function savePuzzlePattern(
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
   if (!Array.isArray(pattern) || pattern.length < 3) {
-    return { ok: false, error: "En az 3 nokta gerekli" };
+    return { ok: false, error: "en az 3 nokta çiz aq" };
   }
   if (!pattern.every((n) => Number.isInteger(n) && n >= 0 && n <= 8)) {
-    return { ok: false, error: "Geçersiz desen" };
+    return { ok: false, error: "desen anlamadım" };
   }
   await setPuzzlePattern(pattern);
   revalidatePath("/settings");

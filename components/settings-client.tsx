@@ -82,7 +82,7 @@ function MemberRow({ member, last }: { member: Member; last: boolean }) {
     fd.set("file", file);
     const r = await updateMemberAvatar(fd);
     setUploading(false);
-    if (!r.ok) setUploadErr(r.error ?? "yükleme hatası");
+    if (!r.ok) setUploadErr(r.error ?? "yüklenmedi aq");
   };
 
   return (
@@ -101,7 +101,7 @@ function MemberRow({ member, last }: { member: Member; last: boolean }) {
           color: "var(--text)",
           borderRadius: "12px",
         }}
-        aria-label="Fotoğraf değiştir"
+        aria-label="foto değiştir"
       >
         {member.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -188,7 +188,7 @@ function PuzzleSection({ currentLength }: { currentLength: number }) {
         <SimpleDialog
           open={true}
           onClose={() => setOpen(false)}
-          title="deseni değiştir"
+          title="yeni desen çiz"
         >
           <PuzzleSetter onDone={() => setOpen(false)} />
         </SimpleDialog>

@@ -49,7 +49,7 @@ export function CreateTripButton() {
       <SimpleDialog
         open={open}
         onClose={onCloseDialog}
-        title="yeni tatil planı"
+        title="yeni plan aç"
       >
         <form onSubmit={onSubmit} className="flex flex-col gap-5">
           <CoverUpload
@@ -70,7 +70,7 @@ export function CreateTripButton() {
             <textarea
               name="description"
               rows={2}
-              placeholder="birkaç not…"
+              placeholder="birkaç not düş, neye gidiyoruz lan?"
               className="field-textarea"
             />
           </Field>
@@ -88,7 +88,7 @@ export function CreateTripButton() {
             className="btn-primary w-full mt-2"
             style={{ padding: "0.95rem 1.25rem" }}
           >
-            {pending ? "oluşturuluyor…" : "oluştur"}
+            {pending ? "açıyor aq…" : "aç gitsin"}
           </button>
         </form>
       </SimpleDialog>
@@ -149,7 +149,7 @@ export function CoverUpload({
               color: "var(--text)",
             }}
           >
-            değiştir
+farklısı gelsin
           </button>
           <button
             type="button"
@@ -162,7 +162,7 @@ export function CoverUpload({
               borderRadius: "999px",
               color: "var(--bg)",
             }}
-            aria-label="Kaldır"
+            aria-label="uçur"
           >
             <X size={14} strokeWidth={2} />
           </button>
@@ -180,7 +180,7 @@ export function CoverUpload({
           }}
         >
           <Camera size={20} strokeWidth={1.5} />
-          <span className="text-[0.85rem] font-medium">kapak ekle</span>
+          <span className="text-[0.85rem] font-medium">kapak at</span>
         </button>
       )}
       <input

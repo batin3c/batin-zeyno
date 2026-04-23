@@ -47,7 +47,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
   };
 
   const onDelete = () => {
-    if (!confirm(`"${trip.name}" silinsin mi? Tüm yerler de gider.`)) return;
+    if (!confirm(`"${trip.name}" sikilsin mi? tüm yerler de gider aq.`)) return;
     const fd = new FormData();
     fd.set("id", trip.id);
     startTransition(() => deleteTrip(fd));
@@ -67,7 +67,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
       <SimpleDialog
         open={open}
         onClose={() => setOpen(false)}
-        title="tatili düzenle"
+        title="tatile dokun"
       >
         <form onSubmit={onSubmit} className="flex flex-col gap-5">
           <CoverUpload
@@ -142,7 +142,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
               style={{ color: "var(--text-muted)" }}
             >
               <Trash2 size={14} strokeWidth={1.5} />
-              tatili sil
+              tatili siktir et
             </button>
           </div>
         </form>
