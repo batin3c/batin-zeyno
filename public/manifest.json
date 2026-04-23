@@ -1,12 +1,12 @@
 {
   "name": "baze",
   "short_name": "baze",
-  "description": "ikimize özel tatil planları",
+  "description": "ikimize özel tatil günlüğü",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#fdf6ef",
-  "theme_color": "#fdf6ef",
+  "background_color": "#fbf7ee",
+  "theme_color": "#fbf7ee",
   "lang": "tr",
   "icons": [
     {
@@ -20,6 +20,12 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

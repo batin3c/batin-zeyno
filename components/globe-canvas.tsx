@@ -150,7 +150,7 @@ export function GlobeCanvas({
       ref={containerRef}
       style={{
         width: "100%",
-        height: "calc(100dvh - 56px)",
+        height: "calc(100dvh - 64px)",
         touchAction: "none",
         cursor: "grab",
       }}

@@ -50,7 +50,7 @@ export function AddLocationButton({ tripId }: { tripId: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="btn-primary fixed bottom-6 right-6 z-30"
+        className="btn-primary fixed safe-bottom right-6 z-30"
         style={{ padding: "0.85rem 1.35rem", fontSize: "0.95rem" }}
       >
         <Plus size={18} strokeWidth={2.5} />

@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <AppHeader member={me} title="Ayarlar" back="/" />
+      <AppHeader member={me} title="ayarlar" back="/" />
       <main className="flex-1 max-w-2xl w-full mx-auto p-4 pb-16">
         <SettingsClient
           members={members}

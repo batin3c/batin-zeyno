@@ -204,6 +204,8 @@ export function CountrySheet({
                     <img
                       src={p.url}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="w-24 h-24 object-cover"
                     />
                   </a>

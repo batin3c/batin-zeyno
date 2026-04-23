@@ -45,7 +45,11 @@ export function AppHeader({
           </Link>
         )}
 
-        <h1 className="flex-1 text-center text-[1rem] font-semibold tracking-tight truncate">
+        <h1
+          className="flex-1 text-center font-semibold tracking-tight line-clamp-1"
+          style={{ fontSize: "0.95rem", minWidth: 0 }}
+          title={title}
+        >
           {title ?? ""}
         </h1>
 
@@ -62,8 +66,8 @@ export function AppHeader({
           <Link
             href="/settings"
             className="btn-icon"
-            aria-label="Ayarlar"
-            title="Ayarlar"
+            aria-label="ayarlar"
+            title="ayarlar"
           >
             <Settings size={18} strokeWidth={2} />
           </Link>

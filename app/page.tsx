@@ -7,7 +7,18 @@ import type { Trip } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-async function loadTrips() {
+type HomeStats = {
+  trips: number;
+  locations: number;
+  visited: number;
+  loves: number;
+  countries: number;
+};
+
+async function loadHome(): Promise<{
+  trips: { trip: Trip; count: number }[];
+  stats: HomeStats;
+}> {
   const { data: trips, error } = await db
     .from("trips")
     .select("*")
@@ -16,30 +27,49 @@ async function loadTrips() {
   const list = (trips ?? []) as Trip[];
 
   const counts = new Map<string, number>();
+  let locations = 0;
+  let visited = 0;
+  let loves = 0;
   if (list.length > 0) {
     const { data: locs } = await db
       .from("locations")
-      .select("trip_id")
+      .select("trip_id, status, loved_by")
       .in(
         "trip_id",
         list.map((t) => t.id)
       );
     for (const l of locs ?? []) {
       counts.set(l.trip_id, (counts.get(l.trip_id) ?? 0) + 1);
+      locations++;
+      if (l.status === "visited") visited++;
+      if (Array.isArray(l.loved_by)) loves += l.loved_by.length;
     }
   }
-  return list.map((t) => ({ trip: t, count: counts.get(t.id) ?? 0 }));
+
+  const { count: countryCount } = await db
+    .from("visited_countries")
+    .select("code", { count: "exact", head: true });
+
+  const tripsOut = list.map((t) => ({ trip: t, count: counts.get(t.id) ?? 0 }));
+  const stats: HomeStats = {
+    trips: list.length,
+    locations,
+    visited,
+    loves,
+    countries: countryCount ?? 0,
+  };
+  return { trips: tripsOut, stats };
 }
 
 export default async function HomePage() {
   const me = await requireCurrentMember();
-  const trips = await loadTrips();
+  const { trips, stats } = await loadHome();
 
   return (
     <>
       <AppHeader member={me} />
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 pt-8 pb-32">
-        <div className="flex items-end justify-between mb-8 anim-reveal">
+        <div className="flex items-end justify-between mb-6 anim-reveal">
           <div>
             <span className="label">arşiv</span>
             <h1
@@ -67,6 +97,10 @@ export default async function HomePage() {
           </div>
         </div>
 
+        {trips.length > 0 && (
+          <StatsStrip stats={stats} />
+        )}
+
         {trips.length === 0 ? (
           <EmptyState memberName={me.name} />
         ) : (
@@ -84,6 +118,50 @@ export default async function HomePage() {
       </main>
       <CreateTripButton />
     </>
+  );
+}
+
+function StatsStrip({ stats }: { stats: HomeStats }) {
+  const items = [
+    { label: "yer", value: stats.locations, bg: "var(--accent-soft)" },
+    { label: "gittik", value: stats.visited, bg: "var(--accent-2-soft)" },
+    { label: "ülke", value: stats.countries, bg: "var(--accent-3-soft)" },
+    { label: "♡", value: stats.loves, bg: "var(--accent-4-soft)" },
+  ];
+  return (
+    <div
+      className="grid grid-cols-4 gap-2 mb-6 anim-reveal"
+      style={{ animationDelay: "60ms" }}
+    >
+      {items.map((it) => (
+        <div
+          key={it.label}
+          className="flex flex-col items-center justify-center py-2.5"
+          style={{
+            background: it.bg,
+            border: "2px solid var(--ink)",
+            borderRadius: "14px",
+            boxShadow: "var(--shadow-pop-sm)",
+          }}
+        >
+          <span
+            className="font-bold leading-none"
+            style={{ fontSize: "1.3rem", color: "var(--ink)" }}
+          >
+            {it.value}
+          </span>
+          <span
+            className="text-[0.68rem] font-semibold mt-0.5"
+            style={{
+              color: "var(--ink-soft)",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {it.label}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 

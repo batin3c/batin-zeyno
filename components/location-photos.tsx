@@ -85,7 +85,7 @@ export function LocationPhotos({
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={u} alt="" className="w-24 h-24 object-cover" />
+              <img src={u} alt="" loading="lazy" decoding="async" className="w-24 h-24 object-cover" />
             </a>
             <span
               className="absolute top-1.5 left-1.5 flex items-center justify-center text-[0.62rem] font-bold"
@@ -117,7 +117,7 @@ export function LocationPhotos({
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={u} alt="" className="w-24 h-24 object-cover" />
+              <img src={u} alt="" loading="lazy" decoding="async" className="w-24 h-24 object-cover" />
             </a>
             <button
               onClick={() => onRemove(u)}

@@ -47,6 +47,8 @@ export function TripCard({
             <img
               src={trip.cover_url}
               alt={trip.name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
           ) : (

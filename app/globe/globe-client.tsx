@@ -12,13 +12,16 @@ const GlobeCanvas = dynamic(
     loading: () => (
       <div
         className="w-full flex items-center justify-center"
-        style={{ height: "calc(100dvh - 56px)", color: "var(--text-muted)" }}
+        style={{ height: "calc(100dvh - 64px)", color: "var(--text-muted)" }}
       >
         <span className="label">dünya yükleniyor…</span>
       </div>
     ),
   }
 );
+
+// world-atlas 110m has ~177 countries after our code map filter
+const TOTAL_COUNTRIES = 195;
 
 export function GlobeClient({
   visited,
@@ -42,16 +45,38 @@ export function GlobeClient({
   }, [selected, visited, photos]);
 
   return (
-    <>
+    <div className="relative">
       <GlobeCanvas
         visitedCodes={visitedCodes}
         onSelect={(code) => setSelected(code)}
       />
+      <div
+        className="absolute top-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5 anim-bounce-in"
+        style={{
+          background: "var(--accent-soft)",
+          border: "2px solid var(--ink)",
+          borderRadius: "999px",
+          padding: "0.4rem 0.95rem",
+          boxShadow: "var(--shadow-pop-sm)",
+          fontWeight: 700,
+          fontSize: "0.88rem",
+          color: "var(--ink)",
+        }}
+      >
+        <span style={{ fontSize: "1rem" }}>🌍</span>
+        <span>
+          {visitedCodes.size}
+          <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+            /{TOTAL_COUNTRIES}
+          </span>{" "}
+          ülke gezdik
+        </span>
+      </div>
       <CountrySheet
         data={selectedData}
         open={selected !== null}
         onClose={() => setSelected(null)}
       />
-    </>
+    </div>
   );
 }
