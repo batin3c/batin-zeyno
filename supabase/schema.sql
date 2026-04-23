@@ -53,6 +53,24 @@ create index if not exists idx_locations_trip on locations (trip_id);
 create index if not exists idx_locations_created on locations (created_at desc);
 create index if not exists idx_locations_trip_visit_date on locations (trip_id, visit_date nulls last);
 
+create table if not exists visited_countries (
+  code       char(2) primary key,
+  note       text,
+  added_by   uuid references members(id) on delete set null,
+  added_at   timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists country_photos (
+  id        uuid primary key default gen_random_uuid(),
+  code      char(2) not null references visited_countries(code) on delete cascade,
+  url       text not null,
+  added_by  uuid references members(id) on delete set null,
+  added_at  timestamptz not null default now()
+);
+
+create index if not exists idx_country_photos_code on country_photos (code, added_at desc);
+
 create table if not exists app_config (
   key text primary key,
   value jsonb not null,
@@ -79,3 +97,5 @@ alter table members enable row level security;
 alter table trips enable row level security;
 alter table locations enable row level security;
 alter table app_config enable row level security;
+alter table visited_countries enable row level security;
+alter table country_photos enable row level security;

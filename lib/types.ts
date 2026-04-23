@@ -70,3 +70,19 @@ export type SessionPayload = {
   memberId: string;
   expiresAt: number;
 };
+
+export type VisitedCountry = {
+  code: string;
+  note: string | null;
+  added_by: string | null;
+  added_at: string;
+  updated_at: string;
+};
+
+export type CountryPhoto = {
+  id: string;
+  code: string;
+  url: string;
+  added_by: string | null;
+  added_at: string;
+};

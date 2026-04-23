@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, ArrowLeft } from "lucide-react";
+import { Settings, ArrowLeft, Globe2 } from "lucide-react";
 import type { Member } from "@/lib/types";
 import { LogoutButton } from "./logout-button";
 
@@ -48,6 +48,14 @@ export function AppHeader({
 
         <div className="flex items-center gap-0.5">
           {right}
+          <Link
+            href="/globe"
+            className="btn-icon"
+            aria-label="dünya"
+            title="dünya"
+          >
+            <Globe2 size={18} strokeWidth={1.5} />
+          </Link>
           <Link
             href="/settings"
             className="btn-icon"
