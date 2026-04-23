@@ -39,20 +39,20 @@ export default async function HomePage() {
     <>
       <AppHeader member={me} />
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 pt-6 pb-32">
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="font-serif italic text-[2rem] leading-none text-[color:var(--ink)]">
-            tatiller
-          </h2>
-          <span className="label-mono">
-            {trips.length} {trips.length === 1 ? "kayıt" : "kayıt"}
+        <div className="flex items-end justify-between mb-8 anim-reveal">
+          <div>
+            <span className="label">arşiv</span>
+            <h1 className="display text-[2.4rem] mt-2">tatiller</h1>
+          </div>
+          <span className="label-dim pb-1">
+            {trips.length.toString().padStart(2, "0")}
           </span>
         </div>
-        <div className="dashed-rule mb-6" />
 
         {trips.length === 0 ? (
           <EmptyState memberName={me.name} />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12">
+          <div className="grid grid-cols-2 gap-4 sm:gap-5">
             {trips.map(({ trip, count }, i) => (
               <TripCard
                 key={trip.id}
@@ -71,23 +71,27 @@ export default async function HomePage() {
 
 function EmptyState({ memberName }: { memberName: string }) {
   return (
-    <div className="flex flex-col items-center text-center py-16 gap-4 animate-rise">
+    <div className="flex flex-col items-start py-10 gap-4 anim-reveal max-w-sm">
       <div
-        className="font-serif italic text-5xl"
-        style={{ color: "var(--ink-soft)", opacity: 0.55 }}
-      >
-        —&nbsp;·&nbsp;—
+        className="w-14 h-14 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)",
+        }}
+      />
+      <div className="flex flex-col gap-1">
+        <h3 className="text-[1.4rem] font-medium tracking-tight">
+          selam {memberName.toLowerCase()}
+        </h3>
+        <p
+          className="text-[0.95rem] leading-relaxed"
+          style={{ color: "var(--text-muted)" }}
+        >
+          henüz bir rota çizilmemiş. aşağıdaki{" "}
+          <span style={{ color: "var(--text)" }}>yeni tatil</span> düğmesine bas,
+          ilk günlüğü aç.
+        </p>
       </div>
-      <h3 className="font-serif italic text-2xl text-[color:var(--ink)]">
-        selam {memberName.toLowerCase()},
-      </h3>
-      <p
-        className="font-serif italic max-w-xs text-[color:var(--ink-soft)]"
-        style={{ fontSize: "1.05rem" }}
-      >
-        henüz bir rota çizilmemiş. sağ alttaki <span className="ink-highlight">yeni tatil</span> düğmesine bas, ilk günlüğü aç.
-      </p>
-      <div className="dashed-rule w-24 mt-2" />
     </div>
   );
 }

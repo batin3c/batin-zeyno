@@ -3,10 +3,11 @@
 import { useRef, useState, useTransition } from "react";
 import { savePuzzlePattern } from "@/app/actions/settings";
 
-const SIZE = 320;
-const PAD = 50;
-const DOT_R = 11;
-const HIT_R = 46;
+const SIZE = 280;
+const PAD = 38;
+const DOT_R = 5;
+const DOT_R_ACTIVE = 7;
+const HIT_R = 44;
 
 const DOTS = Array.from({ length: 9 }, (_, i) => {
   const col = i % 3;
@@ -14,8 +15,6 @@ const DOTS = Array.from({ length: 9 }, (_, i) => {
   const step = (SIZE - PAD * 2) / 2;
   return { i, x: PAD + col * step, y: PAD + row * step };
 });
-
-const JITTER = [-3, 2, -1, 4, -2, 3, -4, 1, -2];
 
 type Step = "first" | "second" | "saving" | "done" | "mismatch";
 
@@ -94,7 +93,7 @@ export function PuzzleSetter({ onDone }: { onDone: () => void }) {
           setFirst([]);
           setCurrent([]);
           setStep("first");
-          setError("eşleşmedi — baştan");
+          setError("eşleşmedi, baştan");
         }, 1000);
         return;
       }
@@ -110,131 +109,105 @@ export function PuzzleSetter({ onDone }: { onDone: () => void }) {
           return;
         }
         setStep("done");
-        setTimeout(onDone, 1000);
+        setTimeout(onDone, 900);
       });
     }
   };
 
-  const strokeColor =
-    step === "mismatch"
-      ? "var(--stamp)"
-      : step === "done"
-      ? "var(--sea)"
-      : "var(--ink)";
+  const stroke =
+    step === "mismatch" ? "var(--danger)" : "var(--accent)";
 
   const label =
-    step === "first"
-      ? "yeni mührü çiz"
-      : step === "second"
-      ? "onay için bir daha"
-      : step === "mismatch"
-      ? "eşleşmedi"
-      : step === "saving"
-      ? "kaydediliyor…"
-      : "kaydedildi ✓";
+    step === "first" ? "yeni deseni çiz" :
+    step === "second" ? "bir daha, onay için" :
+    step === "mismatch" ? "eşleşmedi" :
+    step === "saving" ? "kaydediliyor" :
+    "kaydedildi";
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="font-serif italic text-base" style={{ color: strokeColor }}>
-        — {label} —
+    <div className="flex flex-col items-center gap-6 py-2">
+      <div className="text-sm" style={{ color: step === "mismatch" ? "var(--danger)" : "var(--text-muted)" }}>
+        {label}
       </div>
       <div
-        className={`stamp-frame p-4 ${step === "mismatch" ? "animate-shake" : ""}`}
+        className={`w-[min(260px,68vw)] aspect-square ${
+          step === "mismatch" ? "anim-shake" : ""
+        }`}
+        style={{ touchAction: "none" }}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (t) start(t.clientX, t.clientY);
+        }}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (t) move(t.clientX, t.clientY);
+        }}
+        onTouchEnd={end}
+        onTouchCancel={end}
+        onMouseDown={(e) => start(e.clientX, e.clientY)}
+        onMouseMove={(e) => {
+          if (drawing.current) move(e.clientX, e.clientY);
+        }}
+        onMouseUp={end}
+        onMouseLeave={end}
       >
-        <div
-          className="w-[min(240px,70vw)] aspect-square"
-          style={{ touchAction: "none" }}
-          onTouchStart={(e) => {
-            const t = e.touches[0];
-            if (t) start(t.clientX, t.clientY);
-          }}
-          onTouchMove={(e) => {
-            const t = e.touches[0];
-            if (t) move(t.clientX, t.clientY);
-          }}
-          onTouchEnd={end}
-          onTouchCancel={end}
-          onMouseDown={(e) => start(e.clientX, e.clientY)}
-          onMouseMove={(e) => {
-            if (drawing.current) move(e.clientX, e.clientY);
-          }}
-          onMouseUp={end}
-          onMouseLeave={end}
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          className="w-full h-full pointer-events-none"
         >
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${SIZE} ${SIZE}`}
-            className="w-full h-full pointer-events-none"
-          >
-            {current.length > 1 &&
-              current.slice(0, -1).map((from, idx) => {
-                const a = DOTS[from];
-                const b = DOTS[current[idx + 1]];
-                return (
-                  <line
-                    key={`${from}-${current[idx + 1]}`}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke={strokeColor}
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    opacity={0.85}
-                  />
-                );
-              })}
-            {current.length > 0 && pointer && (
-              <line
-                x1={DOTS[current[current.length - 1]].x}
-                y1={DOTS[current[current.length - 1]].y}
-                x2={pointer.x}
-                y2={pointer.y}
-                stroke={strokeColor}
-                strokeWidth={5}
-                strokeLinecap="round"
-                opacity={0.4}
-                strokeDasharray="2 5"
-              />
-            )}
-            {DOTS.map((d) => {
-              const active = current.includes(d.i);
+          {current.length > 1 &&
+            current.slice(0, -1).map((from, idx) => {
+              const a = DOTS[from];
+              const b = DOTS[current[idx + 1]];
               return (
-                <g key={d.i}>
-                  <circle cx={d.x} cy={d.y} r={HIT_R} fill="transparent" />
-                  <circle
-                    cx={d.x}
-                    cy={d.y}
-                    r={DOT_R + 6}
-                    fill="none"
-                    stroke={active ? strokeColor : "var(--faded)"}
-                    strokeWidth={active ? 1.5 : 1}
-                    strokeDasharray={active ? "none" : "2 3"}
-                    opacity={active ? 0.6 : 0.5}
-                  />
-                  <circle
-                    cx={d.x}
-                    cy={d.y}
-                    r={DOT_R}
-                    fill={active ? strokeColor : "var(--faded)"}
-                    opacity={active ? 1 : 0.35}
-                    style={{
-                      transition:
-                        "fill 140ms, transform 160ms cubic-bezier(.16,1,.3,1)",
-                      transformOrigin: `${d.x}px ${d.y}px`,
-                      transform: active
-                        ? `scale(1.25) rotate(${JITTER[d.i]}deg)`
-                        : "scale(1)",
-                    }}
-                  />
-                </g>
+                <line
+                  key={`${from}-${current[idx + 1]}`}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke={stroke}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  opacity={0.9}
+                />
               );
             })}
-          </svg>
-        </div>
+          {current.length > 0 && pointer && (
+            <line
+              x1={DOTS[current[current.length - 1]].x}
+              y1={DOTS[current[current.length - 1]].y}
+              x2={pointer.x}
+              y2={pointer.y}
+              stroke={stroke}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              opacity={0.3}
+            />
+          )}
+          {DOTS.map((d) => {
+            const active = current.includes(d.i);
+            return (
+              <g key={d.i}>
+                <circle cx={d.x} cy={d.y} r={HIT_R} fill="transparent" />
+                <circle
+                  cx={d.x}
+                  cy={d.y}
+                  r={active ? DOT_R_ACTIVE : DOT_R}
+                  fill={active ? stroke : "var(--text-dim)"}
+                  style={{
+                    transition:
+                      "r 220ms cubic-bezier(.2,.8,.2,1), fill 180ms ease",
+                  }}
+                />
+              </g>
+            );
+          })}
+        </svg>
       </div>
       {error && (
-        <p className="font-mono text-[0.7rem] tracking-wider uppercase text-[color:var(--stamp)]">
+        <p className="text-xs" style={{ color: "var(--danger)" }}>
           {error}
         </p>
       )}

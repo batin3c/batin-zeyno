@@ -36,15 +36,13 @@ export function CreateTripButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="j-btn-stamp fixed bottom-6 right-6 z-30"
+        className="btn-primary fixed bottom-6 right-6 z-30"
         style={{
-          paddingLeft: "1.1rem",
-          paddingRight: "1.3rem",
-          paddingTop: "0.85rem",
-          paddingBottom: "0.85rem",
+          boxShadow:
+            "0 10px 30px -8px color-mix(in srgb, var(--accent) 60%, transparent), 0 4px 8px -4px color-mix(in srgb, var(--text) 20%, transparent)",
         }}
       >
-        <Plus size={15} strokeWidth={2} />
+        <Plus size={16} strokeWidth={2} />
         yeni tatil
       </button>
 
@@ -65,30 +63,30 @@ export function CreateTripButton() {
               required
               autoFocus
               placeholder="Roma 2026"
-              className="j-input"
+              className="field-input"
             />
           </Field>
-          <Field label="açıklama (opsiyonel)">
+          <Field label="açıklama">
             <textarea
               name="description"
               rows={2}
               placeholder="birkaç not…"
-              className="j-textarea"
+              className="field-textarea"
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="başlangıç">
-              <input type="date" name="start_date" className="j-input" />
+              <input type="date" name="start_date" className="field-input" />
             </Field>
             <Field label="bitiş">
-              <input type="date" name="end_date" className="j-input" />
+              <input type="date" name="end_date" className="field-input" />
             </Field>
           </div>
           <button
             type="submit"
             disabled={pending}
-            className="j-btn-stamp mt-2 w-full"
-            style={{ padding: "0.9rem 1.25rem" }}
+            className="btn-primary w-full mt-2"
+            style={{ padding: "0.95rem 1.25rem" }}
           >
             {pending ? "oluşturuluyor…" : "oluştur"}
           </button>
@@ -107,7 +105,9 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="label-mono">{label}</span>
+      <span className="label" style={{ fontSize: "0.62rem" }}>
+        {label}
+      </span>
       {children}
     </label>
   );
@@ -124,63 +124,63 @@ export function CoverUpload({
 }) {
   return (
     <div>
-      <div className="label-mono mb-2">kapak · polaroid</div>
       {preview ? (
         <div
-          className="relative aspect-[5/3] w-full overflow-hidden group"
-          style={{ border: "1px solid var(--faded)" }}
+          className="relative aspect-[4/5] w-full overflow-hidden group"
+          style={{
+            borderRadius: "14px",
+          }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={preview}
             alt=""
             className="w-full h-full object-cover"
-            style={{ filter: "saturate(0.92) contrast(1.02)" }}
           />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="j-btn-ghost"
-              style={{
-                background: "var(--paper)",
-                fontSize: "0.62rem",
-                padding: "0.4rem 0.7rem",
-              }}
-            >
-              değiştir
-            </button>
-            <button
-              type="button"
-              onClick={() => onPick(null)}
-              className="j-btn-ghost"
-              style={{
-                background: "var(--paper)",
-                color: "var(--stamp)",
-                borderColor: "var(--stamp)",
-                fontSize: "0.62rem",
-                padding: "0.4rem 0.7rem",
-              }}
-            >
-              <X size={11} strokeWidth={1.8} /> kaldır
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="absolute bottom-3 left-3 px-3 py-1.5 text-[0.75rem] font-medium"
+            style={{
+              background: "color-mix(in srgb, var(--bg) 85%, transparent)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              borderRadius: "999px",
+              color: "var(--text)",
+            }}
+          >
+            değiştir
+          </button>
+          <button
+            type="button"
+            onClick={() => onPick(null)}
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center"
+            style={{
+              background: "color-mix(in srgb, var(--text) 70%, transparent)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              borderRadius: "999px",
+              color: "var(--bg)",
+            }}
+            aria-label="Kaldır"
+          >
+            <X size={14} strokeWidth={2} />
+          </button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-full aspect-[5/3] flex flex-col items-center justify-center gap-2 transition-colors hover:bg-[color:var(--paper-soft)]"
+          className="w-full aspect-[4/5] flex flex-col items-center justify-center gap-2 transition-colors"
           style={{
-            border: "1px dashed var(--faded)",
+            border: "1px solid var(--line)",
+            background: "var(--surface)",
+            borderRadius: "14px",
+            color: "var(--text-muted)",
           }}
         >
-          <Camera
-            size={22}
-            strokeWidth={1.5}
-            style={{ color: "var(--ink-soft)" }}
-          />
-          <span className="label-mono">kapak ekle</span>
+          <Camera size={20} strokeWidth={1.5} />
+          <span className="text-[0.85rem] font-medium">kapak ekle</span>
         </button>
       )}
       <input

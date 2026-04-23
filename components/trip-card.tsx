@@ -1,13 +1,6 @@
 import Link from "next/link";
 import type { Trip } from "@/lib/types";
 
-// deterministic tilt per id so SSR and client agree
-function tiltFor(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
-  return (((Math.abs(h) % 11) - 5) * 0.28);
-}
-
 export function TripCard({
   trip,
   locationCount,
@@ -17,62 +10,22 @@ export function TripCard({
   locationCount: number;
   index?: number;
 }) {
-  const tilt = tiltFor(trip.id);
   const dateStr = formatDates(trip.start_date, trip.end_date);
-  const stampDate = formatStamp(trip.start_date ?? trip.created_at);
 
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="group block animate-rise"
-      style={{
-        animationDelay: `${index * 70}ms`,
-        transform: `rotate(${tilt}deg)`,
-        transformOrigin: "center",
-      }}
+      className="group block anim-reveal"
+      style={{ animationDelay: `${index * 60}ms` }}
     >
       <article
-        className="relative transition-transform duration-300 group-hover:rotate-0 group-active:scale-[0.98]"
-        style={{
-          background: "color-mix(in srgb, var(--paper-soft) 90%, #fff)",
-          boxShadow: `
-            0 1px 0 rgba(28,24,20,0.04),
-            0 10px 30px rgba(28,24,20,0.12),
-            0 2px 8px rgba(28,24,20,0.06)
-          `,
-          transform: `rotate(${-tilt}deg)`,
-          transformOrigin: "center",
-          padding: "0.75rem 0.75rem 1.1rem",
-        }}
+        className="flex flex-col gap-3 transition-transform duration-300 group-active:scale-[0.98]"
       >
-        {/* stamp badge — tilted postal stamp in corner */}
         <div
-          className="absolute -top-2 -right-2 z-10 flex flex-col items-center justify-center"
+          className="relative w-full aspect-[4/5] overflow-hidden"
           style={{
-            transform: "rotate(8deg)",
-            background: "var(--paper)",
-            border: "1.5px solid var(--stamp)",
-            padding: "0.25rem 0.55rem",
-            minWidth: "52px",
-            fontFamily: "var(--font-dm-mono), monospace",
-            color: "var(--stamp)",
-          }}
-        >
-          <span
-            className="text-[0.55rem] font-medium tracking-[0.15em] uppercase leading-none"
-            style={{ opacity: 0.9 }}
-          >
-            trip
-          </span>
-          <span className="text-[0.9rem] font-semibold leading-tight mt-0.5">
-            {stampDate}
-          </span>
-        </div>
-
-        <div
-          className="relative aspect-[5/3] w-full overflow-hidden"
-          style={{
-            boxShadow: "inset 0 0 0 1px rgba(28,24,20,0.08)",
+            borderRadius: "18px",
+            background: "var(--surface-2)",
           }}
         >
           {trip.cover_url ? (
@@ -80,54 +33,67 @@ export function TripCard({
             <img
               src={trip.cover_url}
               alt={trip.name}
-              className="w-full h-full object-cover"
-              style={{ filter: "saturate(0.92) contrast(1.02)" }}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             />
           ) : (
-            <NoCoverPattern />
+            <EmptyCover />
           )}
-          {/* sepia overlay */}
+          {/* minimal top gradient to keep any top-overlaid UI legible later */}
           <div
+            aria-hidden
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "linear-gradient(180deg, transparent 70%, rgba(28,24,20,0.12) 100%)",
+                "linear-gradient(to top, color-mix(in srgb, var(--text) 15%, transparent), transparent 45%)",
             }}
           />
+          {/* count pill bottom-right */}
+          <div
+            className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 text-[0.7rem] font-medium"
+            style={{
+              background: "color-mix(in srgb, var(--bg) 80%, transparent)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              borderRadius: "999px",
+              color: "var(--text)",
+            }}
+          >
+            <span
+              className="w-1 h-1 rounded-full"
+              style={{ background: "var(--accent)" }}
+            />
+            {locationCount}
+          </div>
         </div>
-
-        <div className="px-1 pt-3 flex flex-col gap-2">
-          <h3 className="font-serif italic text-[1.35rem] leading-tight text-[color:var(--ink)]">
+        <div className="flex flex-col gap-1 px-0.5">
+          <h3 className="text-[1.05rem] font-medium tracking-tight leading-tight text-[color:var(--text)] line-clamp-2">
             {trip.name}
           </h3>
-          <div className="dashed-rule" />
-          <div className="flex items-center justify-between label-mono">
-            <span>{dateStr ?? "tarih yok"}</span>
-            <span>
-              {locationCount} {locationCount === 1 ? "yer" : "yer"}
-            </span>
-          </div>
+          <span className="label-dim">
+            {dateStr ?? "tarih belirlenmedi"}
+          </span>
         </div>
       </article>
     </Link>
   );
 }
 
-function NoCoverPattern() {
+function EmptyCover() {
   return (
     <div
-      className="w-full h-full flex items-center justify-center relative"
+      className="w-full h-full flex items-center justify-center"
       style={{
         background:
-          "repeating-linear-gradient(135deg, var(--paper-soft) 0px, var(--paper-soft) 14px, color-mix(in srgb, var(--faded) 25%, var(--paper-soft)) 14px, color-mix(in srgb, var(--faded) 25%, var(--paper-soft)) 15px)",
+          "linear-gradient(135deg, var(--surface-2) 0%, var(--surface) 60%, var(--line-soft) 100%)",
       }}
     >
-      <span
-        className="font-serif italic text-5xl"
-        style={{ color: "var(--ink-soft)", opacity: 0.55 }}
-      >
-        ·  ·  ·
-      </span>
+      <div
+        className="w-12 h-12 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%)",
+        }}
+      />
     </div>
   );
 }
@@ -142,10 +108,4 @@ function formatDates(start: string | null, end: string | null): string | null {
   };
   if (start && end) return `${fmt(start)} – ${fmt(end)}`;
   return fmt((start ?? end) as string);
-}
-
-function formatStamp(iso: string): string {
-  const d = new Date(iso);
-  const m = d.toLocaleDateString("tr-TR", { month: "short" }).slice(0, 3);
-  return `${m} '${String(d.getFullYear()).slice(-2)}`;
 }

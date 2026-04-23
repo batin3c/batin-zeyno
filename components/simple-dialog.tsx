@@ -36,48 +36,47 @@ export function SimpleDialog({
       onClick={onClose}
     >
       <div
-        className="absolute inset-0"
-        style={{ background: "rgba(28, 24, 20, 0.55)" }}
+        className="absolute inset-0 anim-fade-in"
+        style={{
+          background: "color-mix(in srgb, var(--text) 50%, transparent)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+        }}
       />
       <div
-        className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto animate-rise"
+        className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto anim-scale-in"
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "var(--paper)",
-          border: "1px solid var(--faded)",
-          boxShadow:
-            "0 25px 60px rgba(28,24,20,0.35), 0 8px 16px rgba(28,24,20,0.15)",
+          background: "var(--bg)",
+          border: "1px solid var(--line)",
+          borderRadius: "20px 20px 0 0",
+          boxShadow: "0 -10px 50px -10px color-mix(in srgb, var(--text) 35%, transparent)",
         }}
       >
-        {/* decorative inner dashed frame */}
-        <div
-          className="absolute inset-[6px] pointer-events-none"
-          style={{
-            border: "1px dashed var(--faded)",
-          }}
-        />
-        {/* content */}
-        <div className="relative p-6">
-          <div className="flex items-start justify-between mb-5 gap-4">
-            <div>
-              <div className="label-mono mb-1">form</div>
-              <h2 className="font-serif italic text-[1.5rem] leading-tight text-[color:var(--ink)]">
-                {title}
-              </h2>
-            </div>
+        <div className="p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <h2 className="text-[1.15rem] font-semibold tracking-tight leading-tight">
+              {title}
+            </h2>
             <button
               type="button"
               onClick={onClose}
-              className="-mr-2 -mt-2 p-2 text-[color:var(--ink-soft)] hover:text-[color:var(--stamp)] transition-colors"
+              className="btn-icon -mr-2 -mt-1"
               aria-label="Kapat"
             >
-              <X size={18} strokeWidth={1.5} />
+              <X size={18} strokeWidth={1.75} />
             </button>
           </div>
-          <div className="dashed-rule mb-5" />
           {children}
         </div>
       </div>
+      <style jsx>{`
+        @media (min-width: 640px) {
+          div[class*="anim-scale-in"] {
+            border-radius: 20px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

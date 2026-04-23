@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Map as MapIcon, ListOrdered } from "lucide-react";
+import { Map as MapIcon, List } from "lucide-react";
 import { MapView } from "./map-view";
 import { LocationList } from "./location-list";
 import { AddLocationButton } from "./add-location-dialog";
@@ -19,28 +19,38 @@ export function TripDetailClient({
   members: Member[];
   currentMemberId: string;
 }) {
-  const [tab, setTab] = useState<"map" | "list">("map");
+  const [tab, setTab] = useState<"map" | "list">("list");
   const visitedCount = locations.filter((l) => l.status === "visited").length;
 
   return (
     <>
-      <div className="max-w-3xl w-full mx-auto px-4 pt-5 pb-3">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex gap-0">
-            <TabBtn active={tab === "map"} onClick={() => setTab("map")}>
-              <MapIcon size={13} strokeWidth={1.5} /> harita
-            </TabBtn>
+      <div className="max-w-3xl w-full mx-auto px-4 pt-4 pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <div
+            className="inline-flex p-0.5"
+            style={{
+              background: "var(--surface-2)",
+              borderRadius: "10px",
+            }}
+          >
             <TabBtn active={tab === "list"} onClick={() => setTab("list")}>
-              <ListOrdered size={13} strokeWidth={1.5} /> liste
-              <span className="opacity-60 ml-0.5">· {locations.length}</span>
+              <List size={13} strokeWidth={1.75} /> liste
+            </TabBtn>
+            <TabBtn active={tab === "map"} onClick={() => setTab("map")}>
+              <MapIcon size={13} strokeWidth={1.75} /> harita
             </TabBtn>
           </div>
           <ImportKmlButton tripId={tripId} />
         </div>
         {locations.length > 0 && (
-          <div className="label-mono flex items-center gap-3">
-            <span>{visitedCount}/{locations.length} gittik</span>
-            <span className="flex-1 dashed-rule" />
+          <div
+            className="label-dim mt-3 flex items-center gap-3"
+            style={{ fontSize: "0.65rem" }}
+          >
+            <span>{locations.length} yer</span>
+            <span style={{ color: "var(--line)" }}>·</span>
+            <span>{visitedCount} gittik</span>
+            <span style={{ color: "var(--line)" }}>·</span>
             <span>
               {locations.reduce((acc, l) => acc + l.loved_by.length, 0)} ♡
             </span>
@@ -51,10 +61,10 @@ export function TripDetailClient({
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 pb-32">
         {tab === "map" ? (
           <div
-            className="h-[68vh] overflow-hidden"
+            className="h-[72vh] overflow-hidden"
             style={{
-              border: "1px solid var(--faded)",
-              boxShadow: "inset 0 0 0 1px var(--paper-soft)",
+              borderRadius: "16px",
+              border: "1px solid var(--line)",
             }}
           >
             <MapView locations={locations} members={members} />
@@ -86,10 +96,14 @@ function TabBtn({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[0.68rem] uppercase tracking-[0.18em] transition-colors border-b-2"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-[0.8rem] font-medium tracking-tight transition-all duration-200"
       style={{
-        color: active ? "var(--ink)" : "var(--ink-soft)",
-        borderColor: active ? "var(--stamp)" : "transparent",
+        color: active ? "var(--text)" : "var(--text-muted)",
+        background: active ? "var(--bg)" : "transparent",
+        borderRadius: "8px",
+        boxShadow: active
+          ? "0 1px 3px -1px color-mix(in srgb, var(--text) 20%, transparent)"
+          : "none",
       }}
     >
       {children}

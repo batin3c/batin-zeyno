@@ -1,29 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, DM_Sans, DM_Mono } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
 });
 
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "baze · özel arşiv",
+  title: "baze",
   description: "ikimize özel tatil günlüğü",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -34,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ede4cf",
+  themeColor: "#f5f0e6",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -49,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${fraunces.variable} ${dmSans.variable} ${dmMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

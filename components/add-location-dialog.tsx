@@ -35,15 +35,13 @@ export function AddLocationButton({ tripId }: { tripId: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="j-btn-stamp fixed bottom-6 right-6 z-30"
+        className="btn-primary fixed bottom-6 right-6 z-30"
         style={{
-          paddingLeft: "1.1rem",
-          paddingRight: "1.3rem",
-          paddingTop: "0.85rem",
-          paddingBottom: "0.85rem",
+          boxShadow:
+            "0 10px 30px -8px color-mix(in srgb, var(--accent) 60%, transparent), 0 4px 8px -4px color-mix(in srgb, var(--text) 20%, transparent)",
         }}
       >
-        <Plus size={15} strokeWidth={2} />
+        <Plus size={16} strokeWidth={2} />
         yer ekle
       </button>
       {open && (
@@ -89,15 +87,21 @@ function AddLocationDialog({
 
   return (
     <SimpleDialog open={true} onClose={onClose} title="yer ekle">
-      <div className="flex gap-0 mb-5 border-b border-dashed" style={{ borderColor: "var(--faded)" }}>
+      <div
+        className="flex p-0.5 mb-5"
+        style={{
+          background: "var(--surface-2)",
+          borderRadius: "10px",
+        }}
+      >
         <Tab active={mode === "search"} onClick={() => setMode("search")}>
-          <Search size={12} strokeWidth={1.8} /> ara
+          <Search size={12} strokeWidth={1.75} /> ara
         </Tab>
         <Tab active={mode === "link"} onClick={() => setMode("link")}>
-          <Link2 size={12} strokeWidth={1.8} /> link
+          <Link2 size={12} strokeWidth={1.75} /> link
         </Tab>
         <Tab active={mode === "manual"} onClick={() => setMode("manual")}>
-          <PenLine size={12} strokeWidth={1.8} /> elle
+          <PenLine size={12} strokeWidth={1.75} /> elle
         </Tab>
       </div>
 
@@ -111,36 +115,40 @@ function AddLocationDialog({
 
       {draft.lat !== null && (
         <div
-          className="mt-5 p-3 font-serif italic"
+          className="mt-5 p-3 flex flex-col gap-1"
           style={{
-            background: "color-mix(in srgb, var(--mustard) 14%, transparent)",
-            border: "1px dashed var(--mustard)",
+            background: "var(--accent-soft)",
+            borderRadius: "10px",
           }}
         >
-          <div className="text-base leading-tight text-[color:var(--ink)]">
+          <div
+            className="text-[0.95rem] font-medium tracking-tight"
+            style={{ color: "var(--text)" }}
+          >
             {draft.name || "(isimsiz)"}
           </div>
           {draft.address && (
-            <div className="label-mono mt-1 normal-case tracking-normal font-sans not-italic">
+            <div
+              className="text-[0.8rem]"
+              style={{ color: "var(--text-muted)" }}
+            >
               {draft.address}
             </div>
           )}
-          <div className="label-mono mt-2">
-            {draft.lat.toFixed(4)}, {draft.lng?.toFixed(4)}
-          </div>
         </div>
       )}
 
       <div className="mt-5 grid grid-cols-2 gap-4">
         <div>
-          <div className="label-mono mb-2">kategori</div>
+          <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+            kategori
+          </div>
           <select
             value={draft.category}
             onChange={(e) =>
               setDraft({ ...draft, category: e.target.value as Category })
             }
-            className="j-input"
-            style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
+            className="field-select"
           >
             {CATEGORIES.map((c) => (
               <option key={c.key} value={c.key}>
@@ -150,32 +158,36 @@ function AddLocationDialog({
           </select>
         </div>
         <div>
-          <div className="label-mono mb-2">isim</div>
+          <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+            isim
+          </div>
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder="yer ismi"
-            className="j-input"
+            className="field-input"
           />
         </div>
       </div>
 
-      <div className="mt-4">
-        <div className="label-mono mb-2">not</div>
+      <div className="mt-5">
+        <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+          not
+        </div>
         <textarea
           value={draft.note}
           onChange={(e) => setDraft({ ...draft, note: e.target.value })}
           rows={2}
-          placeholder="&hellip;"
-          className="j-textarea"
+          placeholder="…"
+          className="field-textarea"
         />
       </div>
 
       <button
         onClick={submit}
         disabled={!ready || pending}
-        className="j-btn-stamp mt-6 w-full"
-        style={{ padding: "0.9rem 1.25rem" }}
+        className="btn-primary w-full mt-6"
+        style={{ padding: "0.95rem 1.25rem" }}
       >
         {pending ? "ekleniyor…" : ready ? "ekle" : "önce bir konum seç"}
       </button>
@@ -195,11 +207,14 @@ function Tab({
   return (
     <button
       onClick={onClick}
-      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 font-mono text-[0.68rem] uppercase tracking-[0.18em] transition-colors"
+      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[0.78rem] font-medium transition-all duration-200"
       style={{
-        color: active ? "var(--ink)" : "var(--ink-soft)",
-        borderBottom: active ? "2px solid var(--stamp)" : "2px solid transparent",
-        marginBottom: "-1px",
+        color: active ? "var(--text)" : "var(--text-muted)",
+        background: active ? "var(--bg)" : "transparent",
+        borderRadius: "8px",
+        boxShadow: active
+          ? "0 1px 3px -1px color-mix(in srgb, var(--text) 20%, transparent)"
+          : "none",
       }}
     >
       {children}
@@ -207,7 +222,6 @@ function Tab({
   );
 }
 
-// Google Places Autocomplete — loads the Maps JS script on demand
 function PlaceSearch({
   onPick,
 }: {
@@ -250,8 +264,11 @@ function PlaceSearch({
 
   if (loadError) {
     return (
-      <p className="font-serif italic text-sm p-4 text-center text-[color:var(--ink-soft)]">
-        arama yüklenemedi. api anahtarı?
+      <p
+        className="text-[0.9rem] p-4 text-center"
+        style={{ color: "var(--text-muted)" }}
+      >
+        arama yüklenemedi. API key&apos;i kontrol et.
       </p>
     );
   }
@@ -261,14 +278,14 @@ function PlaceSearch({
       <input
         ref={inputRef}
         disabled={!isLoaded}
-        placeholder={isLoaded ? "yer ara (roma colosseum, mikla…)" : "yükleniyor…"}
-        className="j-input"
+        placeholder={isLoaded ? "yer ara (Roma Colosseum, Mikla…)" : "yükleniyor…"}
+        className="field-input"
       />
-      <p className="label-mono mt-3 normal-case tracking-normal font-sans text-[0.78rem]">
-        <span className="label-mono">tip:</span>{" "}
-        <span className="font-serif italic text-[color:var(--ink-soft)]">
-          google önerilerinden seç — adres + koordinat otomatik gelir.
-        </span>
+      <p
+        className="text-[0.8rem] mt-3 leading-relaxed"
+        style={{ color: "var(--text-muted)" }}
+      >
+        google önerilerinden seç — adres ve koordinat otomatik gelir.
       </p>
     </div>
   );
@@ -290,11 +307,11 @@ function LinkInput({
     try {
       const r = await resolveShareUrl(url.trim());
       if (!r) {
-        setError("link çözülemedi. url'i kontrol et.");
+        setError("link çözülemedi. URL'i kontrol et.");
         return;
       }
       onResolved({
-        name: r.name ?? "yeni yer",
+        name: r.name ?? "Yeni yer",
         lat: r.lat,
         lng: r.lng,
         google_maps_url: url.trim(),
@@ -308,31 +325,31 @@ function LinkInput({
 
   return (
     <div>
-      <div className="flex gap-3 items-end">
+      <div className="flex gap-2 items-end">
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://maps.app.goo.gl/…"
-          className="j-input flex-1"
+          className="field-input flex-1"
         />
         <button
           onClick={resolve}
           disabled={loading || !url.trim()}
-          className="j-btn-stamp"
-          style={{ padding: "0.55rem 0.9rem", fontSize: "0.68rem" }}
+          className="btn-primary"
+          style={{ padding: "0.6rem 0.95rem", fontSize: "0.8rem" }}
         >
           {loading ? "…" : "çöz"}
         </button>
       </div>
       {error && (
-        <p
-          className="label-mono mt-3"
-          style={{ color: "var(--stamp)" }}
-        >
+        <p className="text-[0.8rem] mt-3" style={{ color: "var(--danger)" }}>
           {error}
         </p>
       )}
-      <p className="font-serif italic text-[color:var(--ink-soft)] text-sm mt-3 leading-snug">
+      <p
+        className="text-[0.8rem] mt-3 leading-relaxed"
+        style={{ color: "var(--text-muted)" }}
+      >
         google maps&apos;te yeri aç → paylaş → linki kopyala → yapıştır.
       </p>
     </div>
@@ -349,15 +366,19 @@ function ManualFields({
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
-        <div className="label-mono mb-2">adres</div>
+        <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+          adres
+        </div>
         <input
           value={draft.address}
           onChange={(e) => setDraft({ ...draft, address: e.target.value })}
-          className="j-input"
+          className="field-input"
         />
       </div>
       <div>
-        <div className="label-mono mb-2">enlem</div>
+        <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+          enlem
+        </div>
         <input
           type="number"
           step="any"
@@ -368,11 +389,13 @@ function ManualFields({
               lat: e.target.value ? parseFloat(e.target.value) : null,
             })
           }
-          className="j-input"
+          className="field-input"
         />
       </div>
       <div>
-        <div className="label-mono mb-2">boylam</div>
+        <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+          boylam
+        </div>
         <input
           type="number"
           step="any"
@@ -383,7 +406,7 @@ function ManualFields({
               lng: e.target.value ? parseFloat(e.target.value) : null,
             })
           }
-          className="j-input"
+          className="field-input"
         />
       </div>
     </div>

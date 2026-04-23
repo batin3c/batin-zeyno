@@ -7,13 +7,6 @@ import {
   removeLocationPhoto,
 } from "@/app/actions/locations";
 
-// small deterministic tilt per url so photos feel scattered, not sterile
-function tiltFor(url: string, idx: number): number {
-  let h = idx;
-  for (let i = 0; i < url.length; i++) h = ((h << 5) - h + url.charCodeAt(i)) | 0;
-  return ((Math.abs(h) % 7) - 3) * 1.2;
-}
-
 export function LocationPhotos({
   locationId,
   tripId,
@@ -55,10 +48,17 @@ export function LocationPhotos({
       <>
         <button
           onClick={() => inputRef.current?.click()}
-          className="mt-3 label-mono flex items-center gap-1.5 hover:text-[color:var(--ink)] transition-colors"
-          style={{ color: "var(--ink-soft)" }}
+          className="flex items-center gap-1.5 text-[0.75rem] font-medium mt-2 transition-colors"
+          style={{ color: "var(--text-dim)" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--text)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-dim)")
+          }
         >
-          <Camera size={11} strokeWidth={1.5} /> fotoğraf ekle
+          <Camera size={12} strokeWidth={1.75} />
+          fotoğraf ekle
         </button>
         <input
           ref={inputRef}
@@ -73,73 +73,65 @@ export function LocationPhotos({
   }
 
   return (
-    <div className="mt-4">
-      <div className="flex gap-4 overflow-x-auto -mx-4 px-4 py-2">
-        {urls.map((u, i) => {
-          const tilt = tiltFor(u, i);
-          return (
-            <div
-              key={u}
-              className="relative flex-shrink-0 group"
-              style={{
-                transform: `rotate(${tilt}deg)`,
-              }}
+    <div className="mt-1">
+      <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5">
+        {urls.map((u) => (
+          <div key={u} className="relative flex-shrink-0 group">
+            <a
+              href={u}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block overflow-hidden"
+              style={{ borderRadius: "10px" }}
             >
-              <a
-                href={u}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-                style={{
-                  background: "color-mix(in srgb, var(--paper) 98%, #fff)",
-                  padding: "6px 6px 22px",
-                  boxShadow: `
-                    0 1px 0 rgba(28,24,20,0.04),
-                    0 4px 12px rgba(28,24,20,0.15)
-                  `,
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={u}
-                  alt=""
-                  className="w-24 h-24 object-cover"
-                  style={{
-                    filter: "saturate(0.92) contrast(1.02)",
-                  }}
-                />
-              </a>
-              <button
-                onClick={() => onRemove(u)}
-                className="absolute top-1 right-1 p-1 bg-[color:var(--paper)] text-[color:var(--ink)] opacity-0 group-hover:opacity-100 transition"
-                aria-label="Sil"
-                style={{ border: "1px solid var(--faded)" }}
-              >
-                <X size={10} strokeWidth={1.5} />
-              </button>
-            </div>
-          );
-        })}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={u}
+                alt=""
+                className="w-24 h-24 object-cover"
+              />
+            </a>
+            <button
+              onClick={() => onRemove(u)}
+              className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{
+                background: "color-mix(in srgb, var(--text) 75%, transparent)",
+                borderRadius: "999px",
+                color: "var(--bg)",
+              }}
+              aria-label="Sil"
+            >
+              <X size={11} strokeWidth={2} />
+            </button>
+          </div>
+        ))}
         <button
           onClick={() => inputRef.current?.click()}
           disabled={pending}
-          className="flex-shrink-0 w-[108px] h-[132px] flex flex-col items-center justify-center gap-1.5 hover:bg-[color:var(--paper-soft)] transition disabled:opacity-50"
+          className="flex-shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
           style={{
-            border: "1px dashed var(--faded)",
+            border: "1px solid var(--line)",
+            borderRadius: "10px",
+            color: "var(--text-muted)",
+            background: "var(--surface)",
           }}
           aria-label="Fotoğraf ekle"
         >
-          <Camera size={18} strokeWidth={1.5} style={{ color: "var(--ink-soft)" }} />
-          <span className="label-mono text-[0.6rem]">ekle</span>
+          <Camera size={16} strokeWidth={1.5} />
         </button>
       </div>
       {error && (
-        <p className="label-mono mt-1" style={{ color: "var(--stamp)" }}>
+        <p
+          className="text-[0.75rem] mt-1"
+          style={{ color: "var(--danger)" }}
+        >
           {error}
         </p>
       )}
       {pending && (
-        <p className="label-mono mt-1 opacity-60">yükleniyor…</p>
+        <p className="text-[0.75rem] mt-1" style={{ color: "var(--text-dim)" }}>
+          yükleniyor…
+        </p>
       )}
       <input
         ref={inputRef}

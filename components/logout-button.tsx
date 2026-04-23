@@ -10,7 +10,7 @@ export function LogoutButton() {
     <button
       onClick={() => startTransition(() => logout())}
       disabled={pending}
-      className="p-2 text-[color:var(--ink-soft)] hover:text-[color:var(--stamp)] transition-colors disabled:opacity-50"
+      className="btn-icon disabled:opacity-50"
       aria-label="Çıkış"
       title="Çıkış"
     >

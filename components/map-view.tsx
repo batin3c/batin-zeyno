@@ -3,73 +3,30 @@
 import { useMemo, useState } from "react";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 import type { Location, Member } from "@/lib/types";
-import { CATEGORY_COLOR, directionsUrl, openInMapsUrl } from "@/lib/google-maps";
+import { directionsUrl, openInMapsUrl } from "@/lib/google-maps";
 import { CATEGORIES } from "@/lib/types";
 
 type Libraries = ("places" | "geocoding")[];
 const LIBRARIES: Libraries = ["places"];
 
-// muted journal-style map (applied via options.styles)
+// very quiet, near-monochrome with our accent for water
 const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#ede4cf" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#5a5246" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#ede4cf" }] },
-  {
-    featureType: "administrative",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#b6a486" }],
-  },
-  {
-    featureType: "landscape",
-    elementType: "geometry",
-    stylers: [{ color: "#e5dbc1" }],
-  },
-  {
-    featureType: "landscape.natural",
-    elementType: "geometry",
-    stylers: [{ color: "#d7cdb2" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "geometry",
-    stylers: [{ color: "#e0d5b9" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#c6c79a" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#f4ebd4" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#d6c8a8" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#e9dcb9" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#d6c8a8" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#9db5bf" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#2d5e6e" }],
-  },
+  { elementType: "geometry", stylers: [{ color: "#f0ebe0" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#6a615a" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f0e6" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#d8ceb7" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#ebe2cd" }] },
+  { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#e4d9c0" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#e0d5bd" }] },
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8c9a0" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#fbf7ef" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#e0d5bd" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ede2c9" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#d4c8ad" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#d8ceb7" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#a5bcbf" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4f6366" }] },
 ];
 
 export function MapView({
@@ -104,14 +61,22 @@ export function MapView({
 
   if (loadError) {
     return (
-      <div className="p-6 text-sm text-center font-serif italic text-[color:var(--ink-soft)]">
-        harita yüklenemedi. api anahtarı?
+      <div
+        className="p-6 text-sm text-center"
+        style={{ color: "var(--text-muted)" }}
+      >
+        harita yüklenemedi.
       </div>
     );
   }
   if (!isLoaded) {
     return (
-      <div className="p-6 text-sm text-center label-mono">harita yükleniyor…</div>
+      <div
+        className="p-6 text-sm text-center"
+        style={{ color: "var(--text-dim)" }}
+      >
+        harita yükleniyor…
+      </div>
     );
   }
 
@@ -125,7 +90,7 @@ export function MapView({
         zoomControl: true,
         clickableIcons: false,
         styles: MAP_STYLES,
-        backgroundColor: "#ede4cf",
+        backgroundColor: "#f5f0e6",
       }}
       onClick={(e) => {
         if (!onAddAt) return;
@@ -139,10 +104,10 @@ export function MapView({
           key={loc.id}
           position={{ lat: loc.lat, lng: loc.lng }}
           onClick={() => setSelected(loc)}
-          icon={buildPinIcon(CATEGORY_COLOR[loc.category])}
+          icon={buildPinIcon()}
           label={{
             text: emojiFor(loc.category),
-            fontSize: "14px",
+            fontSize: "13px",
           }}
         />
       ))}
@@ -162,16 +127,16 @@ export function MapView({
   );
 }
 
-function buildPinIcon(color: string): google.maps.Symbol {
+function buildPinIcon(): google.maps.Symbol {
   return {
-    path: "M12 2C7.6 2 4 5.6 4 10c0 5.8 7 11.5 7.3 11.7.2.2.6.2.8 0C12.4 21.5 20 15.8 20 10c0-4.4-3.6-8-8-8z",
-    fillColor: color,
+    path: "M0,0 m -11,0 a 11,11 0 1,0 22,0 a 11,11 0 1,0 -22,0",
+    fillColor: "#8c5e2e",
     fillOpacity: 1,
-    strokeColor: "#1c1814",
-    strokeWeight: 1.5,
-    scale: 1.9,
-    anchor: new google.maps.Point(12, 22),
-    labelOrigin: new google.maps.Point(12, 9),
+    strokeColor: "#fbf7ef",
+    strokeWeight: 2,
+    scale: 1.5,
+    anchor: new google.maps.Point(0, 0),
+    labelOrigin: new google.maps.Point(0, 0),
   };
 }
 
@@ -192,29 +157,29 @@ function InfoContent({
       style={{
         minWidth: 220,
         maxWidth: 260,
-        color: "#1c1814",
-        fontFamily: "'DM Sans', sans-serif",
+        color: "#1a1714",
+        fontFamily: "'Bricolage Grotesque', sans-serif",
         padding: "2px",
       }}
     >
       <div
         style={{
-          fontFamily: "'DM Mono', monospace",
-          fontSize: 9,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
           textTransform: "uppercase",
-          letterSpacing: "0.2em",
-          color: "#5a5246",
-          marginBottom: 4,
+          letterSpacing: "0.12em",
+          color: "#7a7166",
+          marginBottom: 5,
         }}
       >
         {cat?.label ?? "yer"} · {loc.status === "visited" ? "gittik" : "gidilecek"}
       </div>
       <div
         style={{
-          fontFamily: "'Fraunces', serif",
-          fontStyle: "italic",
-          fontSize: 18,
-          lineHeight: 1.1,
+          fontSize: 16,
+          fontWeight: 500,
+          letterSpacing: "-0.02em",
+          lineHeight: 1.15,
           marginBottom: 4,
         }}
       >
@@ -223,12 +188,10 @@ function InfoContent({
       {loc.address && (
         <div
           style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 10,
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            color: "#5a5246",
-            marginBottom: 6,
+            fontSize: 12,
+            color: "#7a7166",
+            marginBottom: 8,
+            lineHeight: 1.4,
           }}
         >
           {loc.address}
@@ -237,29 +200,27 @@ function InfoContent({
       {loc.note && (
         <div
           style={{
-            fontFamily: "'Fraunces', serif",
-            fontStyle: "italic",
             fontSize: 13,
             marginBottom: 8,
-            color: "#5a5246",
+            color: "#5a5248",
+            lineHeight: 1.45,
           }}
         >
-          &ldquo;{loc.note}&rdquo;
+          {loc.note}
         </div>
       )}
       {addedBy && (
         <div
           style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 9,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
             textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            color: "#5a5246",
+            letterSpacing: "0.12em",
+            color: "#a8a093",
             marginBottom: 10,
-            opacity: 0.75,
           }}
         >
-          · {addedBy.name.toLowerCase()} ekledi
+          {addedBy.name.toLowerCase()} ekledi
         </div>
       )}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -268,16 +229,14 @@ function InfoContent({
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 9,
+            fontSize: 12,
             fontWeight: 500,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            padding: "6px 10px",
-            background: "#c23836",
-            color: "#ede4cf",
+            padding: "7px 12px",
+            background: "#8c5e2e",
+            color: "#fbf7ef",
             textDecoration: "none",
             border: "none",
+            borderRadius: 8,
           }}
         >
           yol tarifi
@@ -287,16 +246,14 @@ function InfoContent({
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 9,
+            fontSize: 12,
             fontWeight: 500,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            padding: "6px 10px",
+            padding: "7px 12px",
             background: "transparent",
-            color: "#5a5246",
+            color: "#1a1714",
             textDecoration: "none",
-            border: "1px dashed #b6a486",
+            border: "1px solid #e0d5bd",
+            borderRadius: 8,
           }}
         >
           haritalar

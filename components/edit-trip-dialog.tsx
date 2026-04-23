@@ -57,11 +57,11 @@ export function EditTripButton({ trip }: { trip: Trip }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-2 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors"
+        className="btn-icon"
         aria-label="Düzenle"
         title="Düzenle"
       >
-        <Pencil size={16} strokeWidth={1.5} />
+        <Pencil size={16} strokeWidth={1.75} />
       </button>
 
       <SimpleDialog
@@ -76,62 +76,75 @@ export function EditTripButton({ trip }: { trip: Trip }) {
             onPick={onCoverPick}
           />
           <label className="flex flex-col gap-1.5">
-            <span className="label-mono">isim</span>
+            <span className="label" style={{ fontSize: "0.62rem" }}>
+              isim
+            </span>
             <input
               name="name"
               required
               defaultValue={trip.name}
-              className="j-input"
+              className="field-input"
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="label-mono">açıklama (opsiyonel)</span>
+            <span className="label" style={{ fontSize: "0.62rem" }}>
+              açıklama
+            </span>
             <textarea
               name="description"
               rows={2}
               defaultValue={trip.description ?? ""}
-              className="j-textarea"
+              className="field-textarea"
             />
           </label>
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="label-mono">başlangıç</span>
+              <span className="label" style={{ fontSize: "0.62rem" }}>
+                başlangıç
+              </span>
               <input
                 type="date"
                 name="start_date"
                 defaultValue={trip.start_date ?? ""}
-                className="j-input"
+                className="field-input"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="label-mono">bitiş</span>
+              <span className="label" style={{ fontSize: "0.62rem" }}>
+                bitiş
+              </span>
               <input
                 type="date"
                 name="end_date"
                 defaultValue={trip.end_date ?? ""}
-                className="j-input"
+                className="field-input"
               />
             </label>
           </div>
           <button
             type="submit"
             disabled={pending}
-            className="j-btn-stamp mt-2 w-full"
-            style={{ padding: "0.9rem 1.25rem" }}
+            className="btn-primary w-full mt-2"
+            style={{ padding: "0.95rem 1.25rem" }}
           >
             {pending ? "kaydediliyor…" : "kaydet"}
           </button>
-          <div className="dashed-rule my-2" />
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={pending}
-            className="flex items-center justify-center gap-2 py-2 label-mono hover:text-[color:var(--stamp)] transition-colors disabled:opacity-40"
-            style={{ color: "var(--ink-soft)" }}
+
+          <div
+            className="mt-3 pt-4"
+            style={{ borderTop: "1px solid var(--line-soft)" }}
           >
-            <Trash2 size={12} strokeWidth={1.5} />
-            tatili sil
-          </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={pending}
+              className="flex items-center justify-center gap-2 w-full py-2 text-[0.85rem] font-medium transition-colors disabled:opacity-40"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <Trash2 size={14} strokeWidth={1.5} />
+              tatili sil
+            </button>
+          </div>
         </form>
       </SimpleDialog>
     </>

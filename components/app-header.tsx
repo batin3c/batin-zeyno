@@ -15,60 +15,50 @@ export function AppHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-20">
-      <div
-        className="relative"
-        style={{
-          background:
-            "color-mix(in srgb, var(--paper) 92%, transparent)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-        }}
-      >
-        <div className="flex items-center gap-3 px-4 py-3 max-w-3xl mx-auto">
-          {back ? (
-            <Link
-              href={back}
-              className="flex items-center gap-1.5 -ml-1 py-1 pr-2 label-mono hover:text-[color:var(--ink)] transition-colors"
-              aria-label="Geri"
-            >
-              <ArrowLeft size={14} strokeWidth={1.5} />
-              <span>geri</span>
-            </Link>
-          ) : (
-            <Link
-              href="/"
-              className="label-mono -ml-1"
-            >
-              <span className="ink-highlight font-serif italic normal-case tracking-normal text-base text-[color:var(--ink)]">
-                baze
-              </span>
-            </Link>
-          )}
-          <h1
-            className={`flex-1 truncate text-center ${
-              title
-                ? "font-serif italic text-lg text-[color:var(--ink)]"
-                : "font-mono text-xs uppercase tracking-[0.25em] opacity-0"
-            }`}
+    <header
+      className="sticky top-0 z-20"
+      style={{
+        background: "color-mix(in srgb, var(--bg) 88%, transparent)",
+        backdropFilter: "blur(14px) saturate(140%)",
+        WebkitBackdropFilter: "blur(14px) saturate(140%)",
+        borderBottom: "1px solid var(--line-soft)",
+      }}
+    >
+      <div className="flex items-center gap-2 px-4 h-14 max-w-3xl mx-auto">
+        {back ? (
+          <Link
+            href={back}
+            className="btn-icon -ml-2"
+            aria-label="Geri"
           >
-            {title ?? "baze"}
-          </h1>
-          <div className="flex items-center gap-1.5">
-            {right}
-            <Link
-              href="/settings"
-              className="p-2 text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors"
-              aria-label="Ayarlar"
-              title="Ayarlar"
-            >
-              <Settings size={17} strokeWidth={1.5} />
-            </Link>
-            <MemberChip member={member} />
-            <LogoutButton />
-          </div>
+            <ArrowLeft size={18} strokeWidth={1.75} />
+          </Link>
+        ) : (
+          <Link
+            href="/"
+            className="-ml-1 px-1 text-[1rem] font-semibold tracking-tight"
+          >
+            baze
+          </Link>
+        )}
+
+        <h1 className="flex-1 text-center text-[0.95rem] font-medium tracking-tight truncate">
+          {title ?? ""}
+        </h1>
+
+        <div className="flex items-center gap-0.5">
+          {right}
+          <Link
+            href="/settings"
+            className="btn-icon"
+            aria-label="Ayarlar"
+            title="Ayarlar"
+          >
+            <Settings size={18} strokeWidth={1.5} />
+          </Link>
+          <MemberChip member={member} />
+          <LogoutButton />
         </div>
-        <div className="dashed-rule mx-4" />
       </div>
     </header>
   );
@@ -78,12 +68,11 @@ function MemberChip({ member }: { member: Member }) {
   const initial = member.name.slice(0, 1).toUpperCase();
   return (
     <div
-      className="w-9 h-9 overflow-hidden flex items-center justify-center text-sm font-serif italic"
+      className="w-8 h-8 overflow-hidden flex items-center justify-center text-[0.75rem] font-medium ml-1"
       style={{
-        background: "var(--paper-soft)",
-        border: "1px solid var(--faded)",
-        color: "var(--ink)",
-        transform: "rotate(-1.5deg)",
+        background: "var(--surface-2)",
+        color: "var(--text)",
+        borderRadius: "10px",
       }}
       title={member.name}
     >
@@ -93,7 +82,6 @@ function MemberChip({ member }: { member: Member }) {
           src={member.avatar_url}
           alt={member.name}
           className="w-full h-full object-cover"
-          style={{ filter: "sepia(0.08) saturate(0.9)" }}
         />
       ) : (
         <span>{initial}</span>

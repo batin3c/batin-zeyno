@@ -11,11 +11,10 @@ export function ImportKmlButton({ tripId }: { tripId: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="j-btn-ghost"
-        style={{ padding: "0.45rem 0.75rem", fontSize: "0.62rem" }}
+        className="btn-chip"
         title="KML dosyası içe aktar"
       >
-        <FileArchive size={11} strokeWidth={1.8} />
+        <FileArchive size={11} strokeWidth={1.75} />
         kml
       </button>
       {open && <ImportKmlDialog tripId={tripId} onClose={() => setOpen(false)} />}
@@ -56,31 +55,40 @@ function ImportKmlDialog({
   return (
     <SimpleDialog open={true} onClose={onClose} title="kml içe aktar">
       <div className="flex flex-col gap-5">
-        <p className="font-serif italic text-sm text-[color:var(--ink-soft)] leading-relaxed">
+        <p
+          className="text-[0.9rem] leading-relaxed"
+          style={{ color: "var(--text-muted)" }}
+        >
           google takeout → maps → saved places (kml) dosyasını yükle. her pin
           bu tatile otomatik eklenecek.
         </p>
 
         <button
           onClick={() => inputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 p-8 transition hover:bg-[color:var(--paper-soft)]"
+          className="flex flex-col items-center justify-center gap-3 p-8 transition-all"
           style={{
-            border: "1px dashed var(--faded)",
-            background:
-              "color-mix(in srgb, var(--paper-soft) 50%, transparent)",
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: "14px",
+            color: "var(--text-muted)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "var(--text)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "var(--line)";
           }}
         >
-          <Upload
-            size={22}
-            strokeWidth={1.5}
-            style={{ color: "var(--ink-soft)" }}
-          />
-          <div className="flex flex-col items-center gap-1">
-            <span className="font-serif italic text-base text-[color:var(--ink)]">
+          <Upload size={20} strokeWidth={1.5} />
+          <div className="flex flex-col items-center gap-0.5">
+            <span
+              className="text-[0.95rem] font-medium tracking-tight"
+              style={{ color: "var(--text)" }}
+            >
               {file ? file.name : "dosyayı seç"}
             </span>
             {file && (
-              <span className="label-mono">
+              <span className="text-[0.75rem]">
                 {(file.size / 1024).toFixed(0)} kb
               </span>
             )}
@@ -99,26 +107,24 @@ function ImportKmlDialog({
 
         {result && (
           <div
-            className="p-3 font-serif italic text-sm"
+            className="p-3 text-[0.9rem]"
             style={{
-              background: result.ok
-                ? "color-mix(in srgb, var(--sea) 12%, transparent)"
-                : "color-mix(in srgb, var(--stamp) 12%, transparent)",
-              border: `1px dashed ${result.ok ? "var(--sea)" : "var(--stamp)"}`,
-              color: result.ok ? "var(--sea)" : "var(--stamp)",
+              background: result.ok ? "var(--accent-soft)" : "color-mix(in srgb, var(--danger) 12%, transparent)",
+              color: result.ok ? "var(--accent)" : "var(--danger)",
+              borderRadius: "10px",
             }}
           >
             {result.ok
-              ? `✓ ${result.count} yer eklendi`
-              : `✕ ${result.error}`}
+              ? `${result.count} yer eklendi`
+              : result.error}
           </div>
         )}
 
         <button
           onClick={submit}
           disabled={!file || pending}
-          className="j-btn-stamp w-full"
-          style={{ padding: "0.9rem 1.25rem" }}
+          className="btn-primary w-full"
+          style={{ padding: "0.95rem 1.25rem" }}
         >
           {pending ? "içe aktarılıyor…" : "içe aktar"}
         </button>

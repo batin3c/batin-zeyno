@@ -10,28 +10,27 @@ export default async function WhoPage() {
   }
   const members = await getMembers();
   return (
-    <main className="flex-1 relative flex flex-col items-center justify-center px-6 py-12">
-      <div className="absolute top-6 inset-x-0 px-6 flex justify-between pointer-events-none">
-        <span className="label-mono">mühür onaylandı</span>
-        <span className="label-mono">kimlik · 02</span>
+    <main className="flex-1 relative flex flex-col items-center justify-center px-6 py-12 overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute bottom-[-4vh] left-[-2vw] page-numeral"
+      >
+        Ⅱ
       </div>
 
-      <div className="text-center mb-12 animate-rise">
-        <div className="label-mono mb-4">seç bakalım</div>
-        <h1 className="font-serif italic text-[clamp(2.4rem,8vw,3.6rem)] leading-tight text-[color:var(--ink)]">
-          who the fuck <br />
-          <span className="ink-highlight">are you?</span>
-        </h1>
+      <div className="absolute top-8 left-6 right-6 flex items-center justify-between pointer-events-none">
+        <span className="label">kimlik</span>
+        <span className="label">02</span>
       </div>
 
-      <div className="animate-rise [animation-delay:140ms]">
+      <div className="flex flex-col items-center gap-10 w-full max-w-sm">
+        <div className="text-center anim-reveal">
+          <h1 className="display text-[2.25rem] leading-[1.05] text-[color:var(--text)]">
+            who the fuck <br />
+            are you?
+          </h1>
+        </div>
         <IdentityPicker members={members} />
-      </div>
-
-      <div className="absolute bottom-6 inset-x-0 px-6 flex justify-center pointer-events-none">
-        <span className="label-mono opacity-60">
-          her cihaz 30 gün hatırlar
-        </span>
       </div>
     </main>
   );

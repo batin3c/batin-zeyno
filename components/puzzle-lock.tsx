@@ -4,10 +4,11 @@ import { useRef, useState, useTransition } from "react";
 import { checkPuzzle } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
 
-const SIZE = 320;
-const PAD = 50;
-const DOT_R = 11;
-const HIT_R = 46;
+const SIZE = 300;
+const PAD = 42;
+const DOT_R = 5;
+const DOT_R_ACTIVE = 7;
+const HIT_R = 44;
 
 type Dot = { i: number; x: number; y: number };
 
@@ -17,9 +18,6 @@ const DOTS: Dot[] = Array.from({ length: 9 }, (_, i) => {
   const step = (SIZE - PAD * 2) / 2;
   return { i, x: PAD + col * step, y: PAD + row * step };
 });
-
-// tiny deterministic rotation per dot — so active dots feel stamped, not generated
-const JITTER = [-3, 2, -1, 4, -2, 3, -4, 1, -2];
 
 type Phase = "idle" | "drawing" | "wrong" | "ok";
 
@@ -102,172 +100,131 @@ export function PuzzleLock() {
     });
   };
 
-  const strokeColor =
-    phase === "wrong"
-      ? "var(--stamp)"
-      : phase === "ok"
-      ? "var(--sea)"
-      : "var(--ink)";
-
-  const labelColor =
-    phase === "wrong"
-      ? "var(--stamp)"
-      : phase === "ok"
-      ? "var(--sea)"
-      : "var(--ink-soft)";
+  const stroke =
+    phase === "wrong" ? "var(--danger)" :
+    phase === "ok" ? "var(--accent)" :
+    "var(--accent)";
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-8">
       <div
-        className={`stamp-frame p-5 ${phase === "wrong" ? "animate-shake" : ""}`}
-        style={{
-          transform: "rotate(-0.4deg)",
+        className={`w-[min(300px,80vw)] aspect-square ${
+          phase === "wrong" ? "anim-shake" : ""
+        }`}
+        style={{ touchAction: "none" }}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (t) start(t.clientX, t.clientY);
         }}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (t) move(t.clientX, t.clientY);
+        }}
+        onTouchEnd={end}
+        onTouchCancel={end}
+        onMouseDown={(e) => start(e.clientX, e.clientY)}
+        onMouseMove={(e) => {
+          if (drawing.current) move(e.clientX, e.clientY);
+        }}
+        onMouseUp={end}
+        onMouseLeave={end}
       >
-        {/* corner markers */}
-        <CornerMark corner="tl" />
-        <CornerMark corner="tr" />
-        <CornerMark corner="bl" />
-        <CornerMark corner="br" />
-
-        <div
-          className="w-[min(280px,72vw)] aspect-square"
-          style={{ touchAction: "none" }}
-          onTouchStart={(e) => {
-            const t = e.touches[0];
-            if (t) start(t.clientX, t.clientY);
-          }}
-          onTouchMove={(e) => {
-            const t = e.touches[0];
-            if (t) move(t.clientX, t.clientY);
-          }}
-          onTouchEnd={end}
-          onTouchCancel={end}
-          onMouseDown={(e) => start(e.clientX, e.clientY)}
-          onMouseMove={(e) => {
-            if (drawing.current) move(e.clientX, e.clientY);
-          }}
-          onMouseUp={end}
-          onMouseLeave={end}
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          className="w-full h-full pointer-events-none"
         >
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${SIZE} ${SIZE}`}
-            className="w-full h-full pointer-events-none"
-          >
-            {/* connecting lines — thick ink stroke */}
-            {pattern.length > 1 &&
-              pattern.slice(0, -1).map((from, idx) => {
-                const a = DOTS[from];
-                const b = DOTS[pattern[idx + 1]];
-                return (
-                  <line
-                    key={`${from}-${pattern[idx + 1]}`}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke={strokeColor}
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    opacity={0.85}
-                  />
-                );
-              })}
-            {pattern.length > 0 && pointer && (
-              <line
-                x1={DOTS[pattern[pattern.length - 1]].x}
-                y1={DOTS[pattern[pattern.length - 1]].y}
-                x2={pointer.x}
-                y2={pointer.y}
-                stroke={strokeColor}
-                strokeWidth={5}
-                strokeLinecap="round"
-                opacity={0.4}
-                strokeDasharray="2 5"
-              />
-            )}
-            {DOTS.map((d) => {
-              const active = pattern.includes(d.i);
-              const order = active ? pattern.indexOf(d.i) + 1 : 0;
+          {/* connecting lines */}
+          {pattern.length > 1 &&
+            pattern.slice(0, -1).map((from, idx) => {
+              const a = DOTS[from];
+              const b = DOTS[pattern[idx + 1]];
               return (
-                <g key={d.i}>
-                  <circle cx={d.x} cy={d.y} r={HIT_R} fill="transparent" />
-                  {/* outer ring */}
-                  <circle
-                    cx={d.x}
-                    cy={d.y}
-                    r={DOT_R + 6}
-                    fill="none"
-                    stroke={active ? strokeColor : "var(--faded)"}
-                    strokeWidth={active ? 1.5 : 1}
-                    strokeDasharray={active ? "none" : "2 3"}
-                    opacity={active ? 0.6 : 0.55}
-                    style={{ transition: "stroke 180ms" }}
-                  />
-                  {/* center dot — rubber-stamp feel when active */}
-                  <circle
-                    cx={d.x}
-                    cy={d.y}
-                    r={DOT_R}
-                    fill={active ? strokeColor : "var(--faded)"}
-                    opacity={active ? 1 : 0.35}
-                    style={{
-                      transition:
-                        "fill 140ms ease, transform 160ms cubic-bezier(.16,1,.3,1), opacity 140ms",
-                      transformOrigin: `${d.x}px ${d.y}px`,
-                      transform: active
-                        ? `scale(1.25) rotate(${JITTER[d.i]}deg)`
-                        : "scale(1) rotate(0deg)",
-                    }}
-                  />
-                  {active && (
-                    <text
-                      x={d.x}
-                      y={d.y + 2.5}
-                      textAnchor="middle"
-                      fontSize={8.5}
-                      fontFamily="var(--font-dm-mono), monospace"
-                      fill="var(--paper)"
-                      fontWeight={600}
-                      style={{ pointerEvents: "none" }}
-                    >
-                      {order}
-                    </text>
-                  )}
-                </g>
+                <line
+                  key={`${from}-${pattern[idx + 1]}`}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke={stroke}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  opacity={0.9}
+                />
               );
             })}
-          </svg>
-        </div>
+          {pattern.length > 0 && pointer && (
+            <line
+              x1={DOTS[pattern[pattern.length - 1]].x}
+              y1={DOTS[pattern[pattern.length - 1]].y}
+              x2={pointer.x}
+              y2={pointer.y}
+              stroke={stroke}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              opacity={0.3}
+            />
+          )}
+          {DOTS.map((d) => {
+            const active = pattern.includes(d.i);
+            return (
+              <g key={d.i}>
+                <circle cx={d.x} cy={d.y} r={HIT_R} fill="transparent" />
+                <circle
+                  cx={d.x}
+                  cy={d.y}
+                  r={active ? DOT_R_ACTIVE : DOT_R}
+                  fill={active ? stroke : "var(--text-dim)"}
+                  style={{
+                    transition:
+                      "r 220ms cubic-bezier(.2,.8,.2,1), fill 180ms ease",
+                  }}
+                />
+                {active && (
+                  <circle
+                    cx={d.x}
+                    cy={d.y}
+                    r={18}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={1}
+                    opacity={0.2}
+                    style={{
+                      transformOrigin: `${d.x}px ${d.y}px`,
+                      animation: "scale-in 280ms cubic-bezier(.2,.8,.2,1) both",
+                    }}
+                  />
+                )}
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
-      <div
-        className="h-5 text-center font-serif italic text-[0.92rem]"
-        style={{ color: labelColor }}
-      >
-        {phase === "wrong" && <span>— {wrongLine(wrongCount)} —</span>}
-        {phase === "ok" && <span>— mühür uyuyor… —</span>}
+      <div className="h-5 text-center">
+        {phase === "wrong" && (
+          <span
+            className="text-sm anim-fade-in"
+            style={{ color: "var(--danger)" }}
+          >
+            {wrongLine(wrongCount)}
+          </span>
+        )}
+        {phase === "ok" && (
+          <span
+            className="text-sm anim-fade-in"
+            style={{ color: "var(--accent)" }}
+          >
+            açılıyor
+          </span>
+        )}
         {phase === "idle" && pattern.length === 0 && (
-          <span>— desenini çiz —</span>
+          <span className="text-sm" style={{ color: "var(--text-dim)" }}>
+            şifreyi çiz
+          </span>
         )}
       </div>
     </div>
-  );
-}
-
-function CornerMark({ corner }: { corner: "tl" | "tr" | "bl" | "br" }) {
-  const pos: Record<string, string> = {
-    tl: "top-2 left-2 border-t border-l",
-    tr: "top-2 right-2 border-t border-r",
-    bl: "bottom-2 left-2 border-b border-l",
-    br: "bottom-2 right-2 border-b border-r",
-  };
-  return (
-    <span
-      className={`absolute w-2.5 h-2.5 pointer-events-none ${pos[corner]}`}
-      style={{ borderColor: "var(--ink)" }}
-    />
   );
 }
 
