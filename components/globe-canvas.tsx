@@ -69,6 +69,8 @@ export function GlobeCanvas({
       minDistance: number;
       maxDistance: number;
       enablePan: boolean;
+      minPolarAngle: number;
+      maxPolarAngle: number;
     };
     controls.autoRotate = true;
     controls.autoRotateSpeed = AUTO_ROTATE_SPEED;
@@ -77,6 +79,9 @@ export function GlobeCanvas({
     controls.minDistance = 180;
     controls.maxDistance = 600;
     controls.enablePan = false;
+    // keep globe roughly upright — don't let camera go over the poles
+    controls.minPolarAngle = Math.PI / 4;
+    controls.maxPolarAngle = (3 * Math.PI) / 4;
 
     const el = containerRef.current;
     if (!el) return;
