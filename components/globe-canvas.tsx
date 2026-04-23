@@ -9,11 +9,19 @@ import { loadCountryFeatures, type CountryFeatureProps } from "@/lib/countries";
 
 type CF = Feature<Geometry, CountryFeatureProps>;
 
+type AnyPolyProps = CountryFeatureProps | { kind: "city-boundary"; id: string };
+type AnyPoly = Feature<Geometry, AnyPolyProps>;
+
 export type CityPoint = {
   id: string;
   name: string;
   lat: number;
   lng: number;
+};
+
+export type CityBoundary = {
+  id: string;
+  geometry: Geometry;
 };
 
 const OCEAN = "#a8d8e8";
@@ -28,11 +36,13 @@ const AUTO_ROTATE_SPEED = 0.35;
 export function GlobeCanvas({
   visitedCodes,
   cities,
+  selectedCityBoundary,
   onSelectCountry,
   onSelectCity,
 }: {
   visitedCodes: Set<string>;
   cities: CityPoint[];
+  selectedCityBoundary: CityBoundary | null;
   onSelectCountry: (code: string) => void;
   onSelectCity: (id: string) => void;
 }) {
@@ -128,6 +138,7 @@ export function GlobeCanvas({
   }, [size.w]);
 
   const handleCountryClick = (f: object) => {
+    if (isCityBoundary(f)) return;
     const feat = f as CF;
     const iso2 = feat.properties?.iso2;
     if (!iso2) return;
@@ -149,17 +160,42 @@ export function GlobeCanvas({
     onSelectCity(city.id);
   };
 
+  const polygons = useMemo(() => {
+    const base = features as unknown as AnyPoly[];
+    if (!selectedCityBoundary) return base;
+    const boundaryFeature: AnyPoly = {
+      type: "Feature",
+      geometry: selectedCityBoundary.geometry,
+      properties: { kind: "city-boundary", id: selectedCityBoundary.id },
+    };
+    return [...base, boundaryFeature];
+  }, [features, selectedCityBoundary]);
+
+  const isCityBoundary = (f: object): boolean => {
+    const feat = f as AnyPoly;
+    return (
+      typeof feat.properties === "object" &&
+      feat.properties !== null &&
+      "kind" in feat.properties &&
+      feat.properties.kind === "city-boundary"
+    );
+  };
+
   const polygonCapColor = (f: object) => {
+    if (isCityBoundary(f)) return "rgba(255, 107, 157, 0.78)";
     const feat = f as CF;
     return visitedCodes.has(feat.properties?.iso2 ?? "")
       ? FILL_VISITED
       : FILL_UNVISITED;
   };
 
-  const polygonSideColor = () => SIDE_COLOR;
+  const polygonSideColor = (f: object) =>
+    isCityBoundary(f) ? "rgba(31, 26, 20, 0.4)" : SIDE_COLOR;
+
   const polygonStrokeColor = () => BORDER;
 
   const polygonAltitude = (f: object) => {
+    if (isCityBoundary(f)) return 0.028;
     const feat = f as CF;
     return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.022 : 0.008;
   };
@@ -183,7 +219,7 @@ export function GlobeCanvas({
           globeMaterial={oceanMaterial}
           showAtmosphere={false}
           showGraticules={false}
-          polygonsData={features as unknown as object[]}
+          polygonsData={polygons as unknown as object[]}
           polygonCapColor={polygonCapColor}
           polygonSideColor={polygonSideColor}
           polygonStrokeColor={polygonStrokeColor}

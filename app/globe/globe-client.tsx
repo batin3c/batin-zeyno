@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import type { Geometry } from "geojson";
 import { CountrySheet } from "@/components/country-sheet";
 import { CitySheet } from "@/components/city-sheet";
+import { getCityBoundary } from "@/app/actions/cities";
 import type {
   VisitedCountry,
   CountryPhoto,
@@ -45,6 +47,10 @@ export function GlobeClient({
   cityPhotos: CityPhoto[];
 }) {
   const [selection, setSelection] = useState<Selection>(null);
+  const [boundary, setBoundary] = useState<{
+    id: string;
+    geometry: Geometry;
+  } | null>(null);
 
   const visitedCodes = useMemo(
     () => new Set(visited.map((v) => v.code)),
@@ -69,7 +75,12 @@ export function GlobeClient({
     const citiesInCountry = cities.filter(
       (c) => c.country_code === selection.code
     );
-    return { code: selection.code, visited: v, photos: ps, cities: citiesInCountry };
+    return {
+      code: selection.code,
+      visited: v,
+      photos: ps,
+      cities: citiesInCountry,
+    };
   }, [selection, visited, photos, cities]);
 
   const cityData = useMemo(() => {
@@ -80,11 +91,31 @@ export function GlobeClient({
     return { city, photos: ps };
   }, [selection, cities, cityPhotos]);
 
+  // load city boundary lazily when city is selected
+  useEffect(() => {
+    if (selection?.kind !== "city") {
+      setBoundary(null);
+      return;
+    }
+    const id = selection.id;
+    let active = true;
+    getCityBoundary(id)
+      .then((geo) => {
+        if (!active || !geo) return;
+        setBoundary({ id, geometry: geo as Geometry });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [selection]);
+
   return (
     <div className="relative">
       <GlobeCanvas
         visitedCodes={visitedCodes}
         cities={cityPoints}
+        selectedCityBoundary={boundary}
         onSelectCountry={(code) =>
           setSelection({ kind: "country", code })
         }
@@ -109,8 +140,7 @@ export function GlobeClient({
           <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
             /{TOTAL_COUNTRIES}
           </span>{" "}
-          ülke ·{" "}
-          <span>{cities.length}</span> şehir
+          ülke · <span>{cities.length}</span> şehir
         </span>
       </div>
       <CountrySheet

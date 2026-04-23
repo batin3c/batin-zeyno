@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
+import { fetchCityBoundary, type GeoJsonGeometry } from "@/lib/osm";
 
 function normCountry(v: unknown): string | null {
   if (typeof v !== "string") return null;
@@ -121,6 +122,41 @@ export async function addCityPhoto(
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
+}
+
+export async function getCityBoundary(
+  cityId: string
+): Promise<GeoJsonGeometry | null> {
+  await requireCurrentMember();
+  if (!cityId) return null;
+
+  const { data: city } = await db
+    .from("visited_cities")
+    .select("id, name, country_code, boundary_geojson")
+    .eq("id", cityId)
+    .maybeSingle();
+  if (!city) return null;
+
+  const cached = city.boundary_geojson as GeoJsonGeometry | null;
+  if (cached && (cached.type === "Polygon" || cached.type === "MultiPolygon")) {
+    return cached;
+  }
+
+  const fetched = await fetchCityBoundary(
+    city.name as string,
+    city.country_code as string | null
+  );
+  if (!fetched) return null;
+
+  await db
+    .from("visited_cities")
+    .update({
+      boundary_geojson: fetched,
+      boundary_fetched_at: new Date().toISOString(),
+    })
+    .eq("id", cityId);
+
+  return fetched;
 }
 
 export async function removeCityPhoto(
