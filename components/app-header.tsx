@@ -18,35 +18,38 @@ export function AppHeader({
     <header
       className="sticky top-0 z-20"
       style={{
-        background: "color-mix(in srgb, var(--bg) 88%, transparent)",
-        backdropFilter: "blur(14px) saturate(140%)",
-        WebkitBackdropFilter: "blur(14px) saturate(140%)",
-        borderBottom: "1px solid var(--line-soft)",
+        background: "var(--bg)",
+        borderBottom: "2px solid var(--ink)",
       }}
     >
-      <div className="flex items-center gap-2 px-4 h-14 max-w-3xl mx-auto">
+      <div className="flex items-center gap-1.5 px-4 h-16 max-w-3xl mx-auto">
         {back ? (
           <Link
             href={back}
-            className="btn-icon -ml-2"
+            className="btn-icon"
             aria-label="siktir geri"
           >
-            <ArrowLeft size={18} strokeWidth={1.75} />
+            <ArrowLeft size={18} strokeWidth={2} />
           </Link>
         ) : (
           <Link
             href="/"
-            className="-ml-1 px-1 text-[1rem] font-semibold tracking-tight"
+            className="font-bold tracking-tight px-1"
+            style={{
+              fontSize: "1.3rem",
+              color: "var(--ink)",
+              letterSpacing: "-0.03em",
+            }}
           >
             baze
           </Link>
         )}
 
-        <h1 className="flex-1 text-center text-[0.95rem] font-medium tracking-tight truncate">
+        <h1 className="flex-1 text-center text-[1rem] font-semibold tracking-tight truncate">
           {title ?? ""}
         </h1>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1.5">
           {right}
           <Link
             href="/globe"
@@ -54,7 +57,7 @@ export function AppHeader({
             aria-label="dünya"
             title="dünya"
           >
-            <Globe2 size={18} strokeWidth={1.5} />
+            <Globe2 size={18} strokeWidth={2} />
           </Link>
           <Link
             href="/settings"
@@ -62,7 +65,7 @@ export function AppHeader({
             aria-label="Ayarlar"
             title="Ayarlar"
           >
-            <Settings size={18} strokeWidth={1.5} />
+            <Settings size={18} strokeWidth={2} />
           </Link>
           <MemberChip member={member} />
           <LogoutButton />
@@ -76,11 +79,13 @@ function MemberChip({ member }: { member: Member }) {
   const initial = member.name.slice(0, 1).toUpperCase();
   return (
     <div
-      className="w-8 h-8 overflow-hidden flex items-center justify-center text-[0.75rem] font-medium ml-1"
+      className="w-10 h-10 overflow-hidden flex items-center justify-center text-[0.85rem] font-bold"
       style={{
-        background: "var(--surface-2)",
-        color: "var(--text)",
-        borderRadius: "10px",
+        background: "var(--accent-3-soft)",
+        color: "var(--ink)",
+        border: "2px solid var(--ink)",
+        borderRadius: "12px",
+        boxShadow: "var(--shadow-pop-sm)",
       }}
       title={member.name}
     >

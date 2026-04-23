@@ -14,7 +14,7 @@ export function LogoutButton() {
       aria-label="s'tir"
       title="s'tir"
     >
-      <LogOut size={17} strokeWidth={1.5} />
+      <LogOut size={17} strokeWidth={2} />
     </button>
   );
 }

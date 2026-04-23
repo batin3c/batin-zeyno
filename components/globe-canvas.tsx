@@ -9,11 +9,11 @@ import { loadCountryFeatures, type CountryFeatureProps } from "@/lib/countries";
 
 type CF = Feature<Geometry, CountryFeatureProps>;
 
-const OCEAN = "#b8d4de";
-const BORDER = "#a0c0cc";
-const FILL_UNVISITED = "rgba(251, 247, 239, 0.05)";
-const FILL_VISITED = "rgba(140, 94, 46, 0.82)";
-const SIDE_COLOR = "rgba(160, 192, 204, 0.35)";
+const OCEAN = "#a8d8e8";
+const BORDER = "#1f1a14";
+const FILL_UNVISITED = "rgba(255, 247, 232, 0.92)";
+const FILL_VISITED = "rgba(255, 107, 157, 0.92)";
+const SIDE_COLOR = "rgba(31, 26, 20, 0.25)";
 const IDLE_TIMEOUT_MS = 4000;
 const AUTO_ROTATE_SPEED = 0.35;
 
@@ -137,7 +137,7 @@ export function GlobeCanvas({
 
   const polygonAltitude = (f: object) => {
     const feat = f as CF;
-    return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.012 : 0.006;
+    return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.022 : 0.008;
   };
 
   return (

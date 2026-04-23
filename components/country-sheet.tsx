@@ -131,14 +131,7 @@ export function CountrySheet({
             </span>
           </div>
           {isVisited && (
-            <span
-              className="flex items-center gap-1 px-2.5 py-1 text-[0.72rem] font-medium anim-reveal"
-              style={{
-                background: "var(--accent-soft)",
-                color: "var(--accent)",
-                borderRadius: "999px",
-              }}
-            >
+            <span className="pill pill-mint anim-pop">
               <Check size={12} strokeWidth={2.5} />
               gittik
             </span>
@@ -149,7 +142,7 @@ export function CountrySheet({
           onClick={onToggle}
           disabled={pending}
           className={isVisited ? "btn-ghost" : "btn-primary"}
-          style={{ width: "100%", padding: "0.85rem 1.25rem" }}
+          style={{ width: "100%", padding: "0.9rem 1.25rem", fontSize: "1rem" }}
         >
           {pending
             ? "bir dakika aq…"
@@ -193,15 +186,19 @@ export function CountrySheet({
             </p>
           )}
           {photos.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-0.5">
+            <div className="flex gap-2.5 overflow-x-auto -mx-5 px-5 pb-2 pt-1">
               {photos.map((p) => (
-                <div key={p.id} className="relative flex-shrink-0 group">
+                <div key={p.id} className="relative flex-shrink-0">
                   <a
                     href={p.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block overflow-hidden"
-                    style={{ borderRadius: "10px" }}
+                    style={{
+                      borderRadius: "14px",
+                      border: "2px solid var(--ink)",
+                      boxShadow: "var(--shadow-pop-sm)",
+                    }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -212,16 +209,18 @@ export function CountrySheet({
                   </a>
                   <button
                     onClick={() => onRemovePhoto(p.id)}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 flex items-center justify-center"
                     style={{
-                      background:
-                        "color-mix(in srgb, var(--text) 75%, transparent)",
+                      width: "26px",
+                      height: "26px",
+                      background: "var(--danger-soft)",
+                      border: "2px solid var(--ink)",
                       borderRadius: "999px",
-                      color: "var(--bg)",
+                      color: "var(--ink)",
                     }}
                     aria-label="siktir et"
                   >
-                    <X size={11} strokeWidth={2} />
+                    <X size={12} strokeWidth={2.5} />
                   </button>
                 </div>
               ))}
@@ -230,15 +229,10 @@ export function CountrySheet({
           <button
             onClick={() => inputRef.current?.click()}
             disabled={pending}
-            className="flex items-center justify-center gap-1.5 text-[0.8rem] font-medium py-2 mt-1 transition-colors disabled:opacity-50"
-            style={{
-              border: "1px solid var(--line)",
-              borderRadius: "10px",
-              color: "var(--text-muted)",
-              background: "var(--surface)",
-            }}
+            className="btn-ghost disabled:opacity-50"
+            style={{ width: "100%" }}
           >
-            <Camera size={14} strokeWidth={1.5} />
+            <Camera size={16} strokeWidth={2} />
             foto at
           </button>
           {uploadErr && (

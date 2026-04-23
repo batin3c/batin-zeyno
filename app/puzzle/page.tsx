@@ -18,11 +18,14 @@ export default function PuzzlePage() {
 
       <div className="flex flex-col items-center gap-10 anim-reveal">
         <div className="text-center">
-          <h1 className="display text-[3rem] leading-[0.95] text-[color:var(--text)]">
+          <h1
+            className="display leading-[0.95]"
+            style={{ fontSize: "3.5rem", color: "var(--ink)" }}
+          >
             baze
           </h1>
           <p
-            className="mt-3 text-[0.95rem]"
+            className="mt-3 text-[0.95rem] font-medium"
             style={{ color: "var(--text-muted)" }}
           >
             ikimize özel

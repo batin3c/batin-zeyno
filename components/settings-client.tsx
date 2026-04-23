@@ -43,13 +43,14 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="label mb-4 ml-0.5">{title}</h2>
+      <h2 className="label mb-3 ml-0.5">{title}</h2>
       <div
         className="overflow-hidden"
         style={{
           background: "var(--surface)",
-          border: "1px solid var(--line-soft)",
-          borderRadius: "14px",
+          border: "2px solid var(--ink)",
+          borderRadius: "20px",
+          boxShadow: "var(--shadow-pop)",
         }}
       >
         {children}
@@ -89,17 +90,19 @@ function MemberRow({ member, last }: { member: Member; last: boolean }) {
     <div
       className="flex items-center gap-4 p-4"
       style={{
-        borderBottom: last ? "none" : "1px solid var(--line-soft)",
+        borderBottom: last ? "none" : "2px solid var(--ink)",
       }}
     >
       <button
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="relative w-14 h-14 overflow-hidden flex items-center justify-center text-lg font-medium shrink-0 group transition-transform active:scale-[0.96]"
+        className="relative w-14 h-14 overflow-hidden flex items-center justify-center text-lg font-bold shrink-0 group transition-transform active:scale-[0.96]"
         style={{
-          background: "var(--surface-2)",
-          color: "var(--text)",
-          borderRadius: "12px",
+          background: "var(--accent-3-soft)",
+          color: "var(--ink)",
+          border: "2px solid var(--ink)",
+          borderRadius: "14px",
+          boxShadow: "var(--shadow-pop-sm)",
         }}
         aria-label="foto değiştir"
       >
@@ -139,8 +142,8 @@ function MemberRow({ member, last }: { member: Member; last: boolean }) {
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         }}
-        className="flex-1 bg-transparent outline-none text-[1rem] font-medium tracking-tight"
-        style={{ color: "var(--text)" }}
+        className="flex-1 bg-transparent outline-none text-[1.05rem] font-semibold tracking-tight"
+        style={{ color: "var(--ink)" }}
       />
       {uploading && (
         <span className="text-[0.75rem]" style={{ color: "var(--text-dim)" }}>
@@ -160,16 +163,16 @@ function PuzzleSection({ currentLength }: { currentLength: number }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 gap-3">
         <div>
           <div
-            className="text-[0.98rem] font-medium tracking-tight"
-            style={{ color: "var(--text)" }}
+            className="text-[1.02rem] font-semibold tracking-tight"
+            style={{ color: "var(--ink)" }}
           >
             9-nokta deseni
           </div>
           <div
-            className="text-[0.8rem] mt-0.5"
+            className="text-[0.82rem] mt-0.5 font-medium"
             style={{ color: "var(--text-muted)" }}
           >
             {currentLength} nokta · aktif
@@ -178,9 +181,9 @@ function PuzzleSection({ currentLength }: { currentLength: number }) {
         <button
           onClick={() => setOpen(true)}
           className="btn-ghost"
-          style={{ padding: "0.5rem 0.85rem", fontSize: "0.8rem" }}
+          style={{ padding: "0.55rem 1rem", fontSize: "0.85rem" }}
         >
-          <KeyRound size={13} strokeWidth={1.75} />
+          <KeyRound size={14} strokeWidth={2} />
           değiştir
         </button>
       </div>

@@ -26,33 +26,29 @@ export function TripDetailClient({
     <>
       <div className="max-w-3xl w-full mx-auto px-4 pt-4 pb-3">
         <div className="flex items-center justify-between gap-3">
-          <div
-            className="inline-flex p-0.5"
-            style={{
-              background: "var(--surface-2)",
-              borderRadius: "10px",
-            }}
-          >
+          <div className="inline-flex gap-1.5">
             <TabBtn active={tab === "list"} onClick={() => setTab("list")}>
-              <List size={13} strokeWidth={1.75} /> liste
+              <List size={14} strokeWidth={2} /> liste
             </TabBtn>
             <TabBtn active={tab === "map"} onClick={() => setTab("map")}>
-              <MapIcon size={13} strokeWidth={1.75} /> harita
+              <MapIcon size={14} strokeWidth={2} /> harita
             </TabBtn>
           </div>
           <ImportKmlButton tripId={tripId} />
         </div>
         {locations.length > 0 && (
-          <div
-            className="label-dim mt-3 flex items-center gap-3"
-            style={{ fontSize: "0.65rem" }}
-          >
-            <span>{locations.length} yer</span>
-            <span style={{ color: "var(--line)" }}>·</span>
-            <span>{visitedCount} gittik</span>
-            <span style={{ color: "var(--line)" }}>·</span>
-            <span>
-              {locations.reduce((acc, l) => acc + l.loved_by.length, 0)} ♡
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            <span className="pill pill-mint">
+              <span style={{ fontWeight: 700 }}>{locations.length}</span> yer
+            </span>
+            <span className="pill pill-pink">
+              <span style={{ fontWeight: 700 }}>{visitedCount}</span> gittik
+            </span>
+            <span className="pill pill-lavender">
+              <span style={{ fontWeight: 700 }}>
+                {locations.reduce((acc, l) => acc + l.loved_by.length, 0)}
+              </span>{" "}
+              ♡
             </span>
           </div>
         )}
@@ -61,10 +57,12 @@ export function TripDetailClient({
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 pb-32">
         {tab === "map" ? (
           <div
-            className="h-[72vh] overflow-hidden"
+            className="overflow-hidden"
             style={{
-              borderRadius: "16px",
-              border: "1px solid var(--line)",
+              height: "72vh",
+              borderRadius: "20px",
+              border: "2px solid var(--ink)",
+              boxShadow: "var(--shadow-pop)",
             }}
           >
             <MapView locations={locations} members={members} />
@@ -96,14 +94,10 @@ function TabBtn({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-[0.8rem] font-medium tracking-tight transition-all duration-200"
+      className="btn-chip"
       style={{
-        color: active ? "var(--text)" : "var(--text-muted)",
-        background: active ? "var(--bg)" : "transparent",
-        borderRadius: "8px",
-        boxShadow: active
-          ? "0 1px 3px -1px color-mix(in srgb, var(--text) 20%, transparent)"
-          : "none",
+        background: active ? "var(--accent-2)" : "var(--surface)",
+        fontWeight: active ? 600 : 500,
       }}
     >
       {children}

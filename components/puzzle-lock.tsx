@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 
 const SIZE = 300;
 const PAD = 42;
-const DOT_R = 5;
-const DOT_R_ACTIVE = 7;
+const DOT_R = 10;
+const DOT_R_ACTIVE = 14;
 const HIT_R = 44;
 
 type Dot = { i: number; x: number; y: number };
@@ -102,8 +102,10 @@ export function PuzzleLock() {
 
   const stroke =
     phase === "wrong" ? "var(--danger)" :
-    phase === "ok" ? "var(--accent)" :
+    phase === "ok" ? "var(--accent-2)" :
     "var(--accent)";
+  const dotInactive = "var(--surface-2)";
+  const dotStroke = "var(--ink)";
 
   return (
     <div className="flex flex-col items-center gap-8">
@@ -147,9 +149,8 @@ export function PuzzleLock() {
                   x2={b.x}
                   y2={b.y}
                   stroke={stroke}
-                  strokeWidth={2.5}
+                  strokeWidth={5}
                   strokeLinecap="round"
-                  opacity={0.9}
                 />
               );
             })}
@@ -160,9 +161,9 @@ export function PuzzleLock() {
               x2={pointer.x}
               y2={pointer.y}
               stroke={stroke}
-              strokeWidth={2.5}
+              strokeWidth={5}
               strokeLinecap="round"
-              opacity={0.3}
+              opacity={0.5}
             />
           )}
           {DOTS.map((d) => {
@@ -174,27 +175,14 @@ export function PuzzleLock() {
                   cx={d.x}
                   cy={d.y}
                   r={active ? DOT_R_ACTIVE : DOT_R}
-                  fill={active ? stroke : "var(--text-dim)"}
+                  fill={active ? stroke : dotInactive}
+                  stroke={dotStroke}
+                  strokeWidth={2.5}
                   style={{
                     transition:
-                      "r 220ms cubic-bezier(.2,.8,.2,1), fill 180ms ease",
+                      "r 220ms cubic-bezier(.34,1.56,.64,1), fill 180ms ease",
                   }}
                 />
-                {active && (
-                  <circle
-                    cx={d.x}
-                    cy={d.y}
-                    r={18}
-                    fill="none"
-                    stroke={stroke}
-                    strokeWidth={1}
-                    opacity={0.2}
-                    style={{
-                      transformOrigin: `${d.x}px ${d.y}px`,
-                      animation: "scale-in 280ms cubic-bezier(.2,.8,.2,1) both",
-                    }}
-                  />
-                )}
               </g>
             );
           })}

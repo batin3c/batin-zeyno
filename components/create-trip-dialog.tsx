@@ -48,12 +48,9 @@ export function CreateTripButton() {
       <button
         onClick={() => setOpen(true)}
         className="btn-primary fixed bottom-6 right-6 z-30"
-        style={{
-          boxShadow:
-            "0 10px 30px -8px color-mix(in srgb, var(--accent) 60%, transparent), 0 4px 8px -4px color-mix(in srgb, var(--text) 20%, transparent)",
-        }}
+        style={{ padding: "0.85rem 1.35rem", fontSize: "0.95rem" }}
       >
-        <Plus size={16} strokeWidth={2} />
+        <Plus size={18} strokeWidth={2.5} />
         yeni tatil
       </button>
 

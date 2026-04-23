@@ -9,24 +9,24 @@ import { CATEGORIES } from "@/lib/types";
 type Libraries = ("places" | "geocoding")[];
 const LIBRARIES: Libraries = ["places"];
 
-// very quiet, near-monochrome with our accent for water
+// toony pastel map — cream land, pastel sky water, soft roads
 const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#f0ebe0" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#6a615a" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f0e6" }] },
-  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#d8ceb7" }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#ebe2cd" }] },
-  { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#e4d9c0" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#e0d5bd" }] },
+  { elementType: "geometry", stylers: [{ color: "#fff4e6" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#3b342a" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#1f1a14" }, { weight: 1 }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#fff7e8" }] },
+  { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#fff4e6" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#ffe8b5" }] },
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8c9a0" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#fbf7ef" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8ece2" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
   { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#e0d5bd" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ede2c9" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#d4c8ad" }] },
-  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#d8ceb7" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#a5bcbf" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4f6366" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#ffe8b5" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f1a14" }, { weight: 0.5 }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#e5dbf5" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#a8d8e8" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3b342a" }] },
 ];
 
 export function MapView({
@@ -90,7 +90,7 @@ harita gelmedi aq.
         zoomControl: true,
         clickableIcons: false,
         styles: MAP_STYLES,
-        backgroundColor: "#f5f0e6",
+        backgroundColor: "#fbf7ee",
       }}
       onClick={(e) => {
         if (!onAddAt) return;
@@ -129,12 +129,12 @@ harita gelmedi aq.
 
 function buildPinIcon(): google.maps.Symbol {
   return {
-    path: "M0,0 m -11,0 a 11,11 0 1,0 22,0 a 11,11 0 1,0 -22,0",
-    fillColor: "#8c5e2e",
+    path: "M0,0 m -12,0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0",
+    fillColor: "#ff6b9d",
     fillOpacity: 1,
-    strokeColor: "#fbf7ef",
-    strokeWeight: 2,
-    scale: 1.5,
+    strokeColor: "#1f1a14",
+    strokeWeight: 2.5,
+    scale: 1.6,
     anchor: new google.maps.Point(0, 0),
     labelOrigin: new google.maps.Point(0, 0),
   };
@@ -157,8 +157,8 @@ function InfoContent({
       style={{
         minWidth: 220,
         maxWidth: 260,
-        color: "#1a1714",
-        fontFamily: "'Bricolage Grotesque', sans-serif",
+        color: "#1f1a14",
+        fontFamily: "'Fredoka', sans-serif",
         padding: "2px",
       }}
     >
@@ -168,19 +168,20 @@ function InfoContent({
           fontSize: 10,
           textTransform: "uppercase",
           letterSpacing: "0.12em",
-          color: "#7a7166",
-          marginBottom: 5,
+          color: "#6b6355",
+          marginBottom: 6,
+          fontWeight: 600,
         }}
       >
         {cat?.label ?? "yer"} · {loc.status === "visited" ? "gittik" : "gidilecek"}
       </div>
       <div
         style={{
-          fontSize: 16,
-          fontWeight: 500,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.15,
-          marginBottom: 4,
+          fontSize: 17,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          lineHeight: 1.2,
+          marginBottom: 6,
         }}
       >
         {cat?.emoji} {loc.name}
@@ -189,7 +190,7 @@ function InfoContent({
         <div
           style={{
             fontSize: 12,
-            color: "#7a7166",
+            color: "#6b6355",
             marginBottom: 8,
             lineHeight: 1.4,
           }}
@@ -202,7 +203,7 @@ function InfoContent({
           style={{
             fontSize: 13,
             marginBottom: 8,
-            color: "#5a5248",
+            color: "#3b342a",
             lineHeight: 1.45,
           }}
         >
@@ -216,8 +217,9 @@ function InfoContent({
             fontSize: 10,
             textTransform: "uppercase",
             letterSpacing: "0.12em",
-            color: "#a8a093",
+            color: "#a89f8f",
             marginBottom: 10,
+            fontWeight: 600,
           }}
         >
           {addedBy.name.toLowerCase()} attı
@@ -229,14 +231,15 @@ function InfoContent({
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            fontSize: 12,
-            fontWeight: 500,
-            padding: "7px 12px",
-            background: "#8c5e2e",
-            color: "#fbf7ef",
+            fontSize: 13,
+            fontWeight: 600,
+            padding: "6px 12px",
+            background: "#ff6b9d",
+            color: "#1f1a14",
             textDecoration: "none",
-            border: "none",
-            borderRadius: 8,
+            border: "2px solid #1f1a14",
+            borderRadius: 12,
+            boxShadow: "2px 2px 0 #1f1a14",
           }}
         >
           yol tarifi
@@ -246,14 +249,15 @@ function InfoContent({
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            fontSize: 12,
-            fontWeight: 500,
-            padding: "7px 12px",
-            background: "transparent",
-            color: "#1a1714",
+            fontSize: 13,
+            fontWeight: 600,
+            padding: "6px 12px",
+            background: "#ffffff",
+            color: "#1f1a14",
             textDecoration: "none",
-            border: "1px solid #e0d5bd",
-            borderRadius: 8,
+            border: "2px solid #1f1a14",
+            borderRadius: 12,
+            boxShadow: "2px 2px 0 #1f1a14",
           }}
         >
           haritalar

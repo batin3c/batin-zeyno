@@ -38,15 +38,33 @@ export default async function HomePage() {
   return (
     <>
       <AppHeader member={me} />
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 pt-6 pb-32">
+      <main className="flex-1 max-w-3xl w-full mx-auto px-4 pt-8 pb-32">
         <div className="flex items-end justify-between mb-8 anim-reveal">
           <div>
             <span className="label">arşiv</span>
-            <h1 className="display text-[2.4rem] mt-2">tatiller</h1>
+            <h1
+              className="display mt-2"
+              style={{ fontSize: "2.75rem", color: "var(--ink)" }}
+            >
+              tatiller
+            </h1>
           </div>
-          <span className="label-dim pb-1">
+          <div
+            className="flex items-center justify-center font-bold"
+            style={{
+              minWidth: "44px",
+              height: "44px",
+              padding: "0 12px",
+              background: "var(--accent-3-soft)",
+              border: "2px solid var(--ink)",
+              borderRadius: "999px",
+              fontSize: "0.95rem",
+              color: "var(--ink)",
+              boxShadow: "var(--shadow-pop-sm)",
+            }}
+          >
             {trips.length.toString().padStart(2, "0")}
-          </span>
+          </div>
         </div>
 
         {trips.length === 0 ? (
@@ -71,16 +89,22 @@ export default async function HomePage() {
 
 function EmptyState({ memberName }: { memberName: string }) {
   return (
-    <div className="flex flex-col items-start py-10 gap-4 anim-reveal max-w-sm">
-      <div
-        className="w-14 h-14 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)",
-        }}
-      />
-      <div className="flex flex-col gap-1">
-        <h3 className="text-[1.4rem] font-medium tracking-tight">
+    <div
+      className="flex flex-col items-center py-10 gap-5 anim-reveal max-w-sm mx-auto text-center"
+      style={{
+        background: "var(--surface)",
+        border: "2px solid var(--ink)",
+        borderRadius: "24px",
+        boxShadow: "var(--shadow-pop)",
+        padding: "2.5rem 1.5rem",
+      }}
+    >
+      <div style={{ fontSize: "4rem", lineHeight: 1 }}>🏖️</div>
+      <div className="flex flex-col gap-2">
+        <h3
+          className="font-bold tracking-tight"
+          style={{ fontSize: "1.5rem", color: "var(--ink)" }}
+        >
           naaber {memberName.toLowerCase()}
         </h3>
         <p
@@ -88,8 +112,8 @@ function EmptyState({ memberName }: { memberName: string }) {
           style={{ color: "var(--text-muted)" }}
         >
           daha hiçbir yere gitmemişiz aq. aşağıdan{" "}
-          <span style={{ color: "var(--text)" }}>yeni tatil</span>&apos;e bas da
-          başlayalım.
+          <span style={{ color: "var(--ink)", fontWeight: 600 }}>yeni tatil</span>&apos;e
+          bas da başlayalım.
         </p>
       </div>
     </div>

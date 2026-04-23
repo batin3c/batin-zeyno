@@ -51,12 +51,9 @@ export function AddLocationButton({ tripId }: { tripId: string }) {
       <button
         onClick={() => setOpen(true)}
         className="btn-primary fixed bottom-6 right-6 z-30"
-        style={{
-          boxShadow:
-            "0 10px 30px -8px color-mix(in srgb, var(--accent) 60%, transparent), 0 4px 8px -4px color-mix(in srgb, var(--text) 20%, transparent)",
-        }}
+        style={{ padding: "0.85rem 1.35rem", fontSize: "0.95rem" }}
       >
-        <Plus size={16} strokeWidth={2} />
+        <Plus size={18} strokeWidth={2.5} />
         yer at
       </button>
       {open && (
@@ -110,24 +107,18 @@ function AddLocationDialog({
 
   return (
     <SimpleDialog open={true} onClose={onClose} title="yer at">
-      <div
-        className="flex p-0.5 mb-5"
-        style={{
-          background: "var(--surface-2)",
-          borderRadius: "10px",
-        }}
-      >
+      <div className="flex gap-1.5 mb-5 flex-wrap">
         <Tab active={mode === "search"} onClick={() => setMode("search")}>
-          <Search size={12} strokeWidth={1.75} /> ara
+          <Search size={13} strokeWidth={2} /> ara
         </Tab>
         <Tab active={mode === "link"} onClick={() => setMode("link")}>
-          <Link2 size={12} strokeWidth={1.75} /> link
+          <Link2 size={13} strokeWidth={2} /> link
         </Tab>
         <Tab active={mode === "manual"} onClick={() => setMode("manual")}>
-          <PenLine size={12} strokeWidth={1.75} /> elle
+          <PenLine size={13} strokeWidth={2} /> elle
         </Tab>
         <Tab active={mode === "list"} onClick={() => setMode("list")}>
-          <List size={12} strokeWidth={1.75} /> liste
+          <List size={13} strokeWidth={2} /> liste
         </Tab>
       </div>
 
@@ -147,8 +138,9 @@ function AddLocationDialog({
         <div
           className="mt-5 p-3 flex flex-col gap-1"
           style={{
-            background: "var(--accent-soft)",
-            borderRadius: "10px",
+            background: "var(--accent-2-soft)",
+            border: "2px solid var(--ink)",
+            borderRadius: "14px",
           }}
         >
           <div
@@ -286,14 +278,10 @@ function Tab({
   return (
     <button
       onClick={onClick}
-      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[0.78rem] font-medium transition-all duration-200"
+      className="btn-chip"
       style={{
-        color: active ? "var(--text)" : "var(--text-muted)",
-        background: active ? "var(--bg)" : "transparent",
-        borderRadius: "8px",
-        boxShadow: active
-          ? "0 1px 3px -1px color-mix(in srgb, var(--text) 20%, transparent)"
-          : "none",
+        background: active ? "var(--accent-2)" : "var(--surface)",
+        fontWeight: active ? 600 : 500,
       }}
     >
       {children}

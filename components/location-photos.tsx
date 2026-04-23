@@ -50,17 +50,11 @@ export function LocationPhotos({
       <>
         <button
           onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-1.5 text-[0.75rem] font-medium mt-2 transition-colors"
-          style={{ color: "var(--text-dim)" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = "var(--text)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = "var(--text-dim)")
-          }
+          className="btn-chip inline-flex"
+          style={{ background: "var(--surface-soft)" }}
         >
-          <Camera size={12} strokeWidth={1.75} />
-foto at
+          <Camera size={12} strokeWidth={2} />
+          foto at
         </button>
         <input
           ref={inputRef}
@@ -84,21 +78,24 @@ foto at
               target="_blank"
               rel="noopener noreferrer"
               className="block overflow-hidden"
-              style={{ borderRadius: "10px" }}
+              style={{
+                borderRadius: "14px",
+                border: "2px solid var(--ink)",
+                boxShadow: "var(--shadow-pop-sm)",
+              }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={u}
-                alt=""
-                className="w-24 h-24 object-cover"
-              />
+              <img src={u} alt="" className="w-24 h-24 object-cover" />
             </a>
             <span
-              className="absolute top-1.5 left-1.5 w-5 h-5 flex items-center justify-center text-[0.6rem] font-bold tracking-wider"
+              className="absolute top-1.5 left-1.5 flex items-center justify-center text-[0.62rem] font-bold"
               style={{
-                background: "color-mix(in srgb, var(--text) 75%, transparent)",
+                width: "22px",
+                height: "22px",
+                background: "var(--accent-3-soft)",
+                border: "1.5px solid var(--ink)",
                 borderRadius: "999px",
-                color: "var(--bg)",
+                color: "var(--ink)",
               }}
               title="Google fotoğrafı"
             >
@@ -113,42 +110,46 @@ foto at
               target="_blank"
               rel="noopener noreferrer"
               className="block overflow-hidden"
-              style={{ borderRadius: "10px" }}
+              style={{
+                borderRadius: "14px",
+                border: "2px solid var(--ink)",
+                boxShadow: "var(--shadow-pop-sm)",
+              }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={u}
-                alt=""
-                className="w-24 h-24 object-cover"
-              />
+              <img src={u} alt="" className="w-24 h-24 object-cover" />
             </a>
             <button
               onClick={() => onRemove(u)}
-              className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute -top-2 -right-2 flex items-center justify-center opacity-100"
               style={{
-                background: "color-mix(in srgb, var(--text) 75%, transparent)",
+                width: "26px",
+                height: "26px",
+                background: "var(--danger-soft)",
+                border: "2px solid var(--ink)",
                 borderRadius: "999px",
-                color: "var(--bg)",
+                color: "var(--ink)",
               }}
               aria-label="siktir et"
             >
-              <X size={11} strokeWidth={2} />
+              <X size={12} strokeWidth={2.5} />
             </button>
           </div>
         ))}
         <button
           onClick={() => inputRef.current?.click()}
           disabled={pending}
-          className="flex-shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+          className="flex-shrink-0 w-24 h-24 flex flex-col items-center justify-center gap-1 disabled:opacity-50"
           style={{
-            border: "1px solid var(--line)",
-            borderRadius: "10px",
-            color: "var(--text-muted)",
-            background: "var(--surface)",
+            border: "2px dashed var(--ink)",
+            borderRadius: "14px",
+            color: "var(--ink)",
+            background: "var(--surface-soft)",
           }}
           aria-label="foto at"
         >
-          <Camera size={16} strokeWidth={1.5} />
+          <Camera size={18} strokeWidth={2} />
+          <span className="text-[0.7rem] font-semibold">foto at</span>
         </button>
       </div>
       {error && (

@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { Fredoka, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
-  subsets: ["latin"],
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f0e6",
+  themeColor: "#fbf7ee",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -42,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${bricolage.variable} ${jetbrains.variable} h-full antialiased`}
+      className={`${fredoka.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

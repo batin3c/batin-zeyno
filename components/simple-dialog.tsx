@@ -42,33 +42,34 @@ export function SimpleDialog({
       <div
         className="absolute inset-0 anim-fade-in"
         style={{
-          background: "color-mix(in srgb, var(--text) 50%, transparent)",
-          backdropFilter: "blur(4px)",
-          WebkitBackdropFilter: "blur(4px)",
+          background: "color-mix(in srgb, var(--ink) 45%, transparent)",
         }}
       />
       <div
-        className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto anim-scale-in"
+        className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto anim-bounce-in dialog-content"
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "var(--bg)",
-          border: "1px solid var(--line)",
-          borderRadius: "20px 20px 0 0",
-          boxShadow: "0 -10px 50px -10px color-mix(in srgb, var(--text) 35%, transparent)",
+          background: "var(--surface)",
+          border: "2px solid var(--ink)",
+          borderRadius: "24px 24px 0 0",
+          boxShadow: "0 -8px 0 var(--ink)",
         }}
       >
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4 mb-5">
-            <h2 className="text-[1.15rem] font-semibold tracking-tight leading-tight">
+            <h2
+              className="font-bold tracking-tight leading-tight"
+              style={{ fontSize: "1.3rem", color: "var(--ink)" }}
+            >
               {title}
             </h2>
             <button
               type="button"
               onClick={onClose}
-              className="btn-icon -mr-2 -mt-1"
+              className="btn-icon"
               aria-label="kapat aq"
             >
-              <X size={18} strokeWidth={1.75} />
+              <X size={18} strokeWidth={2.5} />
             </button>
           </div>
           {children}
@@ -76,8 +77,9 @@ export function SimpleDialog({
       </div>
       <style jsx>{`
         @media (min-width: 640px) {
-          div[class*="anim-scale-in"] {
-            border-radius: 20px !important;
+          .dialog-content {
+            border-radius: 24px !important;
+            box-shadow: var(--shadow-pop-lg) !important;
           }
         }
       `}</style>
