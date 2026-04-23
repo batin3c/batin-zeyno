@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   Heart,
   Check,
@@ -8,7 +8,24 @@ import {
   Navigation,
   ExternalLink,
   Star,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Location, Member } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 import { directionsUrl, openInMapsUrl } from "@/lib/google-maps";
@@ -16,6 +33,7 @@ import {
   toggleLove,
   toggleVisited,
   deleteLocation,
+  reorderLocations,
 } from "@/app/actions/locations";
 import { LocationPhotos } from "./location-photos";
 
@@ -37,12 +55,41 @@ export function LocationList({
   members,
   currentMemberId,
   tripId,
+  draggable = false,
 }: {
   locations: Location[];
   members: Member[];
   currentMemberId: string;
   tripId: string;
+  draggable?: boolean;
 }) {
+  const [order, setOrder] = useState<string[]>(locations.map((l) => l.id));
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setOrder(locations.map((l) => l.id));
+  }, [locations]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 160, tolerance: 6 },
+    })
+  );
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = order.indexOf(String(active.id));
+    const newIdx = order.indexOf(String(over.id));
+    if (oldIdx === -1 || newIdx === -1) return;
+    const next = arrayMove(order, oldIdx, newIdx);
+    setOrder(next);
+    startTransition(async () => {
+      await reorderLocations(tripId, next);
+    });
+  };
+
   if (locations.length === 0) {
     return (
       <div
@@ -74,21 +121,80 @@ export function LocationList({
     );
   }
 
+  const byId = new Map(locations.map((l) => [l.id, l]));
+  const ordered = order.map((id) => byId.get(id)).filter(Boolean) as Location[];
+
+  if (!draggable) {
+    return (
+      <div className="flex flex-col gap-3">
+        {locations.map((loc, i) => (
+          <LocationEntry
+            key={loc.id}
+            loc={loc}
+            members={members}
+            currentMemberId={currentMemberId}
+            tripId={tripId}
+            index={i}
+            dragHandle={false}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      {locations.map((loc, i) => (
-        <LocationEntry
-          key={loc.id}
-          loc={loc}
-          members={members}
-          currentMemberId={currentMemberId}
-          tripId={tripId}
-          index={i}
-        />
-      ))}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+    >
+      <SortableContext items={order} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-3">
+          {ordered.map((loc, i) => (
+            <SortableLocationEntry
+              key={loc.id}
+              loc={loc}
+              members={members}
+              currentMemberId={currentMemberId}
+              tripId={tripId}
+              index={i}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableLocationEntry(props: {
+  loc: Location;
+  members: Member[];
+  currentMemberId: string;
+  tripId: string;
+  index: number;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: props.loc.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  } as React.CSSProperties;
+  return (
+    <div ref={setNodeRef} style={style}>
+      <LocationEntry
+        {...props}
+        dragHandle
+        dragListeners={listeners}
+        dragAttributes={attributes}
+      />
     </div>
   );
 }
+
+type DragListeners = ReturnType<typeof useSortable>["listeners"];
+type DragAttributes = ReturnType<typeof useSortable>["attributes"];
 
 function LocationEntry({
   loc,
@@ -96,12 +202,18 @@ function LocationEntry({
   currentMemberId,
   tripId,
   index,
+  dragHandle = false,
+  dragListeners,
+  dragAttributes,
 }: {
   loc: Location;
   members: Member[];
   currentMemberId: string;
   tripId: string;
   index: number;
+  dragHandle?: boolean;
+  dragListeners?: DragListeners;
+  dragAttributes?: DragAttributes;
 }) {
   const cat = CATEGORIES.find((c) => c.key === loc.category);
   const addedBy = members.find((m) => m.id === loc.added_by);
@@ -132,6 +244,23 @@ function LocationEntry({
       }}
     >
       <div className="flex items-start gap-3">
+        {dragHandle && (
+          <button
+            type="button"
+            {...(dragListeners ?? {})}
+            {...(dragAttributes ?? {})}
+            aria-label="sürükle"
+            className="flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing"
+            style={{
+              width: "28px",
+              height: "48px",
+              color: "var(--text-dim)",
+              touchAction: "none",
+            }}
+          >
+            <GripVertical size={18} strokeWidth={2} />
+          </button>
+        )}
         <div
           className="flex items-center justify-center text-[1.35rem] shrink-0"
           style={{

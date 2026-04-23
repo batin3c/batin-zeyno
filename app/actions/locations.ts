@@ -213,6 +213,30 @@ export async function updateVisitDate(
   revalidatePath(`/trips/${tripId}`);
 }
 
+export async function reorderLocations(
+  tripId: string,
+  orderedIds: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  if (!tripId || !Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return { ok: false, error: "bozuk istek" };
+  }
+  // update each row's sort_order sequentially (small N, acceptable)
+  const now = new Date().toISOString();
+  for (let i = 0; i < orderedIds.length; i++) {
+    const id = orderedIds[i];
+    const sort_order = (i + 1) * 100;
+    const { error } = await db
+      .from("locations")
+      .update({ sort_order, updated_at: now })
+      .eq("id", id)
+      .eq("trip_id", tripId);
+    if (error) return { ok: false, error: error.message };
+  }
+  revalidatePath(`/trips/${tripId}`);
+  return { ok: true };
+}
+
 export async function deleteLocation(id: string, tripId: string) {
   await requireCurrentMember();
   // grab photos so we can remove them from storage too
