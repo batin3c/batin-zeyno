@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { SimpleDialog } from "./simple-dialog";
-import { CoverUpload } from "./create-trip-dialog";
+import { CoverUpload, DestinationInput } from "./create-trip-dialog";
 import { updateTrip, removeTripCover, deleteTrip } from "@/app/actions/trips";
 import type { Trip } from "@/lib/types";
 
@@ -15,6 +15,9 @@ export function EditTripButton({ trip }: { trip: Trip }) {
     trip.cover_url
   );
   const [coverCleared, setCoverCleared] = useState(false);
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const onCoverPick = (file: File | null) => {
@@ -36,6 +39,10 @@ export function EditTripButton({ trip }: { trip: Trip }) {
     const fd = new FormData(e.currentTarget);
     fd.set("id", trip.id);
     if (coverFile) fd.set("cover_file", coverFile);
+    if (center) {
+      fd.set("center_lat", String(center.lat));
+      fd.set("center_lng", String(center.lng));
+    }
 
     startTransition(async () => {
       await updateTrip(fd);
@@ -77,13 +84,12 @@ export function EditTripButton({ trip }: { trip: Trip }) {
           />
           <label className="flex flex-col gap-1.5">
             <span className="label" style={{ fontSize: "0.62rem" }}>
-              isim
+              nereye
             </span>
-            <input
-              name="name"
-              required
+            <DestinationInput
               defaultValue={trip.name}
-              className="field-input"
+              onPick={(lat, lng) => setCenter({ lat, lng })}
+              onClear={() => setCenter(null)}
             />
           </label>
           <label className="flex flex-col gap-1.5">

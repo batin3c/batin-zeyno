@@ -78,6 +78,13 @@ export async function updateTrip(formData: FormData) {
     updated_at: new Date().toISOString(),
   };
 
+  const center_lat = num(formData.get("center_lat"));
+  const center_lng = num(formData.get("center_lng"));
+  if (center_lat !== null && center_lng !== null) {
+    patch.center_lat = center_lat;
+    patch.center_lng = center_lng;
+  }
+
   try {
     const uploaded = await uploadCoverIfAny(formData);
     if (uploaded) {

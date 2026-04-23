@@ -121,12 +121,16 @@ function Field({
   );
 }
 
-function DestinationInput({
+export function DestinationInput({
   onPick,
   onClear,
+  defaultValue,
+  name = "name",
 }: {
   onPick: (lat: number, lng: number) => void;
   onClear: () => void;
+  defaultValue?: string;
+  name?: string;
 }) {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -164,9 +168,9 @@ function DestinationInput({
   if (loadError) {
     return (
       <input
-        name="name"
+        name={name}
         required
-        autoFocus
+        defaultValue={defaultValue}
         placeholder="Roma 2026"
         className="field-input"
       />
@@ -176,9 +180,9 @@ function DestinationInput({
   return (
     <input
       ref={inputRef}
-      name="name"
+      name={name}
       required
-      autoFocus
+      defaultValue={defaultValue}
       disabled={!isLoaded}
       placeholder={isLoaded ? "nereye gidiyoruz? (Sevilla, Roma…)" : "yükleniyor…"}
       onChange={() => clearRef.current()}

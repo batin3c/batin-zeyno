@@ -575,57 +575,82 @@ function ListImport({
     }
   };
 
-  const enrichPlaces = (input: EnrichedPlace[]) => {
+  const enrichPlaces = async (input: EnrichedPlace[]) => {
     if (typeof google === "undefined" || !google.maps?.places) return;
     setEnriching(true);
     const svc = new google.maps.places.PlacesService(
       document.createElement("div")
     );
     const detailsFields = ["rating", "user_ratings_total", "photos"];
-    let finished = 0;
-    const clone = [...input];
-    input.forEach((place, idx) => {
-      if (!place.google_place_id) {
-        finished++;
-        if (finished === input.length) setEnriching(false);
-        return;
-      }
-      svc.getDetails(
-        { placeId: place.google_place_id, fields: detailsFields },
-        (res, status) => {
-          if (
-            status === google.maps.places.PlacesServiceStatus.OK &&
-            res
-          ) {
-            const photoUrls =
-              res.photos
-                ?.slice(0, 3)
-                .map((ph) => {
-                  try {
-                    return ph.getUrl({ maxWidth: 1200 });
-                  } catch {
-                    return null;
-                  }
-                })
-                .filter(
-                  (u): u is string => typeof u === "string" && u.length > 0
-                ) ?? [];
-            clone[idx] = {
-              ...clone[idx],
-              rating: typeof res.rating === "number" ? res.rating : null,
-              rating_count:
+    const enrichOne = (place: EnrichedPlace) =>
+      new Promise<void>((resolve) => {
+        if (!place.google_place_id) {
+          resolve();
+          return;
+        }
+        svc.getDetails(
+          { placeId: place.google_place_id, fields: detailsFields },
+          (res, status) => {
+            if (
+              status === google.maps.places.PlacesServiceStatus.OK &&
+              res
+            ) {
+              const photoUrls =
+                res.photos
+                  ?.slice(0, 3)
+                  .map((ph) => {
+                    try {
+                      return ph.getUrl({ maxWidth: 1200 });
+                    } catch {
+                      return null;
+                    }
+                  })
+                  .filter(
+                    (u): u is string =>
+                      typeof u === "string" && u.length > 0
+                  ) ?? [];
+              const nextRating =
+                typeof res.rating === "number" ? res.rating : null;
+              const nextCount =
                 typeof res.user_ratings_total === "number"
                   ? res.user_ratings_total
-                  : null,
-              google_photo_urls: photoUrls,
-            };
-            setPlaces([...clone]);
+                  : null;
+              setPlaces((prev) =>
+                prev
+                  ? prev.map((p) =>
+                      p.google_place_id === place.google_place_id
+                        ? {
+                            ...p,
+                            rating: nextRating,
+                            rating_count: nextCount,
+                            google_photo_urls: photoUrls,
+                          }
+                        : p
+                    )
+                  : prev
+              );
+            } else if (
+              status === google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT
+            ) {
+              // soft retry after a short delay
+              setTimeout(() => enrichOne(place).then(resolve), 400);
+              return;
+            }
+            resolve();
           }
-          finished++;
-          if (finished === input.length) setEnriching(false);
-        }
-      );
+        );
+      });
+    // serialize 4 at a time
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    const workers = Array.from({ length: CONCURRENCY }, async () => {
+      while (cursor < input.length) {
+        const idx = cursor++;
+        await enrichOne(input[idx]);
+      }
     });
+    await Promise.all(workers);
+    setEnriching(false);
   };
 
   const toggle = (i: number) => {
@@ -798,12 +823,14 @@ function ListImport({
       {places && (
         <button
           onClick={importSelected}
-          disabled={selectedCount === 0 || pending}
+          disabled={selectedCount === 0 || pending || enriching}
           className="btn-primary w-full"
           style={{ padding: "0.95rem 1.25rem" }}
         >
           {pending
             ? "atıyor aq…"
+            : enriching
+            ? "puan & foto bekle…"
             : selectedCount === 0
             ? "en az bir yer seç"
             : `${selectedCount} yeri at`}
