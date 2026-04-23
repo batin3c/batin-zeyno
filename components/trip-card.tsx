@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Trip } from "@/lib/types";
+import { TripDeleteButton } from "./trip-delete-button";
 
 const PILL_COLORS = [
   "var(--accent-soft)",
@@ -70,6 +71,7 @@ export function TripCard({
             />
             {locationCount}
           </div>
+          <TripDeleteButton tripId={trip.id} tripName={trip.name} />
         </div>
         <div className="flex items-start justify-between gap-3 px-4 py-3">
           <div className="flex flex-col gap-0.5 min-w-0">
