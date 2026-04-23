@@ -39,6 +39,7 @@ export async function toggleVisitedCountry(
       } catch {}
     }
     revalidatePath("/globe");
+  revalidatePath("/");
     return { ok: true, visited: false };
   }
 
@@ -48,6 +49,7 @@ export async function toggleVisitedCountry(
   });
   if (error) return { ok: false, visited: false, error: error.message };
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true, visited: true };
 }
 
@@ -66,6 +68,7 @@ export async function updateCountryNote(
     .eq("code", c);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -100,6 +103,7 @@ export async function addCountryPhoto(
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/globe");
+  revalidatePath("/");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -124,5 +128,6 @@ export async function removeCountryPhoto(
     } catch {}
   }
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true };
 }

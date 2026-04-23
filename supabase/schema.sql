@@ -44,6 +44,7 @@ create table if not exists locations (
   visit_date date,
   rating numeric,
   rating_count integer,
+  sort_order integer not null default 0,
   added_by uuid references members(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -52,6 +53,7 @@ create table if not exists locations (
 create index if not exists idx_locations_trip on locations (trip_id);
 create index if not exists idx_locations_created on locations (created_at desc);
 create index if not exists idx_locations_trip_visit_date on locations (trip_id, visit_date nulls last);
+create index if not exists idx_locations_sort on locations (trip_id, sort_order);
 
 create table if not exists visited_countries (
   code       char(2) primary key,
@@ -72,16 +74,18 @@ create table if not exists country_photos (
 create index if not exists idx_country_photos_code on country_photos (code, added_at desc);
 
 create table if not exists visited_cities (
-  id              uuid primary key default gen_random_uuid(),
-  name            text not null,
-  country_code    char(2),
-  lat             double precision not null,
-  lng             double precision not null,
-  google_place_id text,
-  note            text,
-  added_by        uuid references members(id) on delete set null,
-  added_at        timestamptz not null default now(),
-  updated_at      timestamptz not null default now()
+  id                 uuid primary key default gen_random_uuid(),
+  name               text not null,
+  country_code       char(2),
+  lat                double precision not null,
+  lng                double precision not null,
+  google_place_id    text,
+  note               text,
+  boundary_geojson   jsonb,
+  boundary_fetched_at timestamptz,
+  added_by           uuid references members(id) on delete set null,
+  added_at           timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
 );
 
 create table if not exists city_photos (

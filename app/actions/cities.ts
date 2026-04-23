@@ -55,6 +55,7 @@ export async function addCity(input: {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true, id: data.id as string };
 }
 
@@ -72,6 +73,7 @@ export async function updateCityNote(
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -92,6 +94,7 @@ export async function deleteCity(
     } catch {}
   }
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -113,6 +116,7 @@ export async function addCityPhoto(
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/globe");
+  revalidatePath("/");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -137,5 +141,6 @@ export async function removeCityPhoto(
     } catch {}
   }
   revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true };
 }

@@ -55,6 +55,7 @@ export type Location = {
   visit_date: string | null;
   rating: number | null;
   rating_count: number | null;
+  sort_order: number;
   added_by: string | null;
   created_at: string;
   updated_at: string;
@@ -95,6 +96,8 @@ export type VisitedCity = {
   lng: number;
   google_place_id: string | null;
   note: string | null;
+  boundary_geojson: unknown | null;
+  boundary_fetched_at: string | null;
   added_by: string | null;
   added_at: string;
   updated_at: string;

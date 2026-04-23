@@ -31,12 +31,12 @@ export function TripCard({
         style={{
           background: "var(--surface)",
           border: "2px solid var(--ink)",
-          borderRadius: "20px",
+          borderRadius: "22px",
           boxShadow: "var(--shadow-pop)",
         }}
       >
         <div
-          className="relative w-full aspect-[4/5] overflow-hidden"
+          className="relative w-full aspect-[16/9] overflow-hidden"
           style={{
             background: pillBg,
             borderBottom: "2px solid var(--ink)",
@@ -55,13 +55,13 @@ export function TripCard({
             <EmptyCover />
           )}
           <div
-            className="absolute bottom-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 text-[0.72rem] font-bold"
+            className="absolute bottom-3 right-3 flex items-center gap-1 px-2.5 py-1 text-[0.78rem] font-bold"
             style={{
               background: "var(--bg)",
-              border: "1.5px solid var(--ink)",
+              border: "2px solid var(--ink)",
               borderRadius: "999px",
               color: "var(--ink)",
-              boxShadow: "1.5px 1.5px 0 var(--ink)",
+              boxShadow: "2px 2px 0 var(--ink)",
             }}
           >
             <span
@@ -71,19 +71,21 @@ export function TripCard({
             {locationCount}
           </div>
         </div>
-        <div className="flex flex-col gap-0.5 px-3 py-2.5">
-          <h3
-            className="text-[1.02rem] font-semibold tracking-tight leading-tight line-clamp-2"
-            style={{ color: "var(--ink)" }}
-          >
-            {trip.name}
-          </h3>
-          <span
-            className="text-[0.75rem] font-medium"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {dateStr ?? "tarih yok"}
-          </span>
+        <div className="flex items-start justify-between gap-3 px-4 py-3">
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <h3
+              className="font-bold tracking-tight leading-tight line-clamp-2"
+              style={{ fontSize: "1.15rem", color: "var(--ink)" }}
+            >
+              {trip.name}
+            </h3>
+            <span
+              className="text-[0.82rem] font-medium"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {dateStr ?? "tarih yok"}
+            </span>
+          </div>
         </div>
       </article>
     </Link>
@@ -93,7 +95,8 @@ export function TripCard({
 function EmptyCover() {
   return (
     <div
-      className="w-full h-full flex items-center justify-center text-4xl"
+      className="w-full h-full flex items-center justify-center"
+      style={{ fontSize: "3.2rem" }}
     >
       🌴
     </div>

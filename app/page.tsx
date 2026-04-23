@@ -13,6 +13,7 @@ type HomeStats = {
   visited: number;
   loves: number;
   countries: number;
+  cities: number;
 };
 
 async function loadHome(): Promise<{
@@ -46,9 +47,14 @@ async function loadHome(): Promise<{
     }
   }
 
-  const { count: countryCount } = await db
-    .from("visited_countries")
-    .select("code", { count: "exact", head: true });
+  const [{ count: countryCount }, { count: cityCount }] = await Promise.all([
+    db
+      .from("visited_countries")
+      .select("code", { count: "exact", head: true }),
+    db
+      .from("visited_cities")
+      .select("id", { count: "exact", head: true }),
+  ]);
 
   const tripsOut = list.map((t) => ({ trip: t, count: counts.get(t.id) ?? 0 }));
   const stats: HomeStats = {
@@ -57,6 +63,7 @@ async function loadHome(): Promise<{
     visited,
     loves,
     countries: countryCount ?? 0,
+    cities: cityCount ?? 0,
   };
   return { trips: tripsOut, stats };
 }
@@ -104,7 +111,7 @@ export default async function HomePage() {
         {trips.length === 0 ? (
           <EmptyState memberName={me.name} />
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:gap-5">
+          <div className="flex flex-col gap-4 sm:gap-5">
             {trips.map(({ trip, count }, i) => (
               <TripCard
                 key={trip.id}
@@ -126,35 +133,36 @@ function StatsStrip({ stats }: { stats: HomeStats }) {
     { label: "yer", value: stats.locations, bg: "var(--accent-soft)" },
     { label: "gittik", value: stats.visited, bg: "var(--accent-2-soft)" },
     { label: "ülke", value: stats.countries, bg: "var(--accent-3-soft)" },
-    { label: "♡", value: stats.loves, bg: "var(--accent-4-soft)" },
+    { label: "şehir", value: stats.cities, bg: "var(--accent-4-soft)" },
+    { label: "♡", value: stats.loves, bg: "var(--surface-soft)" },
   ];
   return (
     <div
-      className="grid grid-cols-4 gap-2 mb-6 anim-reveal"
+      className="grid grid-cols-5 gap-1.5 mb-6 anim-reveal"
       style={{ animationDelay: "60ms" }}
     >
       {items.map((it) => (
         <div
           key={it.label}
-          className="flex flex-col items-center justify-center py-2.5"
+          className="flex flex-col items-center justify-center py-2"
           style={{
             background: it.bg,
             border: "2px solid var(--ink)",
-            borderRadius: "14px",
+            borderRadius: "12px",
             boxShadow: "var(--shadow-pop-sm)",
           }}
         >
           <span
             className="font-bold leading-none"
-            style={{ fontSize: "1.3rem", color: "var(--ink)" }}
+            style={{ fontSize: "1.15rem", color: "var(--ink)" }}
           >
             {it.value}
           </span>
           <span
-            className="text-[0.68rem] font-semibold mt-0.5"
+            className="text-[0.62rem] font-semibold mt-0.5"
             style={{
               color: "var(--ink-soft)",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.04em",
             }}
           >
             {it.label}

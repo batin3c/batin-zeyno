@@ -137,17 +137,32 @@ export function EditTripButton({ trip }: { trip: Trip }) {
           </button>
 
           <div
-            className="mt-3 pt-4"
-            style={{ borderTop: "1px solid var(--line-soft)" }}
+            className="mt-4 p-4 flex flex-col gap-2"
+            style={{
+              background: "var(--danger-soft)",
+              border: "2px solid var(--ink)",
+              borderRadius: "16px",
+            }}
           >
+            <span className="label" style={{ color: "var(--ink)" }}>
+              tehlikeli bölge
+            </span>
             <button
               type="button"
               onClick={onDelete}
               disabled={pending}
-              className="flex items-center justify-center gap-2 w-full py-2 text-[0.85rem] font-medium transition-colors disabled:opacity-40"
-              style={{ color: "var(--text-muted)" }}
+              className="flex items-center justify-center gap-2 w-full font-bold disabled:opacity-40"
+              style={{
+                background: "var(--danger)",
+                color: "#fff",
+                border: "2px solid var(--ink)",
+                borderRadius: "12px",
+                padding: "0.7rem 1rem",
+                fontSize: "0.95rem",
+                boxShadow: "var(--shadow-pop-sm)",
+              }}
             >
-              <Trash2 size={14} strokeWidth={1.5} />
+              <Trash2 size={16} strokeWidth={2.5} />
               tatili siktir et
             </button>
           </div>
