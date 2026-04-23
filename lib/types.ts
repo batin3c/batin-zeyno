@@ -53,6 +53,8 @@ export type Location = {
   photo_urls: string[];
   google_photo_urls: string[];
   visit_date: string | null;
+  rating: number | null;
+  rating_count: number | null;
   added_by: string | null;
   created_at: string;
   updated_at: string;

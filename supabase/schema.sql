@@ -42,6 +42,8 @@ create table if not exists locations (
   photo_urls text[] not null default '{}',
   google_photo_urls text[] not null default '{}',
   visit_date date,
+  rating numeric,
+  rating_count integer,
   added_by uuid references members(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

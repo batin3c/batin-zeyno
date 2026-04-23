@@ -7,6 +7,7 @@ import {
   Trash2,
   Navigation,
   ExternalLink,
+  Star,
 } from "lucide-react";
 import type { Location, Member } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
@@ -138,6 +139,20 @@ function LocationEntry({
               {loc.address}
             </p>
           )}
+          {loc.rating !== null && (
+            <div
+              className="flex items-center gap-1 mt-1 text-[0.72rem]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <Star size={10} fill="var(--accent)" strokeWidth={0} />
+              <span style={{ color: "var(--text)" }}>
+                {loc.rating.toFixed(1)}
+              </span>
+              {loc.rating_count !== null && (
+                <span>· {formatCount(loc.rating_count)}</span>
+              )}
+            </div>
+          )}
         </div>
         <button
           onClick={() => startTransition(() => toggleLove(loc.id, tripId))}
@@ -266,4 +281,11 @@ function formatVisitDate(iso: string): string {
   return new Date(iso)
     .toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
     .toLowerCase();
+}
+
+function formatCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10000) return `${(n / 1000).toFixed(1)}k`;
+  if (n < 1_000_000) return `${Math.round(n / 1000)}k`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
 }
