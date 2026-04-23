@@ -3,7 +3,13 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { CountrySheet } from "@/components/country-sheet";
-import type { VisitedCountry, CountryPhoto } from "@/lib/types";
+import { CitySheet } from "@/components/city-sheet";
+import type {
+  VisitedCountry,
+  CountryPhoto,
+  VisitedCity,
+  CityPhoto,
+} from "@/lib/types";
 
 const GlobeCanvas = dynamic(
   () => import("@/components/globe-canvas").then((m) => m.GlobeCanvas),
@@ -20,35 +26,69 @@ const GlobeCanvas = dynamic(
   }
 );
 
-// world-atlas 110m has ~177 countries after our code map filter
 const TOTAL_COUNTRIES = 195;
+
+type Selection =
+  | { kind: "country"; code: string }
+  | { kind: "city"; id: string }
+  | null;
 
 export function GlobeClient({
   visited,
   photos,
+  cities,
+  cityPhotos,
 }: {
   visited: VisitedCountry[];
   photos: CountryPhoto[];
+  cities: VisitedCity[];
+  cityPhotos: CityPhoto[];
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection>(null);
 
   const visitedCodes = useMemo(
     () => new Set(visited.map((v) => v.code)),
     [visited]
   );
 
-  const selectedData = useMemo(() => {
-    if (!selected) return null;
-    const v = visited.find((x) => x.code === selected) ?? null;
-    const ps = photos.filter((p) => p.code === selected);
-    return { code: selected, visited: v, photos: ps };
-  }, [selected, visited, photos]);
+  const cityPoints = useMemo(
+    () =>
+      cities.map((c) => ({
+        id: c.id,
+        name: c.name,
+        lat: c.lat,
+        lng: c.lng,
+      })),
+    [cities]
+  );
+
+  const countryData = useMemo(() => {
+    if (selection?.kind !== "country") return null;
+    const v = visited.find((x) => x.code === selection.code) ?? null;
+    const ps = photos.filter((p) => p.code === selection.code);
+    const citiesInCountry = cities.filter(
+      (c) => c.country_code === selection.code
+    );
+    return { code: selection.code, visited: v, photos: ps, cities: citiesInCountry };
+  }, [selection, visited, photos, cities]);
+
+  const cityData = useMemo(() => {
+    if (selection?.kind !== "city") return null;
+    const city = cities.find((c) => c.id === selection.id);
+    if (!city) return null;
+    const ps = cityPhotos.filter((p) => p.city_id === city.id);
+    return { city, photos: ps };
+  }, [selection, cities, cityPhotos]);
 
   return (
     <div className="relative">
       <GlobeCanvas
         visitedCodes={visitedCodes}
-        onSelect={(code) => setSelected(code)}
+        cities={cityPoints}
+        onSelectCountry={(code) =>
+          setSelection({ kind: "country", code })
+        }
+        onSelectCity={(id) => setSelection({ kind: "city", id })}
       />
       <div
         className="absolute top-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5 anim-bounce-in"
@@ -69,13 +109,20 @@ export function GlobeClient({
           <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
             /{TOTAL_COUNTRIES}
           </span>{" "}
-          ülke gezdik
+          ülke ·{" "}
+          <span>{cities.length}</span> şehir
         </span>
       </div>
       <CountrySheet
-        data={selectedData}
-        open={selected !== null}
-        onClose={() => setSelected(null)}
+        data={countryData}
+        open={selection?.kind === "country"}
+        onClose={() => setSelection(null)}
+        onOpenCity={(id) => setSelection({ kind: "city", id })}
+      />
+      <CitySheet
+        data={cityData}
+        open={selection?.kind === "city"}
+        onClose={() => setSelection(null)}
       />
     </div>
   );

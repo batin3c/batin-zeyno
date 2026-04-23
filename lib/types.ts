@@ -86,3 +86,24 @@ export type CountryPhoto = {
   added_by: string | null;
   added_at: string;
 };
+
+export type VisitedCity = {
+  id: string;
+  name: string;
+  country_code: string | null;
+  lat: number;
+  lng: number;
+  google_place_id: string | null;
+  note: string | null;
+  added_by: string | null;
+  added_at: string;
+  updated_at: string;
+};
+
+export type CityPhoto = {
+  id: string;
+  city_id: string;
+  url: string;
+  added_by: string | null;
+  added_at: string;
+};

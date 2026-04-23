@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Camera, Check, X } from "lucide-react";
+import { Camera, Check, MapPin, Plus, X } from "lucide-react";
+import { useJsApiLoader } from "@react-google-maps/api";
 import { SimpleDialog } from "./simple-dialog";
 import { COUNTRY_BY_NUMERIC, isoToFlag } from "@/lib/country-codes";
 import {
@@ -10,12 +11,16 @@ import {
   addCountryPhoto,
   removeCountryPhoto,
 } from "@/app/actions/countries";
-import type { VisitedCountry, CountryPhoto } from "@/lib/types";
+import { addCity } from "@/app/actions/cities";
+import type { VisitedCountry, CountryPhoto, VisitedCity } from "@/lib/types";
+
+const LIBRARIES: ("places")[] = ["places"];
 
 type SelectedData = {
   code: string;
   visited: VisitedCountry | null;
   photos: CountryPhoto[];
+  cities: VisitedCity[];
 };
 
 function countryName(code: string): string {
@@ -29,15 +34,18 @@ export function CountrySheet({
   data,
   open,
   onClose,
+  onOpenCity,
 }: {
   data: SelectedData | null;
   open: boolean;
   onClose: () => void;
+  onOpenCity: (id: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState<string>("");
   const [noteSaved, setNoteSaved] = useState(false);
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,6 +57,7 @@ export function CountrySheet({
     }
     setUploadErr(null);
     setNoteSaved(false);
+    setCityPickerOpen(false);
   }, [data?.code, data?.visited?.note]);
 
   if (!data) {
@@ -59,15 +68,16 @@ export function CountrySheet({
     );
   }
 
-  const { code, visited, photos } = data;
+  const { code, visited, photos, cities } = data;
   const isVisited = visited !== null;
   const name = countryName(code);
   const flag = isoToFlag(code);
 
   const onToggle = () => {
     if (isVisited) {
-      if (photos.length > 0) {
-        if (!confirm("tüm fotolar da gider. silsin mi?")) return;
+      const willLose = photos.length + cities.length;
+      if (willLose > 0) {
+        if (!confirm("tüm fotolar ve şehirler de gider. silsin mi?")) return;
       }
     }
     startTransition(async () => {
@@ -114,6 +124,26 @@ export function CountrySheet({
     });
   };
 
+  const onCityPicked = (city: {
+    name: string;
+    lat: number;
+    lng: number;
+    place_id?: string;
+  }) => {
+    startTransition(async () => {
+      const r = await addCity({
+        name: city.name,
+        lat: city.lat,
+        lng: city.lng,
+        country_code: code,
+        google_place_id: city.place_id ?? null,
+      });
+      if (r.ok) {
+        setCityPickerOpen(false);
+      }
+    });
+  };
+
   return (
     <SimpleDialog open={open} onClose={onClose} title="">
       <div className="flex flex-col gap-5">
@@ -152,10 +182,7 @@ export function CountrySheet({
         </button>
 
         <label className="flex flex-col gap-1.5">
-          <span
-            className="label"
-            style={{ fontSize: "0.62rem" }}
-          >
+          <span className="label" style={{ fontSize: "0.62rem" }}>
             not {noteSaved && <span style={{ color: "var(--accent)" }}>✓</span>}
           </span>
           <textarea
@@ -164,24 +191,66 @@ export function CountrySheet({
             onBlur={onNoteBlur}
             rows={2}
             placeholder={
-              isVisited
-                ? "nasıldı aq?"
-                : "tık önce 'burayı gördük'e bas…"
+              isVisited ? "nasıldı aq?" : "tık önce 'burayı gördük'e bas…"
             }
             disabled={!isVisited && pending}
             className="field-textarea"
           />
         </label>
 
+        <div className="flex flex-col gap-2">
+          <span className="label" style={{ fontSize: "0.62rem" }}>
+            şehirler {cities.length > 0 && <span style={{ color: "var(--ink)", fontWeight: 600 }}>· {cities.length}</span>}
+          </span>
+          {cities.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {cities.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => onOpenCity(c.id)}
+                  className="flex items-center gap-2 text-left w-full"
+                  style={{
+                    background: "var(--surface)",
+                    border: "2px solid var(--ink)",
+                    borderRadius: "12px",
+                    padding: "0.55rem 0.85rem",
+                    boxShadow: "var(--shadow-pop-sm)",
+                    fontWeight: 600,
+                    color: "var(--ink)",
+                  }}
+                >
+                  <MapPin size={14} strokeWidth={2} style={{ color: "var(--accent-2)" }} />
+                  <span className="text-[0.92rem] flex-1 truncate">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {cityPickerOpen ? (
+            <CityPickerInline
+              countryCode={code}
+              onPicked={onCityPicked}
+              onCancel={() => setCityPickerOpen(false)}
+              pending={pending}
+            />
+          ) : (
+            <button
+              onClick={() => setCityPickerOpen(true)}
+              disabled={pending}
+              className="btn-ghost disabled:opacity-50"
+              style={{ width: "100%" }}
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              şehir ekle
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <span className="label" style={{ fontSize: "0.62rem" }}>
             fotolar
           </span>
           {photos.length === 0 && (
-            <p
-              className="text-[0.8rem]"
-              style={{ color: "var(--text-dim)" }}
-            >
+            <p className="text-[0.8rem]" style={{ color: "var(--text-dim)" }}>
               daha foto yok. aşağıdan at.
             </p>
           )}
@@ -264,5 +333,78 @@ export function CountrySheet({
         </div>
       </div>
     </SimpleDialog>
+  );
+}
+
+function CityPickerInline({
+  countryCode,
+  onPicked,
+  onCancel,
+  pending,
+}: {
+  countryCode: string;
+  onPicked: (p: { name: string; lat: number; lng: number; place_id?: string }) => void;
+  onCancel: () => void;
+  pending: boolean;
+}) {
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    libraries: LIBRARIES,
+    language: "tr",
+  });
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pickedRef = useRef(onPicked);
+
+  useEffect(() => {
+    pickedRef.current = onPicked;
+  }, [onPicked]);
+
+  useEffect(() => {
+    if (!isLoaded || !inputRef.current) return;
+    const ac = new google.maps.places.Autocomplete(inputRef.current, {
+      fields: ["name", "geometry", "place_id"],
+      types: ["(cities)"],
+      componentRestrictions: { country: countryCode.toLowerCase() },
+    });
+    const listener = ac.addListener("place_changed", () => {
+      const p = ac.getPlace();
+      if (!p.geometry?.location || !p.name) return;
+      pickedRef.current({
+        name: p.name,
+        lat: p.geometry.location.lat(),
+        lng: p.geometry.location.lng(),
+        place_id: p.place_id ?? undefined,
+      });
+    });
+    inputRef.current.focus();
+    return () => {
+      listener.remove();
+      google.maps.event.clearInstanceListeners(ac);
+    };
+  }, [isLoaded, countryCode]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input
+        ref={inputRef}
+        className="field-input"
+        placeholder={
+          loadError
+            ? "google gelmedi"
+            : isLoaded
+            ? "şehir yaz, seç…"
+            : "yükleniyor…"
+        }
+        disabled={!isLoaded || pending}
+      />
+      <button
+        type="button"
+        onClick={onCancel}
+        className="btn-chip self-start"
+        style={{ background: "var(--surface-2)" }}
+      >
+        vazgeç
+      </button>
+    </div>
   );
 }
