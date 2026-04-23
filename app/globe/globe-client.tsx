@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Geometry } from "geojson";
+import { Globe2, Images } from "lucide-react";
 import { CountrySheet } from "@/components/country-sheet";
 import { CitySheet } from "@/components/city-sheet";
+import { AlbumGrid } from "@/components/album-grid";
 import { getCityBoundary } from "@/app/actions/cities";
 import type {
   VisitedCountry,
@@ -47,6 +49,7 @@ export function GlobeClient({
   cityPhotos: CityPhoto[];
 }) {
   const [selection, setSelection] = useState<Selection>(null);
+  const [view, setView] = useState<"globe" | "album">("globe");
   const [boundary, setBoundary] = useState<{
     id: string;
     geometry: Geometry;
@@ -112,37 +115,81 @@ export function GlobeClient({
 
   return (
     <div className="relative">
-      <GlobeCanvas
-        visitedCodes={visitedCodes}
-        cities={cityPoints}
-        selectedCityBoundary={boundary}
-        onSelectCountry={(code) =>
-          setSelection({ kind: "country", code })
-        }
-        onSelectCity={(id) => setSelection({ kind: "city", id })}
-      />
+      {view === "globe" ? (
+        <GlobeCanvas
+          visitedCodes={visitedCodes}
+          cities={cityPoints}
+          selectedCityBoundary={boundary}
+          onSelectCountry={(code) =>
+            setSelection({ kind: "country", code })
+          }
+          onSelectCity={(id) => setSelection({ kind: "city", id })}
+        />
+      ) : (
+        <div
+          className="max-w-3xl w-full mx-auto px-4 pt-4 pb-24"
+          style={{ minHeight: "calc(100dvh - 64px)" }}
+        >
+          <AlbumGrid
+            cities={cities}
+            photos={cityPhotos}
+            onSelectCity={(id) => setSelection({ kind: "city", id })}
+          />
+        </div>
+      )}
+
       <div
-        className="absolute top-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5 anim-bounce-in"
-        style={{
-          background: "var(--accent-soft)",
-          border: "2px solid var(--ink)",
-          borderRadius: "999px",
-          padding: "0.4rem 0.95rem",
-          boxShadow: "var(--shadow-pop-sm)",
-          fontWeight: 700,
-          fontSize: "0.88rem",
-          color: "var(--ink)",
-        }}
+        className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 anim-bounce-in"
+        style={{ pointerEvents: "auto" }}
       >
-        <span style={{ fontSize: "1rem" }}>🌍</span>
-        <span>
-          {visitedCodes.size}
-          <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-            /{TOTAL_COUNTRIES}
-          </span>{" "}
-          ülke · <span>{cities.length}</span> şehir
-        </span>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setView("globe")}
+            className="btn-chip"
+            style={{
+              background: view === "globe" ? "var(--accent)" : "var(--surface)",
+              fontWeight: view === "globe" ? 700 : 500,
+            }}
+          >
+            <Globe2 size={13} strokeWidth={2.5} /> küre
+          </button>
+          <button
+            onClick={() => setView("album")}
+            className="btn-chip"
+            style={{
+              background: view === "album" ? "var(--accent)" : "var(--surface)",
+              fontWeight: view === "album" ? 700 : 500,
+            }}
+          >
+            <Images size={13} strokeWidth={2.5} /> albüm
+          </button>
+        </div>
       </div>
+
+      {view === "globe" && (
+        <div
+          className="absolute top-[3.8rem] left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5"
+          style={{
+            background: "var(--accent-soft)",
+            border: "2px solid var(--ink)",
+            borderRadius: "999px",
+            padding: "0.35rem 0.85rem",
+            boxShadow: "var(--shadow-pop-sm)",
+            fontWeight: 700,
+            fontSize: "0.8rem",
+            color: "var(--ink)",
+          }}
+        >
+          <span>🌍</span>
+          <span>
+            {visitedCodes.size}
+            <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+              /{TOTAL_COUNTRIES}
+            </span>{" "}
+            ülke · <span>{cities.length}</span> şehir
+          </span>
+        </div>
+      )}
       <CountrySheet
         data={countryData}
         open={selection?.kind === "country"}
