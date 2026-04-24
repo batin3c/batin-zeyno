@@ -28,7 +28,8 @@
     "three": "^0.184.0",
     "three-globe": "^2.45.2",
     "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2"
+    "world-atlas": "^2.0.2",
+    "yet-another-react-lightbox": "^3.31.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

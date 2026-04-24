@@ -11,6 +11,7 @@ import {
   deleteCity,
 } from "@/app/actions/cities";
 import type { VisitedCity, CityPhoto } from "@/lib/types";
+import { PhotoLightbox } from "./photo-lightbox";
 
 type SelectedData = {
   city: VisitedCity;
@@ -38,6 +39,7 @@ export function CitySheet({
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState<string>("");
   const [noteSaved, setNoteSaved] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -157,13 +159,12 @@ export function CitySheet({
           )}
           {photos.length > 0 && (
             <div className="flex gap-2.5 overflow-x-auto -mx-5 px-5 pb-2 pt-1">
-              {photos.map((p) => (
+              {photos.map((p, i) => (
                 <div key={p.id} className="relative flex-shrink-0">
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden"
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIdx(i)}
+                    className="block overflow-hidden p-0"
                     style={{
                       borderRadius: "14px",
                       border: "2px solid var(--ink)",
@@ -178,7 +179,7 @@ export function CitySheet({
                       decoding="async"
                       className="w-24 h-24 object-cover"
                     />
-                  </a>
+                  </button>
                   <button
                     onClick={() => onRemovePhoto(p.id)}
                     className="absolute -top-2 -right-2 flex items-center justify-center"
@@ -241,6 +242,11 @@ export function CitySheet({
           </button>
         </div>
       </div>
+      <PhotoLightbox
+        urls={photos.map((p) => p.url)}
+        index={lightboxIdx}
+        onClose={() => setLightboxIdx(null)}
+      />
     </SimpleDialog>
   );
 }

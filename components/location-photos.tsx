@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { Camera, X } from "lucide-react";
 import {
   addLocationPhoto,
   removeLocationPhoto,
 } from "@/app/actions/locations";
+import { PhotoLightbox } from "./photo-lightbox";
 
 export function LocationPhotos({
   locationId,
@@ -21,6 +22,9 @@ export function LocationPhotos({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  const allUrls = useMemo(() => [...googleUrls, ...urls], [googleUrls, urls]);
 
   const onUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -71,13 +75,12 @@ export function LocationPhotos({
   return (
     <div className="mt-1">
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5">
-        {googleUrls.map((u) => (
+        {googleUrls.map((u, i) => (
           <div key={u} className="relative flex-shrink-0">
-            <a
-              href={u}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block overflow-hidden"
+            <button
+              type="button"
+              onClick={() => setLightboxIdx(i)}
+              className="block overflow-hidden p-0"
               style={{
                 borderRadius: "14px",
                 border: "2px solid var(--ink)",
@@ -86,9 +89,9 @@ export function LocationPhotos({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={u} alt="" loading="lazy" decoding="async" className="w-24 h-24 object-cover" />
-            </a>
+            </button>
             <span
-              className="absolute top-1.5 left-1.5 flex items-center justify-center text-[0.62rem] font-bold"
+              className="absolute top-1.5 left-1.5 flex items-center justify-center text-[0.62rem] font-bold pointer-events-none"
               style={{
                 width: "22px",
                 height: "22px",
@@ -103,13 +106,12 @@ export function LocationPhotos({
             </span>
           </div>
         ))}
-        {urls.map((u) => (
+        {urls.map((u, i) => (
           <div key={u} className="relative flex-shrink-0 group">
-            <a
-              href={u}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block overflow-hidden"
+            <button
+              type="button"
+              onClick={() => setLightboxIdx(googleUrls.length + i)}
+              className="block overflow-hidden p-0"
               style={{
                 borderRadius: "14px",
                 border: "2px solid var(--ink)",
@@ -118,7 +120,7 @@ export function LocationPhotos({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={u} alt="" loading="lazy" decoding="async" className="w-24 h-24 object-cover" />
-            </a>
+            </button>
             <button
               onClick={() => onRemove(u)}
               className="absolute -top-2 -right-2 flex items-center justify-center opacity-100"
@@ -172,6 +174,11 @@ export function LocationPhotos({
         multiple
         className="hidden"
         onChange={(e) => onUpload(e.target.files)}
+      />
+      <PhotoLightbox
+        urls={allUrls}
+        index={lightboxIdx}
+        onClose={() => setLightboxIdx(null)}
       />
     </div>
   );
