@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Geometry } from "geojson";
 import { Globe2, Images } from "lucide-react";
 import { CountrySheet } from "@/components/country-sheet";
 import { CitySheet } from "@/components/city-sheet";
 import { AlbumGrid } from "@/components/album-grid";
-import { getCityBoundary } from "@/app/actions/cities";
 import type {
   VisitedCountry,
   CountryPhoto,
@@ -33,10 +32,10 @@ const GlobeCanvas = dynamic(
 const TOTAL_COUNTRIES = 195;
 
 function haloCircle(lat: number, lng: number, radiusKm: number): Geometry {
-  const n = 48;
+  const n = 40;
   const latStep = radiusKm / 111;
-  const lngStep =
-    radiusKm / (111 * Math.cos((lat * Math.PI) / 180) || 1);
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  const lngStep = radiusKm / (111 * (Math.abs(cosLat) < 0.05 ? 0.05 : cosLat));
   const coords: number[][] = [];
   for (let i = 0; i <= n; i++) {
     const t = (i / n) * 2 * Math.PI;
@@ -63,10 +62,6 @@ export function GlobeClient({
 }) {
   const [selection, setSelection] = useState<Selection>(null);
   const [view, setView] = useState<"globe" | "album">("globe");
-  const [boundary, setBoundary] = useState<{
-    id: string;
-    geometry: Geometry;
-  } | null>(null);
 
   const visitedCodes = useMemo(
     () => new Set(visited.map((v) => v.code)),
@@ -107,29 +102,12 @@ export function GlobeClient({
     return { city, photos: ps };
   }, [selection, cities, cityPhotos]);
 
-  // load city boundary lazily when city is selected
-  // 1) immediately show a generated halo circle so the area looks painted
-  // 2) in parallel try to fetch the real admin polygon; replace when it arrives
-  useEffect(() => {
-    if (selection?.kind !== "city") {
-      setBoundary(null);
-      return;
-    }
-    const id = selection.id;
-    const city = cities.find((c) => c.id === id);
-    if (city) {
-      setBoundary({ id, geometry: haloCircle(city.lat, city.lng, 35) });
-    }
-    let active = true;
-    getCityBoundary(id)
-      .then((geo) => {
-        if (!active || !geo) return;
-        setBoundary({ id, geometry: geo as Geometry });
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
+  // boundary = halo circle, derived synchronously from selection
+  const boundary = useMemo(() => {
+    if (selection?.kind !== "city") return null;
+    const city = cities.find((c) => c.id === selection.id);
+    if (!city) return null;
+    return { id: city.id, geometry: haloCircle(city.lat, city.lng, 35) };
   }, [selection, cities]);
 
   return (

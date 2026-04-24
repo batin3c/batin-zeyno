@@ -184,7 +184,7 @@ export function GlobeCanvas({
   };
 
   const polygonCapColor = (f: object) => {
-    if (isCityBoundary(f)) return "rgba(255, 107, 157, 0.78)";
+    if (isCityBoundary(f)) return "rgba(255, 107, 157, 0.85)";
     const feat = f as CF;
     return visitedCodes.has(feat.properties?.iso2 ?? "")
       ? FILL_VISITED
@@ -192,12 +192,13 @@ export function GlobeCanvas({
   };
 
   const polygonSideColor = (f: object) =>
-    isCityBoundary(f) ? "rgba(31, 26, 20, 0.4)" : SIDE_COLOR;
+    isCityBoundary(f) ? "rgba(255, 107, 157, 0.55)" : SIDE_COLOR;
 
-  const polygonStrokeColor = () => BORDER;
+  const polygonStrokeColor = (f: object) =>
+    isCityBoundary(f) ? BORDER : BORDER;
 
   const polygonAltitude = (f: object) => {
-    if (isCityBoundary(f)) return 0.04;
+    if (isCityBoundary(f)) return 0.05;
     const feat = f as CF;
     return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.022 : 0.008;
   };
@@ -226,7 +227,7 @@ export function GlobeCanvas({
           polygonSideColor={polygonSideColor}
           polygonStrokeColor={polygonStrokeColor}
           polygonAltitude={polygonAltitude}
-          polygonsTransitionDuration={220}
+          polygonsTransitionDuration={0}
           onPolygonClick={handleCountryClick}
           pointsData={cities as unknown as object[]}
           pointLat="lat"
@@ -238,7 +239,7 @@ export function GlobeCanvas({
             return selectedCityId === c.id ? 0 : 0.004;
           }}
           pointRadius={0.28}
-          pointResolution={16}
+          pointResolution={10}
           pointLabel={(p: object) => {
             const c = p as CityPoint;
             return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;

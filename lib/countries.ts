@@ -1,5 +1,5 @@
 import { feature } from "topojson-client";
-import worldAtlas from "world-atlas/countries-50m.json";
+import worldAtlas from "world-atlas/countries-110m.json";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import { lookupCountry } from "./country-codes";
