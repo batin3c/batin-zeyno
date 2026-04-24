@@ -135,6 +135,25 @@ export async function removeTripCover(id: string) {
   revalidatePath(`/trips/${id}`);
 }
 
+export async function reorderTrips(
+  orderedIds: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return { ok: false, error: "bozuk istek" };
+  }
+  const now = new Date().toISOString();
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await db
+      .from("trips")
+      .update({ sort_order: (i + 1) * 100, updated_at: now })
+      .eq("id", orderedIds[i]);
+    if (error) return { ok: false, error: error.message };
+  }
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function deleteTrip(formData: FormData) {
   await requireCurrentMember();
   const id = str(formData.get("id"));

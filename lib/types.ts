@@ -15,6 +15,7 @@ export type Trip = {
   end_date: string | null;
   center_lat: number | null;
   center_lng: number | null;
+  sort_order: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;

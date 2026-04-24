@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { AppHeader } from "@/components/app-header";
-import { TripCard } from "@/components/trip-card";
+import { TripList } from "@/components/trip-list";
 import { CreateTripButton } from "@/components/create-trip-dialog";
 import type { Trip } from "@/lib/types";
 
@@ -24,6 +24,7 @@ async function loadHome(): Promise<{
   const { data: trips, error } = await db
     .from("trips")
     .select("*")
+    .order("sort_order", { ascending: true })
     .order("updated_at", { ascending: false });
   if (error) throw error;
   const list = (trips ?? []) as Trip[];
@@ -115,16 +116,7 @@ export default async function HomePage() {
         {trips.length === 0 ? (
           <EmptyState memberName={me.name} />
         ) : (
-          <div className="flex flex-col gap-4 sm:gap-5">
-            {trips.map(({ trip, count }, i) => (
-              <TripCard
-                key={trip.id}
-                trip={trip}
-                locationCount={count}
-                index={i}
-              />
-            ))}
-          </div>
+          <TripList items={trips} />
         )}
       </main>
       <CreateTripButton />

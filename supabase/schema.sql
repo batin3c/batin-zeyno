@@ -19,12 +19,14 @@ create table if not exists trips (
   end_date date,
   center_lat double precision,
   center_lng double precision,
+  sort_order integer not null default 0,
   created_by uuid references members(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index if not exists idx_trips_updated on trips (updated_at desc);
+create index if not exists idx_trips_sort on trips (sort_order);
 
 create table if not exists locations (
   id uuid primary key default gen_random_uuid(),
