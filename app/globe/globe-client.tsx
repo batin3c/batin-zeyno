@@ -79,6 +79,32 @@ export function GlobeClient({
     [cities]
   );
 
+  const routes = useMemo(() => {
+    // chronological by added_at (oldest first), connect consecutive pairs
+    const ordered = [...cities].sort((a, b) =>
+      (a.added_at ?? "").localeCompare(b.added_at ?? "")
+    );
+    const out: {
+      startLat: number;
+      startLng: number;
+      endLat: number;
+      endLng: number;
+    }[] = [];
+    for (let i = 1; i < ordered.length; i++) {
+      const a = ordered[i - 1];
+      const b = ordered[i];
+      // skip if exact same coords (would be a zero-length arc)
+      if (a.lat === b.lat && a.lng === b.lng) continue;
+      out.push({
+        startLat: a.lat,
+        startLng: a.lng,
+        endLat: b.lat,
+        endLng: b.lng,
+      });
+    }
+    return out;
+  }, [cities]);
+
   const countryData = useMemo(() => {
     if (selection?.kind !== "country") return null;
     const v = visited.find((x) => x.code === selection.code) ?? null;
@@ -118,6 +144,7 @@ export function GlobeClient({
           cities={cityPoints}
           selectedCityBoundary={boundary}
           selectedCityId={selection?.kind === "city" ? selection.id : null}
+          routes={routes}
           onSelectCountry={(code) =>
             setSelection({ kind: "country", code })
           }

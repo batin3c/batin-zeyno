@@ -24,6 +24,13 @@ export type CityBoundary = {
   geometry: Geometry;
 };
 
+export type RouteArc = {
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+};
+
 const OCEAN = "#a8d8e8";
 const BORDER = "#1f1a14";
 const FILL_UNVISITED = "rgba(255, 247, 232, 0.92)";
@@ -38,6 +45,7 @@ export function GlobeCanvas({
   cities,
   selectedCityBoundary,
   selectedCityId,
+  routes,
   onSelectCountry,
   onSelectCity,
 }: {
@@ -45,6 +53,7 @@ export function GlobeCanvas({
   cities: CityPoint[];
   selectedCityBoundary: CityBoundary | null;
   selectedCityId: string | null;
+  routes: RouteArc[];
   onSelectCountry: (code: string) => void;
   onSelectCity: (id: string) => void;
 }) {
@@ -245,6 +254,17 @@ export function GlobeCanvas({
             return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
           }}
           onPointClick={handlePointClick}
+          arcsData={routes as unknown as object[]}
+          arcStartLat="startLat"
+          arcStartLng="startLng"
+          arcEndLat="endLat"
+          arcEndLng="endLng"
+          arcColor={() => "rgba(31, 26, 20, 0.55)"}
+          arcAltitudeAutoScale={0.35}
+          arcStroke={0.35}
+          arcDashLength={0.45}
+          arcDashGap={0.25}
+          arcDashAnimateTime={2600}
         />
       )}
     </div>
