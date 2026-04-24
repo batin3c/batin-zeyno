@@ -107,7 +107,7 @@ export function GlobeClient({
     if (selection?.kind !== "city") return null;
     const city = cities.find((c) => c.id === selection.id);
     if (!city) return null;
-    return { id: city.id, geometry: haloCircle(city.lat, city.lng, 35) };
+    return { id: city.id, geometry: haloCircle(city.lat, city.lng, 90) };
   }, [selection, cities]);
 
   return (

@@ -198,9 +198,10 @@ export function GlobeCanvas({
     isCityBoundary(f) ? BORDER : BORDER;
 
   const polygonAltitude = (f: object) => {
-    if (isCityBoundary(f)) return 0.05;
+    if (isCityBoundary(f)) return 0.06;
     const feat = f as CF;
-    return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.022 : 0.008;
+    // keep countries very flat so they never occlude city dots/halos
+    return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.004 : 0.002;
   };
 
   return (
@@ -235,11 +236,10 @@ export function GlobeCanvas({
           pointColor={() => CITY_COLOR}
           pointAltitude={(p: object) => {
             const c = p as CityPoint;
-            // hide selected city's point so boundary polygon takes over
-            return selectedCityId === c.id ? 0 : 0.004;
+            return selectedCityId === c.id ? 0 : 0.018;
           }}
-          pointRadius={0.28}
-          pointResolution={10}
+          pointRadius={0.55}
+          pointResolution={12}
           pointLabel={(p: object) => {
             const c = p as CityPoint;
             return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
