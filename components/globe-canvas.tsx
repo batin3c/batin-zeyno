@@ -184,7 +184,7 @@ export function GlobeCanvas({
   };
 
   const polygonCapColor = (f: object) => {
-    if (isCityBoundary(f)) return "rgba(255, 107, 157, 0.85)";
+    if (isCityBoundary(f)) return "rgba(93, 201, 177, 0.9)";
     const feat = f as CF;
     return visitedCodes.has(feat.properties?.iso2 ?? "")
       ? FILL_VISITED
@@ -192,7 +192,7 @@ export function GlobeCanvas({
   };
 
   const polygonSideColor = (f: object) =>
-    isCityBoundary(f) ? "rgba(255, 107, 157, 0.55)" : SIDE_COLOR;
+    isCityBoundary(f) ? "rgba(93, 201, 177, 0.6)" : SIDE_COLOR;
 
   const polygonStrokeColor = (f: object) =>
     isCityBoundary(f) ? BORDER : BORDER;
