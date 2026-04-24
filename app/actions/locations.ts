@@ -6,6 +6,7 @@ import { requireCurrentMember } from "@/lib/dal";
 import { resolveMapsShareUrl } from "@/lib/google-maps";
 import { resolveGoogleList, type GoogleListResult } from "@/lib/google-list";
 import { uploadImage, removeByUrl } from "@/lib/storage";
+import { notifyOthers } from "./push";
 import type { Category, LocationStatus } from "@/lib/types";
 
 function str(v: FormDataEntryValue | null): string | null {
@@ -70,6 +71,13 @@ export async function createLocation(formData: FormData) {
     added_by: me.id,
   });
   if (error) throw error;
+
+  notifyOthers({
+    title: `${me.name.toLowerCase()} yeni yer ekledi`,
+    body: name,
+    url: `/trips/${trip_id}`,
+    tag: `loc-${trip_id}`,
+  }).catch(() => {});
 
   revalidatePath(`/trips/${trip_id}`);
 }
@@ -170,12 +178,13 @@ export async function toggleLove(id: string, tripId: string) {
   const me = await requireCurrentMember();
   const { data: row, error: e1 } = await db
     .from("locations")
-    .select("loved_by")
+    .select("loved_by, name")
     .eq("id", id)
     .single();
   if (e1) throw e1;
   const loved: string[] = (row?.loved_by ?? []) as string[];
-  const next = loved.includes(me.id)
+  const wasLoved = loved.includes(me.id);
+  const next = wasLoved
     ? loved.filter((x) => x !== me.id)
     : [...loved, me.id];
   const { error } = await db
@@ -183,6 +192,14 @@ export async function toggleLove(id: string, tripId: string) {
     .update({ loved_by: next, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
+  if (!wasLoved && row?.name) {
+    notifyOthers({
+      title: `${me.name.toLowerCase()} kalp attı ♡`,
+      body: row.name as string,
+      url: `/trips/${tripId}`,
+      tag: `love-${id}`,
+    }).catch(() => {});
+  }
   revalidatePath(`/trips/${tripId}`);
 }
 
@@ -269,7 +286,7 @@ export async function deleteLocation(id: string, tripId: string) {
 export async function addLocationPhoto(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string }> {
-  await requireCurrentMember();
+  const me = await requireCurrentMember();
   const id = String(formData.get("location_id") ?? "");
   const tripId = String(formData.get("trip_id") ?? "");
   const file = formData.get("file");
@@ -280,7 +297,7 @@ export async function addLocationPhoto(
     const url = await uploadImage(file, `locations/${id}`);
     const { data: row } = await db
       .from("locations")
-      .select("photo_urls")
+      .select("photo_urls, name")
       .eq("id", id)
       .single();
     const current = (row?.photo_urls ?? []) as string[];
@@ -292,6 +309,14 @@ export async function addLocationPhoto(
       })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
+    if (row?.name) {
+      notifyOthers({
+        title: `${me.name.toLowerCase()} foto attı 📸`,
+        body: row.name as string,
+        url: `/trips/${tripId}`,
+        tag: `photo-${id}`,
+      }).catch(() => {});
+    }
     revalidatePath(`/trips/${tripId}`);
     return { ok: true };
   } catch (e) {

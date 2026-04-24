@@ -8,6 +8,7 @@ import {
   updateMemberName,
   updateMemberAvatar,
 } from "@/app/actions/settings";
+import { PushToggle } from "./push-toggle";
 import type { Member } from "@/lib/types";
 
 export function SettingsClient({
@@ -25,6 +26,10 @@ export function SettingsClient({
             <MemberRow key={m.id} member={m} last={i === members.length - 1} />
           ))}
         </div>
+      </Section>
+
+      <Section title="bildirim">
+        <PushToggle />
       </Section>
 
       <Section title="mühür">
