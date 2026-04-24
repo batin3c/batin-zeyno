@@ -45,6 +45,8 @@ create table if not exists locations (
   rating numeric,
   rating_count integer,
   sort_order integer not null default 0,
+  amount numeric,
+  currency char(3),
   added_by uuid references members(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

@@ -4,6 +4,7 @@ import { requireCurrentMember, getMembers } from "@/lib/dal";
 import { AppHeader } from "@/components/app-header";
 import { TripDetailClient } from "@/components/trip-detail-client";
 import { EditTripButton } from "@/components/edit-trip-dialog";
+import { fetchRatesToTRY } from "@/lib/currency";
 import type { Trip, Location } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,19 @@ export default async function TripPage({
   const tripTyped = trip as Trip;
   const locs = (locations ?? []) as Location[];
 
+  // compute TRY total of tracked expenses
+  const currencyCodes = locs
+    .map((l) => l.currency)
+    .filter((c): c is string => !!c);
+  const rates = await fetchRatesToTRY(currencyCodes);
+  let expenseTRY = 0;
+  for (const l of locs) {
+    if (l.amount != null && l.currency) {
+      const rate = rates[l.currency] ?? null;
+      if (rate) expenseTRY += Number(l.amount) * rate;
+    }
+  }
+
   return (
     <>
       <AppHeader
@@ -47,6 +61,7 @@ export default async function TripPage({
         locations={locs}
         members={members}
         currentMemberId={me.id}
+        expenseTRY={Math.round(expenseTRY)}
       />
     </>
   );

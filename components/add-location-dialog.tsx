@@ -5,6 +5,7 @@ import { Plus, Search, Link2, PenLine, List, Star } from "lucide-react";
 import { useJsApiLoader } from "@react-google-maps/api";
 import { SimpleDialog } from "./simple-dialog";
 import { CATEGORIES, type Category } from "@/lib/types";
+import { CURRENCIES } from "@/lib/currency";
 import {
   createLocation,
   createLocationsBatch,
@@ -29,6 +30,8 @@ type Draft = {
   visit_date: string;
   rating: number | null;
   rating_count: number | null;
+  amount: string;
+  currency: string;
 };
 
 const EMPTY: Draft = {
@@ -42,6 +45,8 @@ const EMPTY: Draft = {
   visit_date: "",
   rating: null,
   rating_count: null,
+  amount: "",
+  currency: "EUR",
 };
 
 export function AddLocationButton({ tripId }: { tripId: string }) {
@@ -99,6 +104,11 @@ function AddLocationDialog({
     fd.set("category", draft.category);
     fd.set("note", draft.note);
     if (draft.visit_date) fd.set("visit_date", draft.visit_date);
+    const amtNum = parseFloat(draft.amount);
+    if (Number.isFinite(amtNum)) {
+      fd.set("amount", String(amtNum));
+      fd.set("currency", draft.currency);
+    }
     startTransition(async () => {
       await createLocation(fd);
       onClose();
@@ -220,16 +230,47 @@ function AddLocationDialog({
         </div>
       </div>
 
-      <div className="mt-5">
-        <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
-          tarih
+      <div className="mt-5 grid grid-cols-2 gap-4">
+        <div>
+          <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+            tarih
+          </div>
+          <input
+            type="date"
+            value={draft.visit_date}
+            onChange={(e) => setDraft({ ...draft, visit_date: e.target.value })}
+            className="field-input"
+          />
         </div>
-        <input
-          type="date"
-          value={draft.visit_date}
-          onChange={(e) => setDraft({ ...draft, visit_date: e.target.value })}
-          className="field-input"
-        />
+        <div>
+          <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+            harcama
+          </div>
+          <div className="flex gap-1">
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              value={draft.amount}
+              onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+              placeholder="0"
+              className="field-input flex-1"
+              style={{ minWidth: 0 }}
+            />
+            <select
+              value={draft.currency}
+              onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
+              className="field-select"
+              style={{ width: "auto", padding: "0.75rem 1.75rem 0.75rem 0.7rem" }}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="mt-5">

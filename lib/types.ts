@@ -56,6 +56,8 @@ export type Location = {
   rating: number | null;
   rating_count: number | null;
   sort_order: number;
+  amount: number | null;
+  currency: string | null;
   added_by: string | null;
   created_at: string;
   updated_at: string;

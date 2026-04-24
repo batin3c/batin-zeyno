@@ -17,11 +17,13 @@ export function TripDetailClient({
   locations,
   members,
   currentMemberId,
+  expenseTRY,
 }: {
   tripId: string;
   locations: Location[];
   members: Member[];
   currentMemberId: string;
+  expenseTRY: number;
 }) {
   const [tab, setTab] = useState<"map" | "list">("list");
   const [cats, setCats] = useState<Set<Category>>(new Set());
@@ -105,6 +107,13 @@ export function TripDetailClient({
               </span>{" "}
               ♡
             </span>
+            {expenseTRY > 0 && (
+              <span className="pill pill-yellow">
+                <span style={{ fontWeight: 700 }}>
+                  ₺{expenseTRY.toLocaleString("tr-TR")}
+                </span>
+              </span>
+            )}
           </div>
         )}
 
