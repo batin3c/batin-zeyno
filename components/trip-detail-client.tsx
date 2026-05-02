@@ -239,7 +239,7 @@ function FilterSortBar({
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
           className="field-select ml-auto"
-          style={{ padding: "0.4rem 2rem 0.4rem 0.75rem", fontSize: "0.82rem", width: "auto" }}
+          style={{ padding: "0.5rem 2rem 0.5rem 0.85rem", fontSize: "0.92rem", width: "auto" }}
         >
           <option value="manual">elle sıra</option>
           <option value="rating">puana göre</option>

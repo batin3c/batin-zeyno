@@ -352,14 +352,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   background: var(--surface);
   color: var(--ink);
-  padding: 0.4rem 0.9rem;
+  padding: 0.5rem 1rem;
   border: 1.75px solid var(--ink);
   border-radius: 999px;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 500;
   cursor: pointer;
   transition: background 140ms ease, transform 140ms ease;
@@ -402,10 +402,10 @@ body {
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.7rem;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: -0.005em;
   border: 1.5px solid var(--ink);

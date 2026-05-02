@@ -291,7 +291,7 @@ function LocationEntry({
             {loc.visit_date && (
               <span
                 className="pill pill-mint"
-                style={{ padding: "0.1rem 0.5rem", fontSize: "0.68rem" }}
+                style={{ padding: "0.18rem 0.6rem", fontSize: "0.78rem" }}
               >
                 {formatVisitDate(loc.visit_date)}
               </span>
@@ -299,7 +299,7 @@ function LocationEntry({
             {loc.amount != null && (
               <span
                 className="pill pill-yellow"
-                style={{ padding: "0.1rem 0.5rem", fontSize: "0.72rem" }}
+                style={{ padding: "0.18rem 0.6rem", fontSize: "0.8rem" }}
               >
                 {formatAmount(loc.amount, loc.currency)}
               </span>
@@ -307,7 +307,7 @@ function LocationEntry({
           </div>
           {loc.address && (
             <p
-              className="text-[0.8rem] mt-0.5 truncate"
+              className="text-[0.88rem] mt-1 truncate"
               style={{ color: "var(--text-muted)" }}
             >
               {loc.address}
@@ -315,10 +315,10 @@ function LocationEntry({
           )}
           {loc.rating !== null && (
             <div
-              className="flex items-center gap-1 mt-1 text-[0.75rem] font-medium"
+              className="flex items-center gap-1 mt-1.5 text-[0.85rem] font-medium"
               style={{ color: "var(--text-muted)" }}
             >
-              <Star size={12} fill="var(--accent-3)" strokeWidth={2} />
+              <Star size={13} fill="var(--accent-3)" strokeWidth={2} />
               <span style={{ color: "var(--ink)", fontWeight: 700 }}>
                 {loc.rating.toFixed(1)}
               </span>
@@ -383,7 +383,7 @@ function LocationEntry({
           className="btn-chip"
           style={{ background: "var(--accent-3-soft)" }}
         >
-          <Navigation size={12} strokeWidth={2} />
+          <Navigation size={14} strokeWidth={2} />
           yol
         </a>
         <a
@@ -397,7 +397,7 @@ function LocationEntry({
           rel="noopener noreferrer"
           className="btn-chip"
         >
-          <ExternalLink size={12} strokeWidth={2} />
+          <ExternalLink size={14} strokeWidth={2} />
           haritalar
         </a>
         <button
@@ -409,14 +409,14 @@ function LocationEntry({
               : undefined
           }
         >
-          <Check size={12} strokeWidth={2.5} />
+          <Check size={14} strokeWidth={2.5} />
           {visited ? "gittik" : "gidilecek"}
         </button>
 
         <div className="ml-auto flex items-center gap-2">
           {addedBy && (
             <span
-              className="text-[0.72rem] font-medium"
+              className="text-[0.82rem] font-medium"
               style={{ color: "var(--text-dim)" }}
             >
               {addedBy.name.toLowerCase()}
@@ -424,10 +424,10 @@ function LocationEntry({
           )}
           {loc.loved_by.length > 0 && (
             <span
-              className="text-[0.72rem] font-bold flex items-center gap-0.5"
+              className="text-[0.82rem] font-bold flex items-center gap-0.5"
               style={{ color: "var(--accent)" }}
             >
-              <Heart size={11} fill="var(--accent)" strokeWidth={0} />
+              <Heart size={13} fill="var(--accent)" strokeWidth={0} />
               {loc.loved_by.length}
             </span>
           )}
