@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { AppHeader } from "@/components/app-header";
 import { TripList } from "@/components/trip-list";
 import { CreateTripButton } from "@/components/create-trip-dialog";
@@ -17,13 +17,14 @@ type HomeStats = {
   cities: number;
 };
 
-async function loadHome(): Promise<{
+async function loadHome(groupId: string): Promise<{
   trips: { trip: Trip; count: number }[];
   stats: HomeStats;
 }> {
   const { data: trips, error } = await db
     .from("trips")
     .select("*")
+    .eq("group_id", groupId)
     .order("sort_order", { ascending: true })
     .order("updated_at", { ascending: false });
   if (error) throw error;
@@ -34,6 +35,8 @@ async function loadHome(): Promise<{
   let visited = 0;
   let loves = 0;
   if (list.length > 0) {
+    // locations is scoped indirectly via trips.group_id; the trip_id .in()
+    // filter already restricts to this group's trips
     const { data: locs } = await db
       .from("locations")
       .select("trip_id, status, loved_by")
@@ -52,10 +55,12 @@ async function loadHome(): Promise<{
   const [{ count: countryCount }, { count: cityCount }] = await Promise.all([
     db
       .from("visited_countries")
-      .select("code", { count: "exact", head: true }),
+      .select("code", { count: "exact", head: true })
+      .eq("group_id", groupId),
     db
       .from("visited_cities")
-      .select("id", { count: "exact", head: true }),
+      .select("id", { count: "exact", head: true })
+      .eq("group_id", groupId),
   ]);
 
   const tripsOut = list.map((t) => ({ trip: t, count: counts.get(t.id) ?? 0 }));
@@ -72,7 +77,8 @@ async function loadHome(): Promise<{
 
 export default async function HomePage() {
   const me = await requireCurrentMember();
-  const { trips, stats } = await loadHome();
+  const groupId = await requireActiveGroupId();
+  const { trips, stats } = await loadHome(groupId);
 
   return (
     <>

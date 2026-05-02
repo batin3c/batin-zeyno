@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { notifyOthers } from "./push";
 import type { ExpenseSplitMode } from "@/lib/types";
 
@@ -28,6 +28,7 @@ export async function createExpense(
   }
 ): Promise<{ ok: boolean; error?: string }> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const title = clean(input.title);
   const currency = clean(input.currency).toUpperCase();
   if (!tripId) return { ok: false, error: "trip yok" };
@@ -71,6 +72,7 @@ export async function createExpense(
 
   const { error } = await db.from("expenses").insert({
     trip_id: tripId,
+    group_id: groupId,
     title,
     amount: input.amount,
     currency,
@@ -102,8 +104,13 @@ export async function deleteExpense(
   tripId: string
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!id || !tripId) return { ok: false, error: "id yok" };
-  const { error } = await db.from("expenses").delete().eq("id", id);
+  const { error } = await db
+    .from("expenses")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/trips/${tripId}`);
   return { ok: true };
@@ -121,6 +128,7 @@ export async function createSettlement(
   }
 ): Promise<{ ok: boolean; error?: string }> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const currency = clean(input.currency).toUpperCase();
   if (!tripId) return { ok: false, error: "trip yok" };
   if (!input.from_member || !input.to_member) {
@@ -136,6 +144,7 @@ export async function createSettlement(
 
   const { error } = await db.from("settlements").insert({
     trip_id: tripId,
+    group_id: groupId,
     from_member: input.from_member,
     to_member: input.to_member,
     amount: input.amount,
@@ -164,8 +173,13 @@ export async function deleteSettlement(
   tripId: string
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!id || !tripId) return { ok: false, error: "id yok" };
-  const { error } = await db.from("settlements").delete().eq("id", id);
+  const { error } = await db
+    .from("settlements")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/trips/${tripId}`);
   return { ok: true };

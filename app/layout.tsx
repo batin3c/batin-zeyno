@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { ThemeScript } from "@/components/theme-script";
 import { PersistentGlobe } from "@/components/persistent-globe";
 import { db } from "@/lib/supabase";
-import { getCurrentMember } from "@/lib/dal";
+import { getCurrentMember, getActiveGroupId } from "@/lib/dal";
 import type {
   VisitedCountry,
   CountryPhoto,
@@ -58,9 +58,13 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-// cached for 60s, invalidated by tag from country/city actions
+// cached for 60s, invalidated by tag from country/city actions.
+// groupId is part of the cache key (unstable_cache hashes function args),
+// so each group has its own cached payload. The tag stays "globe-data" —
+// today mutations bust ALL groups' caches; per-group invalidation can be
+// added later with updateTag.
 const getGlobeData = unstable_cache(
-  async () => {
+  async (groupId: string) => {
     const [
       { data: visited },
       { data: photos },
@@ -70,18 +74,22 @@ const getGlobeData = unstable_cache(
       db
         .from("visited_countries")
         .select("*")
+        .eq("group_id", groupId)
         .order("added_at", { ascending: false }),
       db
         .from("country_photos")
         .select("*")
+        .eq("group_id", groupId)
         .order("added_at", { ascending: false }),
       db
         .from("visited_cities")
         .select("*")
+        .eq("group_id", groupId)
         .order("added_at", { ascending: false }),
       db
         .from("city_photos")
         .select("*")
+        .eq("group_id", groupId)
         .order("added_at", { ascending: false }),
     ]);
     return {
@@ -99,7 +107,10 @@ async function GlobeShell() {
   try {
     const me = await getCurrentMember();
     if (!me) return null;
-    const data = await getGlobeData();
+    const groupId = await getActiveGroupId();
+    // user is between login and group selection — no globe to show yet
+    if (!groupId) return null;
+    const data = await getGlobeData(groupId);
     return (
       <PersistentGlobe
         visited={data.visited}

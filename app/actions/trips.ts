@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { str, num } from "@/lib/form-helpers";
 
@@ -17,6 +17,7 @@ async function uploadCoverIfAny(
 
 export async function createTrip(formData: FormData) {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const name = str(formData.get("name"));
   if (!name) return;
   const description = str(formData.get("description"));
@@ -45,6 +46,7 @@ export async function createTrip(formData: FormData) {
       center_lat,
       center_lng,
       created_by: me.id,
+      group_id: groupId,
     })
     .select("id")
     .single();
@@ -56,6 +58,7 @@ export async function createTrip(formData: FormData) {
 
 export async function updateTrip(formData: FormData) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const id = str(formData.get("id"));
   const name = str(formData.get("name"));
   if (!id || !name) return;
@@ -83,6 +86,7 @@ export async function updateTrip(formData: FormData) {
         .from("trips")
         .select("cover_url")
         .eq("id", id)
+        .eq("group_id", groupId)
         .single();
       const old = row?.cover_url as string | null;
       if (old && old.includes("/baze-media/")) {
@@ -96,7 +100,11 @@ export async function updateTrip(formData: FormData) {
     // ignore upload failure
   }
 
-  const { error } = await db.from("trips").update(patch).eq("id", id);
+  const { error } = await db
+    .from("trips")
+    .update(patch)
+    .eq("id", id)
+    .eq("group_id", groupId);
   if (error) throw error;
 
   revalidatePath("/tatiller");
@@ -105,16 +113,19 @@ export async function updateTrip(formData: FormData) {
 
 export async function removeTripCover(id: string) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const { data: row } = await db
     .from("trips")
     .select("cover_url")
     .eq("id", id)
+    .eq("group_id", groupId)
     .single();
   const old = row?.cover_url as string | null;
   const { error } = await db
     .from("trips")
     .update({ cover_url: null, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("group_id", groupId);
   if (error) throw error;
   if (old && old.includes("/baze-media/")) {
     try {
@@ -129,6 +140,7 @@ export async function reorderTrips(
   orderedIds: string[]
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
     return { ok: false, error: "bozuk istek" };
   }
@@ -137,7 +149,8 @@ export async function reorderTrips(
     const { error } = await db
       .from("trips")
       .update({ sort_order: (i + 1) * 100, updated_at: now })
-      .eq("id", orderedIds[i]);
+      .eq("id", orderedIds[i])
+      .eq("group_id", groupId);
     if (error) return { ok: false, error: error.message };
   }
   revalidatePath("/tatiller");
@@ -146,9 +159,14 @@ export async function reorderTrips(
 
 export async function deleteTrip(formData: FormData) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const id = str(formData.get("id"));
   if (!id) return;
-  const { error } = await db.from("trips").delete().eq("id", id);
+  const { error } = await db
+    .from("trips")
+    .delete()
+    .eq("id", id)
+    .eq("group_id", groupId);
   if (error) throw error;
   revalidatePath("/tatiller");
   redirect("/tatiller");

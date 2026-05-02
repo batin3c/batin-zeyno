@@ -2,13 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { resolveMapsShareUrl } from "@/lib/google-maps";
 import { resolveGoogleList, type GoogleListResult } from "@/lib/google-list";
 import { uploadImage, uploadImageFromUrl, removeByUrl } from "@/lib/storage";
 import { str, num } from "@/lib/form-helpers";
 import { notifyOthers } from "./push";
 import type { Category, LocationStatus } from "@/lib/types";
+
+/**
+ * Verifies that the given trip belongs to the active group. Returns true if
+ * authorised, false otherwise. Used as an upfront guard in every action that
+ * takes a `tripId` from the client — locations are scoped indirectly through
+ * `trips.group_id`.
+ */
+async function tripBelongsToActiveGroup(
+  tripId: string,
+  groupId: string
+): Promise<boolean> {
+  if (!tripId) return false;
+  const { data: trip } = await db
+    .from("trips")
+    .select("group_id")
+    .eq("id", tripId)
+    .maybeSingle();
+  return !!trip && (trip.group_id as string) === groupId;
+}
 
 /**
  * Google JS SDK photo URLs have an `r_url` query param that pins the image
@@ -45,11 +64,13 @@ async function persistGooglePhotos(
 
 export async function createLocation(formData: FormData) {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const trip_id = str(formData.get("trip_id"));
   const name = str(formData.get("name"));
   const lat = num(formData.get("lat"));
   const lng = num(formData.get("lng"));
   if (!trip_id || !name || lat === null || lng === null) return;
+  if (!(await tripBelongsToActiveGroup(trip_id, groupId))) return;
 
   let google_photo_urls: string[] = [];
   const rawPhotos = formData.get("google_photo_urls");
@@ -119,8 +140,12 @@ export async function createLocationsBatch(
   items: BatchLocationInput[]
 ): Promise<{ ok: boolean; inserted: number; error?: string }> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!tripId || !Array.isArray(items) || items.length === 0) {
     return { ok: false, inserted: 0, error: "boş toplu istek" };
+  }
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
+    return { ok: false, inserted: 0, error: "yetkisiz" };
   }
   const valid = items.filter(
     (it) =>
@@ -190,20 +215,26 @@ export async function updateLocationField(
   }>
 ) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) return;
   const { error } = await db
     .from("locations")
     .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) throw error;
   revalidatePath(`/trips/${tripId}`);
 }
 
 export async function toggleLove(id: string, tripId: string) {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) return;
   const { data: row, error: e1 } = await db
     .from("locations")
     .select("loved_by, name")
     .eq("id", id)
+    .eq("trip_id", tripId)
     .single();
   if (e1) throw e1;
   const loved: string[] = (row?.loved_by ?? []) as string[];
@@ -214,7 +245,8 @@ export async function toggleLove(id: string, tripId: string) {
   const { error } = await db
     .from("locations")
     .update({ loved_by: next, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) throw error;
   if (!wasLoved && row?.name) {
     notifyOthers({
@@ -229,10 +261,13 @@ export async function toggleLove(id: string, tripId: string) {
 
 export async function toggleVisited(id: string, tripId: string) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) return;
   const { data: row, error: e1 } = await db
     .from("locations")
     .select("status, visit_date")
     .eq("id", id)
+    .eq("trip_id", tripId)
     .single();
   if (e1) throw e1;
   const next: LocationStatus = row?.status === "visited" ? "want" : "visited";
@@ -243,7 +278,11 @@ export async function toggleVisited(id: string, tripId: string) {
   if (next === "visited" && !row?.visit_date) {
     patch.visit_date = new Date().toISOString().slice(0, 10);
   }
-  const { error } = await db.from("locations").update(patch).eq("id", id);
+  const { error } = await db
+    .from("locations")
+    .update(patch)
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) throw error;
   revalidatePath(`/trips/${tripId}`);
 }
@@ -254,11 +293,14 @@ export async function updateVisitDate(
   date: string | null
 ) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) return;
   const clean = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
   const { error } = await db
     .from("locations")
     .update({ visit_date: clean, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) throw error;
   revalidatePath(`/trips/${tripId}`);
 }
@@ -268,8 +310,12 @@ export async function reorderLocations(
   orderedIds: string[]
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!tripId || !Array.isArray(orderedIds) || orderedIds.length === 0) {
     return { ok: false, error: "bozuk istek" };
+  }
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
+    return { ok: false, error: "yetkisiz" };
   }
   // update each row's sort_order sequentially (small N, acceptable)
   const now = new Date().toISOString();
@@ -289,14 +335,21 @@ export async function reorderLocations(
 
 export async function deleteLocation(id: string, tripId: string) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) return;
   // grab photos so we can remove them from storage too — both user uploads
   // and Google copies live in our bucket now
   const { data: row } = await db
     .from("locations")
     .select("photo_urls, google_photo_urls")
     .eq("id", id)
+    .eq("trip_id", tripId)
     .single();
-  const { error } = await db.from("locations").delete().eq("id", id);
+  const { error } = await db
+    .from("locations")
+    .delete()
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) throw error;
   const all = [
     ...((row?.photo_urls ?? []) as string[]),
@@ -310,11 +363,15 @@ export async function addLocationPhoto(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string }> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const id = String(formData.get("location_id") ?? "");
   const tripId = String(formData.get("trip_id") ?? "");
   const file = formData.get("file");
   if (!id || !tripId || !(file instanceof File)) {
     return { ok: false, error: "istek bozuk" };
+  }
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
+    return { ok: false, error: "yetkisiz" };
   }
   try {
     const url = await uploadImage(file, `locations/${id}`);
@@ -322,6 +379,7 @@ export async function addLocationPhoto(
       .from("locations")
       .select("photo_urls, name")
       .eq("id", id)
+      .eq("trip_id", tripId)
       .single();
     const current = (row?.photo_urls ?? []) as string[];
     const { error } = await db
@@ -330,7 +388,8 @@ export async function addLocationPhoto(
         photo_urls: [...current, url],
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("trip_id", tripId);
     if (error) return { ok: false, error: error.message };
     if (row?.name) {
       notifyOthers({
@@ -353,10 +412,13 @@ export async function removeLocationPhoto(
   url: string
 ) {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) return;
   const { data: row } = await db
     .from("locations")
     .select("photo_urls")
     .eq("id", id)
+    .eq("trip_id", tripId)
     .single();
   const current = (row?.photo_urls ?? []) as string[];
   const next = current.filter((u) => u !== url);
@@ -366,7 +428,8 @@ export async function removeLocationPhoto(
       photo_urls: next,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) throw error;
   try {
     await removeByUrl(url);
@@ -380,13 +443,18 @@ export async function removeLocationPhotosBulk(
   urls: string[]
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!id || !Array.isArray(urls) || urls.length === 0) {
     return { ok: false, error: "boş istek" };
+  }
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
+    return { ok: false, error: "yetkisiz" };
   }
   const { data: row } = await db
     .from("locations")
     .select("photo_urls")
     .eq("id", id)
+    .eq("trip_id", tripId)
     .single();
   const current = (row?.photo_urls ?? []) as string[];
   const removeSet = new Set(urls);
@@ -397,7 +465,8 @@ export async function removeLocationPhotosBulk(
       photo_urls: next,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("trip_id", tripId);
   if (error) return { ok: false, error: error.message };
   await Promise.allSettled(urls.map((u) => removeByUrl(u)));
   revalidatePath(`/trips/${tripId}`);

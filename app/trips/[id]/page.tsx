@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember, getMembers } from "@/lib/dal";
+import {
+  requireCurrentMember,
+  requireActiveGroupId,
+  getActiveGroupMembers,
+} from "@/lib/dal";
 import { AppHeader } from "@/components/app-header";
 import { TripDetailClient } from "@/components/trip-detail-client";
 import { EditTripButton } from "@/components/edit-trip-dialog";
@@ -15,12 +19,16 @@ export default async function TripPage({
 }) {
   const { id } = await params;
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
 
+  // Filtering by group_id here also stops users from seeing another group's
+  // trip by guessing the URL — they get a 404 instead.
   const { data: trip } = await db
     .from("trips")
     .select("*")
     .eq("id", id)
-    .single();
+    .eq("group_id", groupId)
+    .maybeSingle();
   if (!trip) notFound();
 
   const [{ data: locations }, { data: expensesRaw }, { data: settlementsRaw }] =
@@ -31,21 +39,25 @@ export default async function TripPage({
         .eq("trip_id", id)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true }),
+      // group_id filter is defense-in-depth; trip_id already constrains
+      // these to the group since we just verified the trip's group above
       db
         .from("expenses")
         .select("*")
         .eq("trip_id", id)
+        .eq("group_id", groupId)
         .order("spent_at", { ascending: false })
         .order("created_at", { ascending: false }),
       db
         .from("settlements")
         .select("*")
         .eq("trip_id", id)
+        .eq("group_id", groupId)
         .order("settled_at", { ascending: false })
         .order("created_at", { ascending: false }),
     ]);
 
-  const members = await getMembers();
+  const members = await getActiveGroupMembers();
   const tripTyped = trip as Trip;
   const locs = (locations ?? []) as Location[];
   const expenses = (expensesRaw ?? []).map((e) => ({

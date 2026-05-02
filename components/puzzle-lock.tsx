@@ -88,7 +88,7 @@ export function PuzzleLock() {
       const result = await checkPuzzle(attempt);
       if (result.ok) {
         setPhase("ok");
-        router.push("/who");
+        router.push(result.nextPath);
       } else {
         setPhase("wrong");
         setWrongCount((n) => n + 1);
@@ -203,7 +203,7 @@ export function PuzzleLock() {
             className="text-sm anim-fade-in"
             style={{ color: "var(--accent)" }}
           >
-aha girdin
+oldu
           </span>
         )}
         {phase === "idle" && pattern.length === 0 && (

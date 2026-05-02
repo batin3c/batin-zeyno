@@ -4,10 +4,31 @@ export type Member = {
   avatar_url: string | null;
   sort_order: number;
   created_at: string;
+  handle: string | null;
+  pattern_hash: string | null;
+  is_active: boolean;
+  color: string | null;
+};
+
+export type Group = {
+  id: string;
+  name: string;
+  color: string | null;
+  invite_code: string;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type GroupMember = {
+  group_id: string;
+  member_id: string;
+  role: "owner" | "member";
+  joined_at: string;
 };
 
 export type Trip = {
   id: string;
+  group_id: string;
   name: string;
   description: string | null;
   cover_url: string | null;
@@ -72,10 +93,13 @@ export type AppConfig = {
 
 export type SessionPayload = {
   memberId: string;
+  /** active group for this session — switched via /select-group */
+  activeGroupId: string | null;
   expiresAt: number;
 };
 
 export type VisitedCountry = {
+  group_id: string;
   code: string;
   note: string | null;
   added_by: string | null;
@@ -85,6 +109,7 @@ export type VisitedCountry = {
 
 export type CountryPhoto = {
   id: string;
+  group_id: string;
   code: string;
   url: string;
   added_by: string | null;
@@ -95,6 +120,7 @@ import type { GeoJsonGeometry } from "./osm";
 
 export type VisitedCity = {
   id: string;
+  group_id: string;
   name: string;
   country_code: string | null;
   lat: number;
@@ -110,6 +136,7 @@ export type VisitedCity = {
 
 export type CityPhoto = {
   id: string;
+  group_id: string;
   city_id: string;
   url: string;
   added_by: string | null;
@@ -120,6 +147,7 @@ export type ExpenseSplitMode = "half" | "full" | "custom";
 
 export type Expense = {
   id: string;
+  group_id: string;
   trip_id: string;
   title: string;
   amount: number;
@@ -137,6 +165,7 @@ export type Expense = {
 
 export type Settlement = {
   id: string;
+  group_id: string;
   trip_id: string;
   from_member: string;
   to_member: string;

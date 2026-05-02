@@ -2,7 +2,7 @@
 
 import webpush from "web-push";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 
 function configure() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -54,17 +54,27 @@ type PushPayload = {
   tag?: string;
 };
 
-// send a push to every member EXCEPT the one who triggered (so the author
-// doesn't get their own notification)
+// send a push to every member of the ACTIVE GROUP except the one who
+// triggered (so the author doesn't get their own notification, and members
+// of unrelated groups don't get spammed about activity they can't see)
 export async function notifyOthers(
   payload: PushPayload
 ): Promise<{ ok: boolean; sent: number }> {
   if (!configure()) return { ok: false, sent: 0 };
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  const { data: gms } = await db
+    .from("group_members")
+    .select("member_id")
+    .eq("group_id", groupId);
+  const recipientIds = (gms ?? [])
+    .map((g: { member_id: string }) => g.member_id)
+    .filter((id: string) => id !== me.id);
+  if (recipientIds.length === 0) return { ok: true, sent: 0 };
   const { data: subs } = await db
     .from("push_subscriptions")
     .select("*")
-    .neq("member_id", me.id);
+    .in("member_id", recipientIds);
   if (!subs || subs.length === 0) return { ok: true, sent: 0 };
 
   let sent = 0;

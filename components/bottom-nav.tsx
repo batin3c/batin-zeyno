@@ -29,7 +29,14 @@ export function BottomNav() {
   const pathname = usePathname();
 
   // hide on auth screens
-  if (pathname === "/puzzle" || pathname === "/who") return null;
+  if (
+    pathname === "/puzzle" ||
+    pathname === "/select-group" ||
+    pathname === "/yeni-grup" ||
+    pathname === "/katil" ||
+    pathname.startsWith("/katil/")
+  )
+    return null;
 
   const activeFor = (href: string) => {
     if (href === "/") return pathname === "/";

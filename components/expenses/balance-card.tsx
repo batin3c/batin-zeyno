@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { symbolFor } from "@/lib/currency";
+import { balancesToDebtPairs, type Balances } from "@/lib/expenses";
 import type { Member } from "@/lib/types";
 
 export function BalanceCard({
@@ -9,7 +10,7 @@ export function BalanceCard({
   members,
   onSettle,
 }: {
-  balances: Record<string, Record<string, number>>;
+  balances: Balances;
   members: Member[];
   onSettle: (preset: {
     from_member: string;
@@ -18,10 +19,9 @@ export function BalanceCard({
     currency: string;
   }) => void;
 }) {
-  const currencies = Object.keys(balances);
-  const settled = currencies.length === 0;
+  const pairs = balancesToDebtPairs(balances);
 
-  if (settled) {
+  if (pairs.length === 0) {
     return (
       <div
         className="px-4 py-3 mt-4 anim-reveal"
@@ -39,21 +39,16 @@ export function BalanceCard({
     );
   }
 
+  const memberById = (id: string) => members.find((m) => m.id === id);
+
   return (
     <div className="flex flex-col gap-2 mt-4 anim-reveal">
-      {currencies.map((cur) => {
-        const cMap = balances[cur];
-        const memberIds = Object.keys(cMap);
-        // pick the one with positive balance — they're owed money
-        const creditor = memberIds.find((m) => cMap[m] > 0.005);
-        const debtor = memberIds.find((m) => cMap[m] < -0.005);
-        if (!creditor || !debtor) return null;
-        const amount = cMap[creditor];
-        const creditorMember = members.find((m) => m.id === creditor);
-        const debtorMember = members.find((m) => m.id === debtor);
+      {pairs.map((p, i) => {
+        const fromMember = memberById(p.from);
+        const toMember = memberById(p.to);
         return (
           <div
-            key={cur}
+            key={`${p.from}-${p.to}-${p.currency}-${i}`}
             className="px-4 py-3 flex items-center justify-between gap-3"
             style={{
               background: "var(--accent-soft)",
@@ -67,19 +62,19 @@ export function BalanceCard({
                 className="text-[0.92rem] font-semibold tracking-tight truncate"
                 style={{ color: "var(--ink)" }}
               >
-                {debtorMember?.name.toLowerCase() ?? "?"}{" "}
+                {fromMember?.name.toLowerCase() ?? "?"}{" "}
                 <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
                   ↦
                 </span>{" "}
-                {creditorMember?.name.toLowerCase() ?? "?"}
+                {toMember?.name.toLowerCase() ?? "?"}
               </div>
               <div
                 className="font-bold mt-0.5"
                 style={{ fontSize: "1.4rem", color: "var(--ink)", lineHeight: 1 }}
               >
-                {symbolFor(cur)}
-                {amount.toLocaleString("tr-TR", {
-                  minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+                {symbolFor(p.currency)}
+                {p.amount.toLocaleString("tr-TR", {
+                  minimumFractionDigits: p.amount % 1 === 0 ? 0 : 2,
                   maximumFractionDigits: 2,
                 })}
               </div>
@@ -88,10 +83,10 @@ export function BalanceCard({
               type="button"
               onClick={() =>
                 onSettle({
-                  from_member: debtor,
-                  to_member: creditor,
-                  amount,
-                  currency: cur,
+                  from_member: p.from,
+                  to_member: p.to,
+                  amount: p.amount,
+                  currency: p.currency,
                 })
               }
               className="btn-chip flex-shrink-0"

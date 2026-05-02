@@ -42,15 +42,15 @@ export function ExpensesTab({
     null
   );
 
-  const memberIds: [string, string] | null = useMemo(() => {
-    if (members.length < 2) return null;
-    return [members[0].id, members[1].id];
-  }, [members]);
+  const memberIds: string[] = useMemo(
+    () => members.map((m) => m.id),
+    [members]
+  );
 
-  const balances = useMemo(() => {
-    if (!memberIds) return {};
-    return computeBalances(expenses, settlements, memberIds);
-  }, [expenses, settlements, memberIds]);
+  const balances = useMemo(
+    () => computeBalances(expenses, settlements, memberIds),
+    [expenses, settlements, memberIds]
+  );
 
   const feed: FeedItem[] = useMemo(() => {
     const out: FeedItem[] = [
@@ -78,23 +78,25 @@ export function ExpensesTab({
     id ? locations.find((l) => l.id === id) : undefined;
 
   const startManualSettle = () => {
-    if (!memberIds) return;
+    if (members.length < 2) return;
+    const otherId =
+      members.find((m) => m.id !== currentMemberId)?.id ??
+      members[0].id;
     setSettlePreset({
       from_member: currentMemberId,
-      to_member:
-        memberIds[0] === currentMemberId ? memberIds[1] : memberIds[0],
+      to_member: otherId,
       amount: 0,
       currency: "EUR",
     });
   };
 
-  if (members.length < 2) {
+  if (members.length < 1) {
     return (
       <p
         className="text-center mt-8 text-[0.95rem]"
         style={{ color: "var(--text-muted)" }}
       >
-        en az 2 üye gerekli.
+        bu grupta üye yok.
       </p>
     );
   }

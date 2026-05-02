@@ -33,8 +33,11 @@ async function decrypt(token: string): Promise<SessionPayload | null> {
       typeof payload.memberId === "string" &&
       typeof payload.expiresAt === "number"
     ) {
+      const activeGroupId =
+        typeof payload.activeGroupId === "string" ? payload.activeGroupId : null;
       return {
         memberId: payload.memberId,
+        activeGroupId,
         expiresAt: payload.expiresAt,
       };
     }
@@ -44,9 +47,12 @@ async function decrypt(token: string): Promise<SessionPayload | null> {
   }
 }
 
-export async function createSession(memberId: string) {
+export async function createSession(
+  memberId: string,
+  activeGroupId: string | null = null
+) {
   const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  const token = await encrypt({ memberId, expiresAt });
+  const token = await encrypt({ memberId, activeGroupId, expiresAt });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -55,6 +61,19 @@ export async function createSession(memberId: string) {
     path: "/",
     expires: new Date(expiresAt),
   });
+}
+
+/**
+ * Replace the current session cookie with one pointing at a new active group.
+ * Keeps the same member, just updates which group's data they're seeing.
+ */
+export async function setActiveGroup(activeGroupId: string | null) {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (!token) return;
+  const current = await decrypt(token);
+  if (!current) return;
+  await createSession(current.memberId, activeGroupId);
 }
 
 export async function readSession(): Promise<SessionPayload | null> {

@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { iso2 } from "@/lib/form-helpers";
 
@@ -12,12 +12,14 @@ export async function toggleVisitedCountry(
   code: string
 ): Promise<{ ok: boolean; visited: boolean; error?: string }> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const c = iso2(code);
   if (!c) return { ok: false, visited: false, error: "geçersiz kod" };
 
   const { data: existing, error: selErr } = await db
     .from("visited_countries")
     .select("code")
+    .eq("group_id", groupId)
     .eq("code", c)
     .maybeSingle();
   if (selErr) return { ok: false, visited: false, error: selErr.message };
@@ -26,8 +28,13 @@ export async function toggleVisitedCountry(
     const { data: photos } = await db
       .from("country_photos")
       .select("url")
+      .eq("group_id", groupId)
       .eq("code", c);
-    const { error } = await db.from("visited_countries").delete().eq("code", c);
+    const { error } = await db
+      .from("visited_countries")
+      .delete()
+      .eq("group_id", groupId)
+      .eq("code", c);
     if (error) return { ok: false, visited: false, error: error.message };
     await Promise.allSettled(
       ((photos ?? []) as { url: string }[]).map((p) => removeByUrl(p.url))
@@ -40,6 +47,7 @@ export async function toggleVisitedCountry(
   const { error } = await db.from("visited_countries").insert({
     code: c,
     added_by: me.id,
+    group_id: groupId,
   });
   if (error) return { ok: false, visited: false, error: error.message };
   revalidatePath("/"); bust();
@@ -52,6 +60,7 @@ export async function updateCountryNote(
   note: string | null
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const c = iso2(code);
   if (!c) return { ok: false, error: "geçersiz kod" };
   const clean =
@@ -59,6 +68,7 @@ export async function updateCountryNote(
   const { error } = await db
     .from("visited_countries")
     .update({ note: clean, updated_at: new Date().toISOString() })
+    .eq("group_id", groupId)
     .eq("code", c);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/"); bust();
@@ -70,6 +80,7 @@ export async function addCountryPhoto(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string }> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const code = iso2(formData.get("code"));
   const file = formData.get("file");
   if (!code || !(file instanceof File)) {
@@ -80,12 +91,13 @@ export async function addCountryPhoto(
     const { data: existing } = await db
       .from("visited_countries")
       .select("code")
+      .eq("group_id", groupId)
       .eq("code", code)
       .maybeSingle();
     if (!existing) {
       const { error: insErr } = await db
         .from("visited_countries")
-        .insert({ code, added_by: me.id });
+        .insert({ code, added_by: me.id, group_id: groupId });
       if (insErr) return { ok: false, error: insErr.message };
       countryCreated = true;
     }
@@ -95,6 +107,7 @@ export async function addCountryPhoto(
       code,
       url,
       added_by: me.id,
+      group_id: groupId,
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/"); bust();
@@ -109,14 +122,20 @@ export async function removeCountryPhotosBulk(
   ids: string[]
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!Array.isArray(ids) || ids.length === 0) {
     return { ok: false, error: "boş istek" };
   }
   const { data: rows } = await db
     .from("country_photos")
     .select("id, url")
+    .eq("group_id", groupId)
     .in("id", ids);
-  const { error } = await db.from("country_photos").delete().in("id", ids);
+  const { error } = await db
+    .from("country_photos")
+    .delete()
+    .eq("group_id", groupId)
+    .in("id", ids);
   if (error) return { ok: false, error: error.message };
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
@@ -130,13 +149,19 @@ export async function removeCountryPhoto(
   id: string
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   if (!id) return { ok: false, error: "id yok" };
   const { data: row } = await db
     .from("country_photos")
     .select("url")
+    .eq("group_id", groupId)
     .eq("id", id)
     .single();
-  const { error } = await db.from("country_photos").delete().eq("id", id);
+  const { error } = await db
+    .from("country_photos")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("id", id);
   if (error) return { ok: false, error: error.message };
   if (row?.url) {
     try {

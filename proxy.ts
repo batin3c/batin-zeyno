@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decryptFromToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
-const PUBLIC_PATHS = new Set(["/puzzle", "/who"]);
+const PUBLIC_PATHS = new Set(["/puzzle"]);
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

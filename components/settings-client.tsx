@@ -10,17 +10,34 @@ import {
 } from "@/app/actions/settings";
 import { PushToggle } from "./push-toggle";
 import { ThemeToggle } from "./theme-toggle";
-import type { Member } from "@/lib/types";
+import { GroupSection } from "./groups/group-section";
+import type { Member, Group } from "@/lib/types";
 
 export function SettingsClient({
   members,
+  currentMemberId,
+  activeGroup,
+  myGroups,
+  myRole,
   currentPatternLength,
 }: {
   members: Member[];
+  currentMemberId: string;
+  activeGroup: Group | null;
+  myGroups: Group[];
+  myRole: "owner" | "member" | null;
   currentPatternLength: number;
 }) {
   return (
     <div className="flex flex-col gap-10 pt-6">
+      <GroupSection
+        activeGroup={activeGroup}
+        myGroups={myGroups}
+        members={members}
+        myRole={myRole}
+        currentMemberId={currentMemberId}
+      />
+
       <Section title="biz">
         <div className="flex flex-col">
           {members.map((m, i) => (
