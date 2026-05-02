@@ -248,18 +248,20 @@ export function GlobeCanvas({
   );
 
   const polygonSideColor = useCallback(
-    (f: object) =>
-      isCityBoundary(f) ? palette.cityHaloSide : palette.side,
+    (f: object) => (isCityBoundary(f) ? palette.cityHaloSide : palette.border),
     [palette]
   );
 
-  const polygonStrokeColor = useCallback(() => palette.border, [palette.border]);
+  // stroke is a thin gl.LINE — flickers on rotation. Kill it; the extruded
+  // side faces (above) act as the visible border instead.
+  const polygonStrokeColor = useCallback(() => "rgba(0,0,0,0)", []);
 
   const polygonAltitude = useCallback(
     (f: object) => {
       if (isCityBoundary(f)) return 0.06;
       const feat = f as CF;
-      return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.004 : 0.002;
+      // bumped well off the sphere to kill z-fighting with ocean
+      return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.018 : 0.012;
     },
     [visitedCodes]
   );
@@ -267,7 +269,8 @@ export function GlobeCanvas({
   const pointAltitude = useCallback(
     (p: object) => {
       const c = p as CityPoint;
-      return selectedCityId === c.id ? 0 : 0.018;
+      // city dots stay above the visited country cap (0.018)
+      return selectedCityId === c.id ? 0 : 0.028;
     },
     [selectedCityId]
   );
@@ -302,6 +305,10 @@ export function GlobeCanvas({
           ref={globeRef}
           width={size.w}
           height={size.h}
+          rendererConfig={{
+            antialias: true,
+            logarithmicDepthBuffer: true,
+          }}
           backgroundColor="rgba(0,0,0,0)"
           globeMaterial={oceanMaterial}
           showAtmosphere={false}
