@@ -5,9 +5,24 @@ import { usePathname } from "next/navigation";
 import { Briefcase, Globe2, UserCircle2 } from "lucide-react";
 
 const TABS = [
-  { href: "/tatiller", icon: Briefcase, label: "tatiller" },
-  { href: "/", icon: Globe2, label: "ana sayfa" },
-  { href: "/profil", icon: UserCircle2, label: "profil" },
+  {
+    href: "/tatiller",
+    icon: Briefcase,
+    label: "tatiller",
+    color: "var(--accent-3)", // yellow
+  },
+  {
+    href: "/",
+    icon: Globe2,
+    label: "ana sayfa",
+    color: "var(--accent-2)", // mint
+  },
+  {
+    href: "/profil",
+    icon: UserCircle2,
+    label: "profil",
+    color: "var(--accent-4)", // lavender
+  },
 ] as const;
 
 export function BottomNav() {
@@ -44,13 +59,13 @@ export function BottomNav() {
                 width: "72px",
                 height: "60px",
                 background: active ? "var(--accent)" : "var(--surface)",
-                color: "var(--ink)",
+                color: active ? "var(--ink)" : tab.color,
                 border: "2px solid var(--ink)",
                 borderRadius: "16px",
                 boxShadow: active ? "var(--shadow-pop)" : "var(--shadow-pop-sm)",
               }}
             >
-              <Icon size={26} strokeWidth={2.25} />
+              <Icon size={26} strokeWidth={2.5} />
             </Link>
           );
         })}
