@@ -53,7 +53,7 @@ export default async function TripPage({
       <AppHeader
         member={me}
         title={tripTyped.name}
-        back="/"
+        back="/tatiller"
         right={<EditTripButton trip={tripTyped} />}
       />
       <TripDetailClient

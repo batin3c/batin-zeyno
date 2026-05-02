@@ -50,7 +50,7 @@ export async function createTrip(formData: FormData) {
     .single();
   if (error) throw error;
 
-  revalidatePath("/");
+  revalidatePath("/tatiller");
   redirect(`/trips/${data.id}`);
 }
 
@@ -99,7 +99,7 @@ export async function updateTrip(formData: FormData) {
   const { error } = await db.from("trips").update(patch).eq("id", id);
   if (error) throw error;
 
-  revalidatePath("/");
+  revalidatePath("/tatiller");
   revalidatePath(`/trips/${id}`);
 }
 
@@ -121,7 +121,7 @@ export async function removeTripCover(id: string) {
       await removeByUrl(old);
     } catch {}
   }
-  revalidatePath("/");
+  revalidatePath("/tatiller");
   revalidatePath(`/trips/${id}`);
 }
 
@@ -140,7 +140,7 @@ export async function reorderTrips(
       .eq("id", orderedIds[i]);
     if (error) return { ok: false, error: error.message };
   }
-  revalidatePath("/");
+  revalidatePath("/tatiller");
   return { ok: true };
 }
 
@@ -150,6 +150,6 @@ export async function deleteTrip(formData: FormData) {
   if (!id) return;
   const { error } = await db.from("trips").delete().eq("id", id);
   if (error) throw error;
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/tatiller");
+  redirect("/tatiller");
 }

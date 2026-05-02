@@ -30,8 +30,8 @@ export async function toggleVisitedCountry(
     await Promise.allSettled(
       ((photos ?? []) as { url: string }[]).map((p) => removeByUrl(p.url))
     );
-    revalidatePath("/globe");
-    revalidatePath("/"); // country count changed → home stats
+    revalidatePath("/");
+    revalidatePath("/tatiller"); // country count changed → home stats
     return { ok: true, visited: false };
   }
 
@@ -40,8 +40,8 @@ export async function toggleVisitedCountry(
     added_by: me.id,
   });
   if (error) return { ok: false, visited: false, error: error.message };
-  revalidatePath("/globe");
-  revalidatePath("/"); // country count changed → home stats
+  revalidatePath("/");
+  revalidatePath("/tatiller"); // country count changed → home stats
   return { ok: true, visited: true };
 }
 
@@ -59,7 +59,7 @@ export async function updateCountryNote(
     .update({ note: clean, updated_at: new Date().toISOString() })
     .eq("code", c);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/globe");
+  revalidatePath("/");
   // note doesn't affect any count → no home revalidate
   return { ok: true };
 }
@@ -95,8 +95,8 @@ export async function addCountryPhoto(
       added_by: me.id,
     });
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/globe");
-    if (countryCreated) revalidatePath("/");
+    revalidatePath("/");
+    if (countryCreated) revalidatePath("/tatiller");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -119,7 +119,7 @@ export async function removeCountryPhotosBulk(
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
-  revalidatePath("/globe");
+  revalidatePath("/");
   // photo deletion doesn't affect home stats
   return { ok: true };
 }
@@ -141,6 +141,6 @@ export async function removeCountryPhoto(
       await removeByUrl(row.url);
     } catch {}
   }
-  revalidatePath("/globe");
+  revalidatePath("/");
   return { ok: true };
 }

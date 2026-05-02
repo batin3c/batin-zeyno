@@ -18,3 +18,27 @@ export function LogoutButton() {
     </button>
   );
 }
+
+export function LogoutLargeButton() {
+  const [pending, startTransition] = useTransition();
+  return (
+    <button
+      onClick={() => startTransition(() => logout())}
+      disabled={pending}
+      className="flex items-center justify-center gap-2 w-full font-bold disabled:opacity-50"
+      style={{
+        background: "var(--danger)",
+        color: "#fff",
+        border: "2px solid var(--ink)",
+        borderRadius: "14px",
+        padding: "0.85rem 1rem",
+        fontSize: "1rem",
+        boxShadow: "var(--shadow-pop)",
+      }}
+      aria-label="s'tir"
+    >
+      <LogOut size={18} strokeWidth={2.5} />
+      s&apos;tir
+    </button>
+  );
+}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, JetBrains_Mono } from "next/font/google";
+import { BottomNav } from "@/components/bottom-nav";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -52,7 +53,10 @@ export default function RootLayout({
       lang="tr"
       className={`${fredoka.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <BottomNav />
+      </body>
     </html>
   );
 }
