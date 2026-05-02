@@ -27,10 +27,10 @@ export function BottomNav() {
       style={{
         background: "var(--bg)",
         borderTop: "2px solid var(--ink)",
-        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
       }}
     >
-      <div className="max-w-3xl mx-auto flex items-center justify-around px-3 pt-2">
+      <div className="max-w-3xl mx-auto flex items-center justify-around px-4 pt-3.5">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeFor(tab.href);
@@ -39,18 +39,18 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               aria-label={tab.label}
-              className="flex items-center justify-center transition-transform active:scale-95"
+              className="flex items-center justify-center transition-transform active:translate-x-[2px] active:translate-y-[2px]"
               style={{
-                width: "60px",
-                height: "52px",
-                background: active ? "var(--accent)" : "transparent",
+                width: "72px",
+                height: "60px",
+                background: active ? "var(--accent)" : "var(--surface)",
                 color: "var(--ink)",
-                border: active ? "2px solid var(--ink)" : "2px solid transparent",
+                border: "2px solid var(--ink)",
                 borderRadius: "16px",
-                boxShadow: active ? "var(--shadow-pop-sm)" : "none",
+                boxShadow: active ? "var(--shadow-pop)" : "var(--shadow-pop-sm)",
               }}
             >
-              <Icon size={24} strokeWidth={2.25} />
+              <Icon size={26} strokeWidth={2.25} />
             </Link>
           );
         })}

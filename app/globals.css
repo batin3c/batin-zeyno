@@ -145,7 +145,7 @@ body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   letter-spacing: -0.002em;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
 }
 
 .no-select {
@@ -491,14 +491,14 @@ body {
 }
 
 /* ---------- safe area (iOS home indicator) ---------- */
-/* FAB sits above bottom nav (≈ 64px tall + safe inset) */
+/* FAB sits above bottom nav (≈ 88px tall + safe inset) */
 .safe-bottom {
-  bottom: calc(72px + max(1rem, env(safe-area-inset-bottom)));
+  bottom: calc(92px + max(1rem, env(safe-area-inset-bottom)));
 }
 
 /* main content needs room for the fixed bottom nav */
 .has-bottom-nav {
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
 }
 
 /* ---------- date input — native picker, toony outer ---------- */
