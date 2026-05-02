@@ -115,3 +115,33 @@ export type CityPhoto = {
   added_by: string | null;
   added_at: string;
 };
+
+export type ExpenseSplitMode = "half" | "full";
+
+export type Expense = {
+  id: string;
+  trip_id: string;
+  title: string;
+  amount: number;
+  currency: string;
+  paid_by: string;
+  split_mode: ExpenseSplitMode;
+  location_id: string | null;
+  spent_at: string;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type Settlement = {
+  id: string;
+  trip_id: string;
+  from_member: string;
+  to_member: string;
+  amount: number;
+  currency: string;
+  settled_at: string;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+};

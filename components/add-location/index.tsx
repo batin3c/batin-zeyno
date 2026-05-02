@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { Plus, Search, Link2, PenLine, List, Star } from "lucide-react";
 import { SimpleDialog } from "../simple-dialog";
 import { CATEGORIES, type Category } from "@/lib/types";
-import { CURRENCIES } from "@/lib/currency";
 import { createLocation } from "@/app/actions/locations";
 import { EMPTY, draftToFormData, formatCount, type Draft } from "./draft";
 import { PlaceSearch } from "./place-search";
@@ -118,56 +117,18 @@ function AddLocationDialog({
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <div>
-              <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
-                tarih
-              </div>
-              <input
-                type="date"
-                value={draft.visit_date}
-                onChange={(e) =>
-                  setDraft({ ...draft, visit_date: e.target.value })
-                }
-                className="field-input"
-              />
+          <div className="mt-5">
+            <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
+              tarih
             </div>
-            <div>
-              <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
-                harcama
-              </div>
-              <div className="flex gap-1">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  value={draft.amount}
-                  onChange={(e) =>
-                    setDraft({ ...draft, amount: e.target.value })
-                  }
-                  placeholder="0"
-                  className="field-input flex-1"
-                  style={{ minWidth: 0 }}
-                />
-                <select
-                  value={draft.currency}
-                  onChange={(e) =>
-                    setDraft({ ...draft, currency: e.target.value })
-                  }
-                  className="field-select"
-                  style={{
-                    width: "auto",
-                    padding: "0.75rem 1.75rem 0.75rem 0.7rem",
-                  }}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.symbol}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <input
+              type="date"
+              value={draft.visit_date}
+              onChange={(e) =>
+                setDraft({ ...draft, visit_date: e.target.value })
+              }
+              className="field-input"
+            />
           </div>
 
           <div className="mt-5">

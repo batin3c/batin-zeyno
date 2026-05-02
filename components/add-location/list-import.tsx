@@ -9,12 +9,15 @@ import {
   type BatchLocationInput,
 } from "@/app/actions/locations";
 import type { GoogleListPlace } from "@/lib/google-list";
+import { pickCategoryFromGoogleTypes } from "@/lib/category-map";
+import type { Category } from "@/lib/types";
 import { LIBRARIES, formatCount } from "./draft";
 
 type EnrichedPlace = GoogleListPlace & {
   rating: number | null;
   rating_count: number | null;
   google_photo_urls: string[];
+  category: Category;
   selected: boolean;
 };
 
@@ -56,6 +59,7 @@ export function ListImport({
         rating: null,
         rating_count: null,
         google_photo_urls: [],
+        category: "other",
         selected: true,
       }));
       setPlaces(base);
@@ -73,7 +77,7 @@ export function ListImport({
     const svc = new google.maps.places.PlacesService(
       document.createElement("div")
     );
-    const detailsFields = ["rating", "user_ratings_total", "photos"];
+    const detailsFields = ["rating", "user_ratings_total", "photos", "types"];
     const enrichOne = (place: EnrichedPlace) =>
       new Promise<void>((resolve) => {
         if (!place.google_place_id) {
@@ -107,6 +111,7 @@ export function ListImport({
                 typeof res.user_ratings_total === "number"
                   ? res.user_ratings_total
                   : null;
+              const nextCategory = pickCategoryFromGoogleTypes(res.types);
               setPlaces((prev) =>
                 prev
                   ? prev.map((p) =>
@@ -116,6 +121,7 @@ export function ListImport({
                             rating: nextRating,
                             rating_count: nextCount,
                             google_photo_urls: photoUrls,
+                            category: nextCategory,
                           }
                         : p
                     )
@@ -163,6 +169,7 @@ export function ListImport({
       google_photo_urls: p.google_photo_urls,
       rating: p.rating,
       rating_count: p.rating_count,
+      category: p.category,
     }));
     startTransition(async () => {
       const r = await createLocationsBatch(tripId, payload);

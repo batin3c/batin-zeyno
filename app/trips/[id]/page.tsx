@@ -4,8 +4,7 @@ import { requireCurrentMember, getMembers } from "@/lib/dal";
 import { AppHeader } from "@/components/app-header";
 import { TripDetailClient } from "@/components/trip-detail-client";
 import { EditTripButton } from "@/components/edit-trip-dialog";
-import { fetchRatesToTRY } from "@/lib/currency";
-import type { Trip, Location } from "@/lib/types";
+import type { Trip, Location, Expense, Settlement } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,29 +23,39 @@ export default async function TripPage({
     .single();
   if (!trip) notFound();
 
-  const { data: locations } = await db
-    .from("locations")
-    .select("*")
-    .eq("trip_id", id)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  const [{ data: locations }, { data: expensesRaw }, { data: settlementsRaw }] =
+    await Promise.all([
+      db
+        .from("locations")
+        .select("*")
+        .eq("trip_id", id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      db
+        .from("expenses")
+        .select("*")
+        .eq("trip_id", id)
+        .order("spent_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+      db
+        .from("settlements")
+        .select("*")
+        .eq("trip_id", id)
+        .order("settled_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+    ]);
 
   const members = await getMembers();
   const tripTyped = trip as Trip;
   const locs = (locations ?? []) as Location[];
-
-  // compute TRY total of tracked expenses
-  const currencyCodes = locs
-    .map((l) => l.currency)
-    .filter((c): c is string => !!c);
-  const rates = await fetchRatesToTRY(currencyCodes);
-  let expenseTRY = 0;
-  for (const l of locs) {
-    if (l.amount != null && l.currency) {
-      const rate = rates[l.currency] ?? null;
-      if (rate) expenseTRY += Number(l.amount) * rate;
-    }
-  }
+  const expenses = (expensesRaw ?? []).map((e) => ({
+    ...(e as Expense),
+    amount: Number((e as Expense).amount),
+  })) as Expense[];
+  const settlements = (settlementsRaw ?? []).map((s) => ({
+    ...(s as Settlement),
+    amount: Number((s as Settlement).amount),
+  })) as Settlement[];
 
   return (
     <>
@@ -61,7 +70,8 @@ export default async function TripPage({
         locations={locs}
         members={members}
         currentMemberId={me.id}
-        expenseTRY={Math.round(expenseTRY)}
+        expenses={expenses}
+        settlements={settlements}
       />
     </>
   );

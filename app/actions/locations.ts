@@ -67,13 +67,6 @@ export async function createLocation(formData: FormData) {
   const rating_count =
     ratingCountRaw !== null ? Math.round(ratingCountRaw) : null;
 
-  const amount = num(formData.get("amount"));
-  const currencyRaw = str(formData.get("currency"));
-  const currency =
-    currencyRaw && /^[A-Za-z]{3}$/.test(currencyRaw)
-      ? currencyRaw.toUpperCase()
-      : null;
-
   const persisted_google_photo_urls = await persistGooglePhotos(
     google_photo_urls,
     `google/${trip_id}`
@@ -93,8 +86,6 @@ export async function createLocation(formData: FormData) {
     google_photo_urls: persisted_google_photo_urls,
     rating,
     rating_count,
-    amount,
-    currency,
     status: "want" as LocationStatus,
     added_by: me.id,
   });

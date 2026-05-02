@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useJsApiLoader } from "@react-google-maps/api";
+import { pickCategoryFromGoogleTypes } from "@/lib/category-map";
 import { LIBRARIES, type Draft } from "./draft";
 
 export function PlaceSearch({
@@ -33,6 +34,7 @@ export function PlaceSearch({
         "photos",
         "rating",
         "user_ratings_total",
+        "types",
       ],
     });
     const listener = ac.addListener("place_changed", () => {
@@ -63,6 +65,7 @@ export function PlaceSearch({
           typeof p.user_ratings_total === "number"
             ? p.user_ratings_total
             : null,
+        category: pickCategoryFromGoogleTypes(p.types),
       });
     });
     return () => {

@@ -28,7 +28,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Location, Member } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
-import { formatAmount } from "@/lib/currency";
 import { directionsUrl, openInMapsUrl } from "@/lib/google-maps";
 import {
   toggleLove,
@@ -294,14 +293,6 @@ function LocationEntry({
                 style={{ padding: "0.18rem 0.6rem", fontSize: "0.78rem" }}
               >
                 {formatVisitDate(loc.visit_date)}
-              </span>
-            )}
-            {loc.amount != null && (
-              <span
-                className="pill pill-yellow"
-                style={{ padding: "0.18rem 0.6rem", fontSize: "0.8rem" }}
-              >
-                {formatAmount(loc.amount, loc.currency)}
               </span>
             )}
           </div>

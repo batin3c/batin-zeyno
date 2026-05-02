@@ -15,8 +15,6 @@ export type Draft = {
   visit_date: string;
   rating: number | null;
   rating_count: number | null;
-  amount: string;
-  currency: string;
 };
 
 export const EMPTY: Draft = {
@@ -30,8 +28,6 @@ export const EMPTY: Draft = {
   visit_date: "",
   rating: null,
   rating_count: null,
-  amount: "",
-  currency: "EUR",
 };
 
 export function formatCount(n: number): string {
@@ -59,10 +55,5 @@ export function draftToFormData(tripId: string, draft: Draft): FormData {
   fd.set("category", draft.category);
   fd.set("note", draft.note);
   if (draft.visit_date) fd.set("visit_date", draft.visit_date);
-  const amtNum = parseFloat(draft.amount);
-  if (Number.isFinite(amtNum)) {
-    fd.set("amount", String(amtNum));
-    fd.set("currency", draft.currency);
-  }
   return fd;
 }
