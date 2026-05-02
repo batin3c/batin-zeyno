@@ -2,6 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Fredoka, JetBrains_Mono } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { ThemeScript } from "@/components/theme-script";
+import { PersistentGlobe } from "@/components/persistent-globe";
+import { db } from "@/lib/supabase";
+import { getCurrentMember } from "@/lib/dal";
+import type {
+  VisitedCountry,
+  CountryPhoto,
+  VisitedCity,
+  CityPhoto,
+} from "@/lib/types";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -47,11 +56,34 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+async function loadGlobeData() {
+  const [
+    { data: visited },
+    { data: photos },
+    { data: cities },
+    { data: cityPhotos },
+  ] = await Promise.all([
+    db.from("visited_countries").select("*").order("added_at", { ascending: false }),
+    db.from("country_photos").select("*").order("added_at", { ascending: false }),
+    db.from("visited_cities").select("*").order("added_at", { ascending: false }),
+    db.from("city_photos").select("*").order("added_at", { ascending: false }),
+  ]);
+  return {
+    visited: (visited ?? []) as VisitedCountry[],
+    photos: (photos ?? []) as CountryPhoto[],
+    cities: (cities ?? []) as VisitedCity[],
+    cityPhotos: (cityPhotos ?? []) as CityPhoto[],
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const me = await getCurrentMember();
+  const globeData = me ? await loadGlobeData() : null;
+
   return (
     <html
       lang="tr"
@@ -62,6 +94,14 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col">
+        {globeData && (
+          <PersistentGlobe
+            visited={globeData.visited}
+            photos={globeData.photos}
+            cities={globeData.cities}
+            cityPhotos={globeData.cityPhotos}
+          />
+        )}
         {children}
         <BottomNav />
       </body>

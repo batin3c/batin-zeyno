@@ -21,7 +21,7 @@ const GlobeCanvas = dynamic(
     loading: () => (
       <div
         className="w-full flex items-center justify-center"
-        style={{ height: "calc(100dvh - 64px)", color: "var(--text-muted)" }}
+        style={{ height: "100%", color: "var(--text-muted)" }}
       >
         <span className="label">dünya yükleniyor…</span>
       </div>
@@ -163,7 +163,7 @@ export function GlobeClient({
       ) : (
         <div
           className="max-w-3xl w-full mx-auto px-4 pt-4 pb-24"
-          style={{ minHeight: "calc(100dvh - 64px)" }}
+          style={{ minHeight: "100%" }}
         >
           <AlbumGrid
             cities={cities}
