@@ -1,12 +1,15 @@
 export type Member = {
   id: string;
   name: string;
+  surname: string | null;
+  email: string;
   avatar_url: string | null;
   sort_order: number;
   created_at: string;
-  handle: string | null;
   is_active: boolean;
   color: string | null;
+  // password_hash is intentionally NOT in this type — it's server-only and
+  // never sent down to the client. Server reads via raw db.from('members').
 };
 
 export type Group = {

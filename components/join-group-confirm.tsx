@@ -9,31 +9,17 @@ type Props = {
   inviteCode: string;
   groupName: string;
   groupColor: string | null;
-  needsMemberName?: boolean;
 };
 
-export function JoinGroupConfirm({
-  inviteCode,
-  groupName,
-  groupColor,
-  needsMemberName = false,
-}: Props) {
-  const [memberName, setMemberName] = useState("");
+export function JoinGroupConfirm({ inviteCode, groupName, groupColor }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
   const join = () => {
-    if (needsMemberName && !memberName.trim()) {
-      setError("adın boş");
-      return;
-    }
     setError(null);
     startTransition(async () => {
-      const result = await joinGroup({
-        inviteCode,
-        memberName: needsMemberName ? memberName.trim() : undefined,
-      });
+      const result = await joinGroup({ inviteCode });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -46,10 +32,7 @@ export function JoinGroupConfirm({
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-sm anim-reveal">
       <div className="text-center">
-        <p
-          className="label mb-3"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <p className="label mb-3" style={{ color: "var(--text-muted)" }}>
           davet
         </p>
         <h1
@@ -92,25 +75,6 @@ export function JoinGroupConfirm({
           {groupName}
         </span>
       </div>
-
-      {needsMemberName && (
-        <div className="w-full flex flex-col gap-2">
-          <label className="label" htmlFor="join-name">
-            adın
-          </label>
-          <input
-            id="join-name"
-            className="field-input"
-            type="text"
-            value={memberName}
-            onChange={(e) => setMemberName(e.target.value)}
-            placeholder="adın"
-            maxLength={40}
-            disabled={pending}
-            autoFocus
-          />
-        </div>
-      )}
 
       {error && (
         <p

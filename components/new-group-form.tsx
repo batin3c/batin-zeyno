@@ -14,13 +14,8 @@ const COLORS = [
   "#ef476f",
 ];
 
-export function NewGroupForm({
-  needsMemberName = false,
-}: {
-  needsMemberName?: boolean;
-}) {
+export function NewGroupForm() {
   const [name, setName] = useState("");
-  const [memberName, setMemberName] = useState("");
   const [color, setColor] = useState(COLORS[0]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -32,17 +27,9 @@ export function NewGroupForm({
       setError("grup ismi boş");
       return;
     }
-    if (needsMemberName && !memberName.trim()) {
-      setError("adın boş");
-      return;
-    }
     setError(null);
     startTransition(async () => {
-      const result = await createGroup({
-        name: trimmed,
-        color,
-        memberName: needsMemberName ? memberName.trim() : undefined,
-      });
+      const result = await createGroup({ name: trimmed, color });
       if (result && !result.ok) setError(result.error);
     });
   };
@@ -65,24 +52,6 @@ export function NewGroupForm({
           disabled={pending}
         />
       </div>
-
-      {needsMemberName && (
-        <div className="flex flex-col gap-2">
-          <label className="label" htmlFor="member-name">
-            senin adın
-          </label>
-          <input
-            id="member-name"
-            className="field-input"
-            type="text"
-            value={memberName}
-            onChange={(e) => setMemberName(e.target.value)}
-            placeholder="adın"
-            maxLength={40}
-            disabled={pending}
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-3">
         <span className="label">renk</span>

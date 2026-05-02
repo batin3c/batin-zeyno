@@ -11,7 +11,7 @@ export const getSession = cache(async () => {
 
 export const requireSession = cache(async () => {
   const session = await getSession();
-  if (!session) redirect("/pick-member");
+  if (!session) redirect("/giris");
   return session;
 });
 
@@ -39,7 +39,7 @@ export const getCurrentMember = cache(async (): Promise<Member | null> => {
 
 export const requireCurrentMember = cache(async (): Promise<Member> => {
   const member = await getCurrentMember();
-  if (!member) redirect("/pick-member");
+  if (!member) redirect("/giris");
   return member;
 });
 

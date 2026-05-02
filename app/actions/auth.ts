@@ -2,57 +2,116 @@
 
 import { redirect } from "next/navigation";
 import { createSession, destroySession, setActiveGroup } from "@/lib/session";
-import { requireCurrentMember, getCurrentMember } from "@/lib/dal";
+import { requireCurrentMember } from "@/lib/dal";
 import { db } from "@/lib/supabase";
+import { hashPassword, verifyPassword } from "@/lib/password";
+import { makeInviteCode } from "@/lib/invite";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD = 6;
+
+function clean(s: unknown): string {
+  return typeof s === "string" ? s.trim() : "";
+}
 
 /**
- * Create a brand-new account (member row) and sign in as it. No group is
- * attached — the new account lands on /yeni-grup so they can either create
- * a group or paste an invite code.
- *
- * Note: name-based sign-in has been removed. Returning users on a new
- * device must come back via an invite code (see `joinGroup`). Real email
- * magic-link auth lands in a later phase.
+ * Brand-new account: email + password + name + surname.
+ * On success, sets the session and redirects to /yeni-grup so the new user
+ * can either spin up a group or paste an invite code.
  */
-export async function createAccount(name: string): Promise<{
-  ok: boolean;
-  error?: string;
-}> {
-  const trimmed = (name ?? "").trim();
-  if (!trimmed) return { ok: false, error: "adın boş" };
-  if (trimmed.length > 40) return { ok: false, error: "ad çok uzun" };
+export async function signUp(input: {
+  email: string;
+  password: string;
+  name: string;
+  surname: string;
+}): Promise<{ ok: false; error: string } | never> {
+  const email = clean(input.email).toLowerCase();
+  const password = typeof input.password === "string" ? input.password : "";
+  const name = clean(input.name);
+  const surname = clean(input.surname);
 
-  const baseHandle =
-    trimmed
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[^\w]+/g, "_")
-      .slice(0, 30) || "uye";
-
-  // handles must be unique — append a numeric suffix if needed
-  let handle = baseHandle;
-  for (let i = 0; i < 25; i++) {
-    const { data: clash } = await db
-      .from("members")
-      .select("id")
-      .eq("handle", handle)
-      .maybeSingle();
-    if (!clash) break;
-    handle = `${baseHandle}_${Math.floor(Math.random() * 10000)}`;
+  if (!EMAIL_RE.test(email)) return { ok: false, error: "geçersiz e-posta" };
+  if (password.length < MIN_PASSWORD) {
+    return { ok: false, error: `şifre en az ${MIN_PASSWORD} karakter` };
   }
+  if (!name) return { ok: false, error: "isim boş" };
+  if (name.length > 40) return { ok: false, error: "isim çok uzun" };
+  if (!surname) return { ok: false, error: "soyisim boş" };
+  if (surname.length > 40) return { ok: false, error: "soyisim çok uzun" };
 
+  // case-insensitive email uniqueness via the lower(email) unique index
+  const { data: clash } = await db
+    .from("members")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+  if (clash) return { ok: false, error: "bu e-posta zaten kayıtlı" };
+
+  const password_hash = hashPassword(password);
   const { data, error } = await db
     .from("members")
-    .insert({ name: trimmed, handle, is_active: true })
+    .insert({
+      email,
+      password_hash,
+      name,
+      surname,
+      is_active: true,
+    })
     .select("id")
     .single();
   if (error || !data) {
-    return { ok: false, error: error?.message ?? "üye oluşturulamadı" };
+    // race on the unique index → caught here
+    if ((error as { code?: string } | null)?.code === "23505") {
+      return { ok: false, error: "bu e-posta zaten kayıtlı" };
+    }
+    return { ok: false, error: error?.message ?? "hesap oluşturulamadı" };
   }
   const memberId = (data as { id: string }).id;
-
   await createSession(memberId, null);
   redirect("/yeni-grup");
+}
+
+/**
+ * Sign in: email + password. Active-group is auto-set to the user's first
+ * group (oldest joined) so they land somewhere; if they have no groups yet,
+ * goes to /yeni-grup.
+ */
+export async function signIn(input: {
+  email: string;
+  password: string;
+}): Promise<{ ok: false; error: string } | never> {
+  const email = clean(input.email).toLowerCase();
+  const password = typeof input.password === "string" ? input.password : "";
+  if (!EMAIL_RE.test(email) || password.length === 0) {
+    return { ok: false, error: "e-posta veya şifre yanlış" };
+  }
+
+  const { data } = await db
+    .from("members")
+    .select("id, password_hash, is_active")
+    .ilike("email", email)
+    .maybeSingle();
+
+  // generic error for both "no such user" and "wrong password" — don't leak
+  // which emails exist
+  if (!data || !data.is_active) {
+    return { ok: false, error: "e-posta veya şifre yanlış" };
+  }
+  const row = data as { id: string; password_hash: string; is_active: boolean };
+  if (!verifyPassword(password, row.password_hash)) {
+    return { ok: false, error: "e-posta veya şifre yanlış" };
+  }
+
+  const { data: link } = await db
+    .from("group_members")
+    .select("group_id")
+    .eq("member_id", row.id)
+    .order("joined_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const activeGroupId = (link as { group_id?: string } | null)?.group_id ?? null;
+  await createSession(row.id, activeGroupId);
+  redirect(activeGroupId ? "/" : "/yeni-grup");
 }
 
 /**
@@ -72,53 +131,19 @@ export async function selectGroup(groupId: string) {
   redirect("/");
 }
 
-const INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-function makeInviteCode(): string {
-  let out = "";
-  for (let i = 0; i < 6; i++) {
-    out += INVITE_ALPHABET[Math.floor(Math.random() * INVITE_ALPHABET.length)];
-  }
-  return out;
-}
-
 /**
- * Create a new group. Anonymous-friendly: if no current member, a new one
- * is created from `memberName`.
+ * Create a new group. Requires an authenticated session — anonymous group
+ * creation is gone now that auth is real.
  */
 export async function createGroup(input: {
   name: string;
   color: string;
-  memberName?: string;
 }): Promise<{ ok: false; error: string } | never> {
-  const trimmedName = (input.name ?? "").trim();
+  const me = await requireCurrentMember();
+  const trimmedName = clean(input.name);
   if (!trimmedName) return { ok: false, error: "grup ismi boş" };
   if (trimmedName.length > 60) return { ok: false, error: "grup ismi çok uzun" };
-  const safeColor = (input.color ?? "").trim() || "#ff6b9d";
-
-  const existingMe = await getCurrentMember();
-  let ownerId: string;
-  if (existingMe) {
-    ownerId = existingMe.id;
-  } else {
-    const memberName = (input.memberName ?? "").trim();
-    if (!memberName) return { ok: false, error: "adın boş" };
-    const handle =
-      memberName
-        .toLowerCase()
-        .normalize("NFKD")
-        .replace(/[^\w]+/g, "_")
-        .slice(0, 30) || "uye";
-    const { data: newMember, error: memberErr } = await db
-      .from("members")
-      .insert({ name: memberName, handle, is_active: true })
-      .select("id")
-      .single();
-    if (memberErr || !newMember) {
-      return { ok: false, error: memberErr?.message ?? "üye oluşturulamadı" };
-    }
-    ownerId = (newMember as { id: string }).id;
-  }
+  const safeColor = clean(input.color) || "#ff6b9d";
 
   let groupId: string | null = null;
   let lastError: string | null = null;
@@ -130,7 +155,7 @@ export async function createGroup(input: {
         name: trimmedName,
         color: safeColor,
         invite_code: code,
-        created_by: ownerId,
+        created_by: me.id,
       })
       .select("id")
       .single();
@@ -145,23 +170,23 @@ export async function createGroup(input: {
 
   const { error: linkError } = await db.from("group_members").insert({
     group_id: groupId,
-    member_id: ownerId,
+    member_id: me.id,
     role: "owner",
   });
   if (linkError) return { ok: false, error: linkError.message };
 
-  await createSession(ownerId, groupId);
+  await setActiveGroup(groupId);
   redirect("/");
 }
 
 /**
- * Join a group by invite code. Anonymous-friendly.
+ * Join a group by invite code. Requires an authenticated session.
  */
 export async function joinGroup(input: {
   inviteCode: string;
-  memberName?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const code = (input.inviteCode ?? "").trim().toUpperCase();
+  const me = await requireCurrentMember();
+  const code = clean(input.inviteCode).toUpperCase();
   if (!code) return { ok: false, error: "kod yok" };
 
   const { data: group } = await db
@@ -172,50 +197,26 @@ export async function joinGroup(input: {
   if (!group) return { ok: false, error: "kod yok" };
   const groupId = (group as { id: string }).id;
 
-  const existingMe = await getCurrentMember();
-  let memberId: string;
-  if (existingMe) {
-    memberId = existingMe.id;
-  } else {
-    const memberName = (input.memberName ?? "").trim();
-    if (!memberName) return { ok: false, error: "adın boş" };
-    const handle =
-      memberName
-        .toLowerCase()
-        .normalize("NFKD")
-        .replace(/[^\w]+/g, "_")
-        .slice(0, 30) || "uye";
-    const { data: newMember, error: memberErr } = await db
-      .from("members")
-      .insert({ name: memberName, handle, is_active: true })
-      .select("id")
-      .single();
-    if (memberErr || !newMember) {
-      return { ok: false, error: memberErr?.message ?? "üye oluşturulamadı" };
-    }
-    memberId = (newMember as { id: string }).id;
-  }
-
   const { data: existing } = await db
     .from("group_members")
     .select("member_id")
     .eq("group_id", groupId)
-    .eq("member_id", memberId)
+    .eq("member_id", me.id)
     .maybeSingle();
   if (!existing) {
     const { error: insertError } = await db.from("group_members").insert({
       group_id: groupId,
-      member_id: memberId,
+      member_id: me.id,
       role: "member",
     });
     if (insertError) return { ok: false, error: insertError.message };
   }
 
-  await createSession(memberId, groupId);
+  await setActiveGroup(groupId);
   return { ok: true };
 }
 
 export async function logout() {
   await destroySession();
-  redirect("/pick-member");
+  redirect("/giris");
 }

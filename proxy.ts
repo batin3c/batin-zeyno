@@ -1,14 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decryptFromToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
-// no password gate — these pages are open to anyone (the rest of the app
-// will redirect through to /pick-member if it can't find a member)
-const PUBLIC_PATHS = new Set([
-  "/pick-member",
-  "/puzzle",
-  "/yeni-grup",
-  "/katil",
-]);
+// pages anonymous visitors can reach: /giris (login + signup), /katil/[code]
+// (invite landing — confirms group, then bounces to /giris if no session)
+const PUBLIC_PATHS = new Set(["/giris", "/pick-member", "/puzzle", "/katil"]);
 const PUBLIC_PREFIXES = ["/katil/", "/grup-kur/"];
 
 export async function proxy(req: NextRequest) {
@@ -33,19 +28,12 @@ export async function proxy(req: NextRequest) {
 
   if (!session && !isPublic) {
     const url = req.nextUrl.clone();
-    url.pathname = "/pick-member";
+    url.pathname = "/giris";
     return NextResponse.redirect(url);
   }
 
-  // bounce already-signed-in users away from /pick-member — they don't need to
-  // pick again. /yeni-grup and /katil stay reachable so they can create or
-  // join more groups while signed in.
-  if (
-    session &&
-    session.memberId &&
-    session.activeGroupId &&
-    pathname === "/pick-member"
-  ) {
+  // bounce already-signed-in users away from /giris — no need to log in again
+  if (session?.memberId && (pathname === "/giris" || pathname === "/pick-member")) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
