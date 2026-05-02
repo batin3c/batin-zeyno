@@ -12,7 +12,7 @@ export const getSession = cache(async () => {
 
 export const requireSession = cache(async () => {
   const session = await getSession();
-  if (!session) redirect("/puzzle");
+  if (!session) redirect("/pick-member");
   return session;
 });
 
@@ -39,12 +39,8 @@ export const getCurrentMember = cache(async (): Promise<Member | null> => {
 });
 
 export const requireCurrentMember = cache(async (): Promise<Member> => {
-  const session = await getSession();
-  if (!session) redirect("/puzzle");
-  // pattern-matched a group but identity not picked yet
-  if (!session.memberId && session.activeGroupId) redirect("/pick-member");
   const member = await getCurrentMember();
-  if (!member) redirect("/puzzle");
+  if (!member) redirect("/pick-member");
   return member;
 });
 

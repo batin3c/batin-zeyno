@@ -1,33 +1,18 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { db } from "@/lib/supabase";
-import { getSession } from "@/lib/dal";
 import { PickMemberForm } from "@/components/pick-member-form";
-import type { Member, Group } from "@/lib/types";
+import type { Member } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function PickMemberPage() {
-  const session = await getSession();
-  if (!session?.activeGroupId) redirect("/puzzle");
-  if (session.memberId) redirect("/");
-
-  const [{ data: group }, { data: links }] = await Promise.all([
-    db
-      .from("groups")
-      .select("*")
-      .eq("id", session.activeGroupId)
-      .maybeSingle(),
-    db
-      .from("group_members")
-      .select("members(*)")
-      .eq("group_id", session.activeGroupId),
-  ]);
-
-  if (!group) redirect("/puzzle");
-  const members = ((links ?? []) as unknown as { members: Member }[])
-    .map((l) => l.members)
-    .filter((m) => m && m.is_active)
-    .sort((a, b) => a.sort_order - b.sort_order);
+  const { data } = await db
+    .from("members")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  const members = (data ?? []) as Member[];
 
   return (
     <main className="flex-1 relative flex flex-col items-center justify-center px-6 py-12 overflow-hidden">
@@ -38,7 +23,7 @@ export default async function PickMemberPage() {
         ?
       </div>
       <div className="absolute top-8 left-6 right-6 flex items-center justify-between pointer-events-none">
-        <span className="label">{(group as Group).name?.toLowerCase()}</span>
+        <span className="label">baze</span>
         <span className="label">kim?</span>
       </div>
       <div className="flex flex-col items-center gap-8 w-full max-w-sm">
@@ -53,10 +38,21 @@ export default async function PickMemberPage() {
             className="mt-3 text-[0.9rem] font-medium"
             style={{ color: "var(--text-muted)" }}
           >
-            kendine tıkla
+            kendine tıkla, geç
           </p>
         </div>
         <PickMemberForm members={members} />
+        <div
+          className="w-full flex flex-col gap-2 pt-3 mt-2"
+          style={{ borderTop: "2px dashed var(--line-soft)" }}
+        >
+          <Link href="/yeni-grup" className="btn-chip w-full justify-center">
+            yeni grup oluştur
+          </Link>
+          <Link href="/katil" className="btn-chip w-full justify-center">
+            gruba katıl
+          </Link>
+        </div>
       </div>
     </main>
   );

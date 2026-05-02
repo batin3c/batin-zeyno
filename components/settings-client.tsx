@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import { Camera, KeyRound } from "lucide-react";
-import { SimpleDialog } from "./simple-dialog";
-import { PuzzleSetter } from "./puzzle-setter";
+import { Camera } from "lucide-react";
 import {
   updateMemberName,
   updateMemberAvatar,
@@ -19,14 +17,15 @@ export function SettingsClient({
   activeGroup,
   myGroups,
   myRole,
-  currentPatternLength,
 }: {
   members: Member[];
   currentMemberId: string;
   activeGroup: Group | null;
   myGroups: Group[];
   myRole: "owner" | "member" | null;
-  currentPatternLength: number;
+  // legacy prop kept for prop-shape compatibility with the parent page;
+  // ignored now that the puzzle pattern has been removed
+  currentPatternLength?: number;
 }) {
   return (
     <div className="flex flex-col gap-10 pt-6">
@@ -52,10 +51,6 @@ export function SettingsClient({
 
       <Section title="bildirim">
         <PushToggle />
-      </Section>
-
-      <Section title="mühür">
-        <PuzzleSection currentLength={currentPatternLength} />
       </Section>
     </div>
   );
@@ -186,43 +181,3 @@ function MemberRow({ member, last }: { member: Member; last: boolean }) {
   );
 }
 
-function PuzzleSection({ currentLength }: { currentLength: number }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <div className="flex items-center justify-between p-4 gap-3">
-        <div>
-          <div
-            className="text-[1.02rem] font-semibold tracking-tight"
-            style={{ color: "var(--ink)" }}
-          >
-            9-nokta deseni
-          </div>
-          <div
-            className="text-[0.82rem] mt-0.5 font-medium"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {currentLength} nokta · aktif
-          </div>
-        </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="btn-ghost"
-          style={{ padding: "0.55rem 1rem", fontSize: "0.85rem" }}
-        >
-          <KeyRound size={14} strokeWidth={2} />
-          değiştir
-        </button>
-      </div>
-      {open && (
-        <SimpleDialog
-          open={true}
-          onClose={() => setOpen(false)}
-          title="yeni desen çiz"
-        >
-          <PuzzleSetter onDone={() => setOpen(false)} />
-        </SimpleDialog>
-      )}
-    </>
-  );
-}

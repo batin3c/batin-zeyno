@@ -2,184 +2,44 @@
 
 import { redirect } from "next/navigation";
 import { createSession, destroySession, setActiveGroup } from "@/lib/session";
-import {
-  hashPattern,
-  requireCurrentMember,
-  getCurrentMember,
-  getSession,
-} from "@/lib/dal";
+import { requireCurrentMember, getCurrentMember, getSession } from "@/lib/dal";
 import { db } from "@/lib/supabase";
 
-export type PuzzleResult =
-  | { ok: false; reason?: "wrong" | "empty" }
-  | { ok: true; nextPath: string };
-
 /**
- * The drawn pattern identifies a GROUP (not a member). On match we set the
- * session's activeGroupId — but leave memberId null until the user picks
- * their identity on /pick-member.
- */
-export async function checkPuzzle(pattern: number[]): Promise<PuzzleResult> {
-  if (!Array.isArray(pattern) || pattern.length === 0) {
-    return { ok: false, reason: "empty" };
-  }
-  const hash = hashPattern(pattern);
-  const { data: group } = await db
-    .from("groups")
-    .select("id")
-    .eq("pattern_hash", hash)
-    .maybeSingle();
-  if (!group) return { ok: false, reason: "wrong" };
-
-  // memberId stays null — /pick-member will set it after the user clicks
-  await createSession(null, (group as { id: string }).id);
-  return { ok: true, nextPath: "/pick-member" };
-}
-
-/**
- * Second step of the login flow: pick which member of the active group you
- * are. Only callable after `checkPuzzle` set activeGroupId.
+ * Sign in as a specific member. No password — anyone can pick anyone.
+ * Sets the session memberId and (if the member is in any group) sets that
+ * as the active group; otherwise activeGroupId stays null.
  */
 export async function pickMember(memberId: string): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  const session = await getSession();
-  if (!session?.activeGroupId) return { ok: false, error: "grup yok" };
   if (!memberId) return { ok: false, error: "üye yok" };
-
-  // verify memberId is in this group
   const { data: link } = await db
     .from("group_members")
-    .select("member_id")
-    .eq("group_id", session.activeGroupId)
+    .select("group_id")
     .eq("member_id", memberId)
+    .order("joined_at", { ascending: true })
+    .limit(1)
     .maybeSingle();
-  if (!link) return { ok: false, error: "üye bu grupta değil" };
-
-  await createSession(memberId, session.activeGroupId);
+  const activeGroupId = (link as { group_id?: string } | null)?.group_id ?? null;
+  await createSession(memberId, activeGroupId);
   redirect("/");
 }
 
 /**
- * One-shot, anonymous-accessible setup for a group whose pattern_hash is NULL.
- * Used during the legacy → group-pattern migration: the user opens a link
- * keyed by group id, draws a pattern, picks which existing member they are,
- * and the action sets the pattern + session in one go.
- */
-export async function setupGroup(input: {
-  groupId: string;
-  pattern: number[];
-  memberId: string;
-}): Promise<{ ok: boolean; error?: string }> {
-  if (!input.groupId) return { ok: false, error: "grup yok" };
-  if (!Array.isArray(input.pattern) || input.pattern.length < 3) {
-    return { ok: false, error: "en az 3 nokta" };
-  }
-  if (!input.memberId) return { ok: false, error: "üye seç" };
-
-  // group must exist AND pattern_hash must currently be NULL
-  const { data: group } = await db
-    .from("groups")
-    .select("id, pattern_hash")
-    .eq("id", input.groupId)
-    .maybeSingle();
-  if (!group) return { ok: false, error: "grup yok" };
-  if ((group as { pattern_hash: string | null }).pattern_hash) {
-    return { ok: false, error: "bu grubun şifresi zaten ayarlanmış" };
-  }
-
-  // member must exist + be in this group
-  const { data: link } = await db
-    .from("group_members")
-    .select("member_id")
-    .eq("group_id", input.groupId)
-    .eq("member_id", input.memberId)
-    .maybeSingle();
-  if (!link) return { ok: false, error: "üye bu grupta değil" };
-
-  const hash = hashPattern(input.pattern);
-  // collision check
-  const { data: existing } = await db
-    .from("groups")
-    .select("id")
-    .eq("pattern_hash", hash)
-    .maybeSingle();
-  if (existing && (existing as { id: string }).id !== input.groupId) {
-    return { ok: false, error: "bu desen başka grupta" };
-  }
-
-  const { error } = await db
-    .from("groups")
-    .update({ pattern_hash: hash })
-    .eq("id", input.groupId);
-  if (error) return { ok: false, error: error.message };
-
-  await createSession(input.memberId, input.groupId);
-  return { ok: true };
-}
-
-/**
- * Owner-only: change the active group's pattern. The new hash must not
- * collide with any other group's pattern.
- */
-export async function changeGroupPattern(
-  pattern: number[]
-): Promise<{ ok: boolean; error?: string }> {
-  const me = await requireCurrentMember();
-  const session = await getSession();
-  if (!session?.activeGroupId) return { ok: false, error: "grup yok" };
-  if (!Array.isArray(pattern) || pattern.length < 3) {
-    return { ok: false, error: "en az 3 nokta" };
-  }
-
-  // owner check
-  const { data: link } = await db
-    .from("group_members")
-    .select("role")
-    .eq("group_id", session.activeGroupId)
-    .eq("member_id", me.id)
-    .maybeSingle();
-  if ((link as { role?: string } | null)?.role !== "owner") {
-    return { ok: false, error: "sadece owner değiştirebilir" };
-  }
-
-  const hash = hashPattern(pattern);
-  // collision: any other group with this hash?
-  const { data: existing } = await db
-    .from("groups")
-    .select("id")
-    .eq("pattern_hash", hash)
-    .maybeSingle();
-  if (existing && (existing as { id: string }).id !== session.activeGroupId) {
-    return { ok: false, error: "bu desen başka grupta" };
-  }
-
-  const { error } = await db
-    .from("groups")
-    .update({ pattern_hash: hash })
-    .eq("id", session.activeGroupId);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-/**
  * Switch the current session to a different group the user belongs to.
- * Verifies membership server-side, then redirects home.
  */
 export async function selectGroup(groupId: string) {
   const me = await requireCurrentMember();
   if (!groupId) redirect("/select-group");
-
   const { data: link } = await db
     .from("group_members")
     .select("member_id")
     .eq("group_id", groupId)
     .eq("member_id", me.id)
     .maybeSingle();
-
   if (!link) redirect("/select-group");
-
   await setActiveGroup(groupId);
   redirect("/");
 }
@@ -195,26 +55,19 @@ function makeInviteCode(): string {
 }
 
 /**
- * Create a new group with its own pattern + first member. Anonymous-friendly
- * for fresh accounts. If the caller already has a session + member, that
- * member becomes the owner; otherwise a brand-new member is created from
- * `memberName`.
+ * Create a new group. Anonymous-friendly: if no current member, a new one
+ * is created from `memberName`.
  */
 export async function createGroup(input: {
   name: string;
   color: string;
-  pattern: number[];
   memberName?: string;
 }): Promise<{ ok: false; error: string } | never> {
   const trimmedName = (input.name ?? "").trim();
   if (!trimmedName) return { ok: false, error: "grup ismi boş" };
   if (trimmedName.length > 60) return { ok: false, error: "grup ismi çok uzun" };
-  if (!Array.isArray(input.pattern) || input.pattern.length < 3) {
-    return { ok: false, error: "en az 3 nokta" };
-  }
   const safeColor = (input.color ?? "").trim() || "#ff6b9d";
 
-  // resolve the owner-to-be
   const existingMe = await getCurrentMember();
   let ownerId: string;
   if (existingMe) {
@@ -222,11 +75,12 @@ export async function createGroup(input: {
   } else {
     const memberName = (input.memberName ?? "").trim();
     if (!memberName) return { ok: false, error: "adın boş" };
-    const handle = memberName
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[^\w]+/g, "_")
-      .slice(0, 30) || "uye";
+    const handle =
+      memberName
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[^\w]+/g, "_")
+        .slice(0, 30) || "uye";
     const { data: newMember, error: memberErr } = await db
       .from("members")
       .insert({ name: memberName, handle, is_active: true })
@@ -238,15 +92,6 @@ export async function createGroup(input: {
     ownerId = (newMember as { id: string }).id;
   }
 
-  const patternHash = hashPattern(input.pattern);
-  // pattern collision check
-  const { data: dupe } = await db
-    .from("groups")
-    .select("id")
-    .eq("pattern_hash", patternHash)
-    .maybeSingle();
-  if (dupe) return { ok: false, error: "bu desen başka grupta" };
-
   let groupId: string | null = null;
   let lastError: string | null = null;
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -257,7 +102,6 @@ export async function createGroup(input: {
         name: trimmedName,
         color: safeColor,
         invite_code: code,
-        pattern_hash: patternHash,
         created_by: ownerId,
       })
       .select("id")
@@ -283,8 +127,7 @@ export async function createGroup(input: {
 }
 
 /**
- * Join a group by invite code. The caller can be anonymous: if no current
- * member, a brand-new one is created from `memberName` and added to the group.
+ * Join a group by invite code. Anonymous-friendly.
  */
 export async function joinGroup(input: {
   inviteCode: string;
@@ -308,11 +151,12 @@ export async function joinGroup(input: {
   } else {
     const memberName = (input.memberName ?? "").trim();
     if (!memberName) return { ok: false, error: "adın boş" };
-    const handle = memberName
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[^\w]+/g, "_")
-      .slice(0, 30) || "uye";
+    const handle =
+      memberName
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[^\w]+/g, "_")
+        .slice(0, 30) || "uye";
     const { data: newMember, error: memberErr } = await db
       .from("members")
       .insert({ name: memberName, handle, is_active: true })
@@ -324,7 +168,6 @@ export async function joinGroup(input: {
     memberId = (newMember as { id: string }).id;
   }
 
-  // upsert membership
   const { data: existing } = await db
     .from("group_members")
     .select("member_id")
@@ -344,28 +187,44 @@ export async function joinGroup(input: {
   return { ok: true };
 }
 
-/**
- * Update the current member's display name / pattern (legacy; kept for
- * settings even though pattern is now group-scoped). The pattern path is
- * deprecated — use `changeGroupPattern` for the new behavior.
- */
-export async function setMemberPattern(
-  pattern: number[]
-): Promise<{ ok: boolean; error?: string }> {
-  if (!Array.isArray(pattern) || pattern.length < 3) {
-    return { ok: false, error: "en az 3 nokta lan" };
-  }
-  const me = await requireCurrentMember();
-  const hash = hashPattern(pattern);
-  const { error } = await db
-    .from("members")
-    .update({ pattern_hash: hash })
-    .eq("id", me.id);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
 export async function logout() {
   await destroySession();
-  redirect("/puzzle");
+  redirect("/pick-member");
+}
+
+// kept-but-unused exports so imports elsewhere don't break during the
+// password-removal cleanup. These were the legacy puzzle/pattern actions.
+export async function checkPuzzle(_pattern: number[]): Promise<{
+  ok: false;
+  reason: "wrong";
+}> {
+  void _pattern;
+  return { ok: false, reason: "wrong" };
+}
+
+export async function setMemberPattern(
+  _pattern: number[]
+): Promise<{ ok: boolean; error?: string }> {
+  void _pattern;
+  return { ok: false, error: "şifre kaldırıldı" };
+}
+
+export async function setupGroup(_input: {
+  groupId: string;
+  pattern: number[];
+  memberId: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  void _input;
+  return { ok: false, error: "şifre kaldırıldı" };
+}
+
+export async function changeGroupPattern(
+  _pattern: number[]
+): Promise<{ ok: boolean; error?: string }> {
+  void _pattern;
+  return { ok: false, error: "şifre kaldırıldı" };
+}
+
+export async function getSessionState() {
+  return getSession();
 }

@@ -5,7 +5,7 @@ import { selectGroup } from "@/app/actions/auth";
 
 export default async function SelectGroupPage() {
   const me = await getCurrentMember();
-  if (!me) redirect("/puzzle");
+  if (!me) redirect("/pick-member");
 
   const groups = await getMemberGroups();
 

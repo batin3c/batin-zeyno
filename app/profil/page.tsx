@@ -4,7 +4,6 @@ import {
   getActiveGroupMembers,
   getMemberGroups,
   getCurrentGroup,
-  getPuzzlePattern,
 } from "@/lib/dal";
 import { db } from "@/lib/supabase";
 import { AppHeader } from "@/components/app-header";
@@ -14,12 +13,11 @@ import { LogoutLargeButton } from "@/components/logout-button";
 export const dynamic = "force-dynamic";
 
 export default async function ProfilPage() {
-  const [me, members, myGroups, activeGroup, pattern] = await Promise.all([
+  const [me, members, myGroups, activeGroup] = await Promise.all([
     requireCurrentMember(),
     getActiveGroupMembers(),
     getMemberGroups(),
     getCurrentGroup(),
-    getPuzzlePattern(),
   ]);
 
   // profil is always in the context of the active group
@@ -45,7 +43,6 @@ export default async function ProfilPage() {
           activeGroup={activeGroup}
           myGroups={myGroups}
           myRole={myRole}
-          currentPatternLength={pattern.length}
         />
         <div className="mt-8">
           <LogoutLargeButton />

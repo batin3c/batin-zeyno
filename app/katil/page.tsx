@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getCurrentMember, getMemberGroups } from "@/lib/dal";
 import { JoinCodeForm } from "@/components/join-code-form";
 
 export default async function JoinIndexPage() {
+  // anonymous-friendly: someone with an invite code can land here without
+  // having a session yet
   const me = await getCurrentMember();
-  if (!me) redirect("/puzzle");
-
-  const groups = await getMemberGroups();
+  const groups = me ? await getMemberGroups() : [];
   const hasOtherGroups = groups.length > 0;
 
   return (
@@ -21,7 +20,7 @@ export default async function JoinIndexPage() {
 
       <div className="absolute top-8 left-6 right-6 flex items-center justify-between pointer-events-none">
         <span className="label">gruba katıl</span>
-        <span className="label">{me.name?.toLowerCase()}</span>
+        {me?.name && <span className="label">{me.name.toLowerCase()}</span>}
       </div>
 
       <div className="flex flex-col items-center gap-8 w-full max-w-sm anim-reveal">

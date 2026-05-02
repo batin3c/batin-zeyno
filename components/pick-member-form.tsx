@@ -27,6 +27,17 @@ export function PickMemberForm({ members }: { members: Member[] }) {
     });
   };
 
+  if (members.length === 0) {
+    return (
+      <p
+        className="text-[0.9rem] text-center"
+        style={{ color: "var(--text-muted)" }}
+      >
+        henüz hiç üye yok. aşağıdan yeni grup aç.
+      </p>
+    );
+  }
+
   return (
     <ul className="flex flex-col gap-3 w-full">
       {members.map((m, idx) => {
