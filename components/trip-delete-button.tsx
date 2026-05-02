@@ -16,7 +16,7 @@ export function TripDeleteButton({
   const onClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`"${tripName}" sikilsin mi? tüm yerler de gider aq.`)) return;
+    if (!confirm(`"${tripName}" silinsin mi? tüm yerler de gider.`)) return;
     const fd = new FormData();
     fd.set("id", tripId);
     startTransition(() => deleteTrip(fd));
@@ -26,7 +26,7 @@ export function TripDeleteButton({
     <button
       onClick={onClick}
       disabled={pending}
-      aria-label="tatili siktir et"
+      aria-label="tatili sil"
       className="absolute top-3 right-3 flex items-center justify-center disabled:opacity-50"
       style={{
         width: "34px",

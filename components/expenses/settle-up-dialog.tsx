@@ -50,7 +50,7 @@ export function SettleUpDialog({
         note: note.trim() || null,
       });
       if (!r.ok) {
-        setError(r.error ?? "olmadı aq");
+        setError(r.error ?? "olmadı");
         return;
       }
       onClose();

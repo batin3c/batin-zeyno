@@ -87,7 +87,7 @@ export function CitySheet({
 
   const onDeleteCity = () => {
     if (
-      !confirm(`"${city.name}" sikilsin mi? tüm fotolar da gider aq.`)
+      !confirm(`"${city.name}" silinsin mi? tüm fotolar da gider.`)
     ) {
       return;
     }
@@ -128,7 +128,7 @@ export function CitySheet({
             onChange={(e) => setNoteDraft(e.target.value)}
             onBlur={onNoteBlur}
             rows={2}
-            placeholder="nasıldı aq?"
+            placeholder="nasıldı?"
             className="field-textarea"
           />
         </label>

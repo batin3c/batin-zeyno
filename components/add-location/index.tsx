@@ -150,7 +150,7 @@ function AddLocationDialog({
             className="btn-primary w-full mt-6"
             style={{ padding: "0.95rem 1.25rem" }}
           >
-            {pending ? "atıyor aq…" : ready ? "at" : "önce bir yer seç aq"}
+            {pending ? "atılıyor…" : ready ? "at" : "önce bir yer seç"}
           </button>
         </>
       )}

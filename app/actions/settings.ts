@@ -56,7 +56,7 @@ export async function savePuzzlePattern(
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
   if (!Array.isArray(pattern) || pattern.length < 3) {
-    return { ok: false, error: "en az 3 nokta çiz aq" };
+    return { ok: false, error: "en az 3 nokta çiz" };
   }
   if (!pattern.every((n) => Number.isInteger(n) && n >= 0 && n <= 8)) {
     return { ok: false, error: "desen anlamadım" };

@@ -60,7 +60,7 @@ function ImportKmlDialog({
           style={{ color: "var(--text-muted)" }}
         >
           google takeout → maps → saved places (kml). dosyayı at, pinler tatile
-          düşsün aq.
+          düşsün.
         </p>
 
         <button
@@ -126,7 +126,7 @@ function ImportKmlDialog({
           className="btn-primary w-full"
           style={{ padding: "0.95rem 1.25rem" }}
         >
-          {pending ? "yüklüyor aq…" : "yükle aq"}
+          {pending ? "yüklüyor…" : "yükle"}
         </button>
       </div>
     </SimpleDialog>

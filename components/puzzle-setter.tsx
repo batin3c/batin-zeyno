@@ -120,7 +120,7 @@ export function PuzzleSetter({ onDone }: { onDone: () => void }) {
   const label =
     step === "first" ? "yeni deseni çiz" :
     step === "second" ? "bir daha, emin olalım" :
-    step === "mismatch" ? "tutmadı aq" :
+    step === "mismatch" ? "tutmadı" :
     step === "saving" ? "kaydediliyor" :
     "tamam, kaydettim";
 

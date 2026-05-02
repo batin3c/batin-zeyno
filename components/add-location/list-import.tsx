@@ -66,7 +66,7 @@ export function ListImport({
       setLoading(false);
       if (isLoaded) enrichPlaces(base);
     } catch {
-      setError("bir şeyler yamuk oldu aq.");
+      setError("bir şeyler yamuk oldu.");
       setLoading(false);
     }
   };
@@ -174,7 +174,7 @@ export function ListImport({
     startTransition(async () => {
       const r = await createLocationsBatch(tripId, payload);
       if (!r.ok) {
-        setResultMsg(r.error ?? "olmadı aq.");
+        setResultMsg(r.error ?? "olmadı.");
         return;
       }
       setResultMsg(`${r.inserted} yer düştü`);
@@ -188,7 +188,7 @@ export function ListImport({
         className="text-[0.9rem] p-4 text-center"
         style={{ color: "var(--text-muted)" }}
       >
-        google js yüklenmedi aq.
+        google js yüklenmedi.
       </p>
     );
   }
@@ -325,7 +325,7 @@ export function ListImport({
           style={{ padding: "0.95rem 1.25rem" }}
         >
           {pending
-            ? "atıyor aq…"
+            ? "atılıyor…"
             : enriching
             ? "puan & foto bekle…"
             : selectedCount === 0

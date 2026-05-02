@@ -66,7 +66,7 @@ export function AddExpenseDialog({
         location_id: locationId || null,
       });
       if (!r.ok) {
-        setError(r.error ?? "olmadı aq");
+        setError(r.error ?? "olmadı");
         return;
       }
       onClose();

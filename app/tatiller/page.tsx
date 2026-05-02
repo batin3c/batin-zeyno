@@ -337,7 +337,7 @@ function EmptyState({ memberName }: { memberName: string }) {
           className="text-[0.95rem] leading-relaxed"
           style={{ color: "var(--text-muted)" }}
         >
-          daha hiçbir yere gitmemişiz aq. aşağıdan{" "}
+          daha hiçbir yere gitmemişiz. aşağıdan{" "}
           <span style={{ color: "var(--ink)", fontWeight: 600 }}>yeni tatil</span>&apos;e
           bas da başlayalım.
         </p>

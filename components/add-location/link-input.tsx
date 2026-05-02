@@ -20,7 +20,7 @@ export function LinkInput({
     try {
       const r = await resolveShareUrl(url.trim());
       if (!r) {
-        setError("link anlaşılmadı aq. doğru mu yapıştırdın?");
+        setError("link anlaşılmadı. doğru mu yapıştırdın?");
         return;
       }
       onResolved({
@@ -30,7 +30,7 @@ export function LinkInput({
         google_maps_url: url.trim(),
       });
     } catch {
-      setError("bir şeyler yamuk oldu aq.");
+      setError("bir şeyler yamuk oldu.");
     } finally {
       setLoading(false);
     }

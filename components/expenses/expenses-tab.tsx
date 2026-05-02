@@ -94,7 +94,7 @@ export function ExpensesTab({
         className="text-center mt-8 text-[0.95rem]"
         style={{ color: "var(--text-muted)" }}
       >
-        en az 2 üye gerekli aq.
+        en az 2 üye gerekli.
       </p>
     );
   }
@@ -149,7 +149,7 @@ export function ExpensesTab({
             className="text-[0.95rem]"
             style={{ color: "var(--text-muted)" }}
           >
-            henüz harcama yok aq. yukarıdan ekle.
+            henüz harcama yok. yukarıdan ekle.
           </p>
         </div>
       ) : (

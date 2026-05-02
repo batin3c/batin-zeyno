@@ -54,7 +54,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
   };
 
   const onDelete = () => {
-    if (!confirm(`"${trip.name}" sikilsin mi? tüm yerler de gider aq.`)) return;
+    if (!confirm(`"${trip.name}" silinsin mi? tüm yerler de gider.`)) return;
     const fd = new FormData();
     fd.set("id", trip.id);
     startTransition(() => deleteTrip(fd));
@@ -163,7 +163,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
               }}
             >
               <Trash2 size={16} strokeWidth={2.5} />
-              tatili siktir et
+              tatili sil
             </button>
           </div>
         </form>

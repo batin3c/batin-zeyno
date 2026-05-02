@@ -26,8 +26,8 @@ export default async function WhoPage() {
       <div className="flex flex-col items-center gap-10 w-full max-w-sm">
         <div className="text-center anim-reveal">
           <h1 className="display text-[2.25rem] leading-[1.05] text-[color:var(--text)]">
-            who the fuck <br />
-            are you?
+            who are <br />
+            you?
           </h1>
         </div>
         <IdentityPicker members={members} />

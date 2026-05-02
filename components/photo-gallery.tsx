@@ -89,7 +89,7 @@ export function PhotoGallery({
 
   const onBulkDelete = async () => {
     if (selected.size === 0) return;
-    if (!confirm(`${selected.size} foto sikilsin mi?`)) return;
+    if (!confirm(`${selected.size} foto silinsin mi?`)) return;
     setBulkBusy(true);
     try {
       if (onRemoveBulk) {
@@ -107,7 +107,7 @@ export function PhotoGallery({
   };
 
   const onSingleRemove = async (id: string) => {
-    if (!confirm("foto sikilsin mi?")) return;
+    if (!confirm("foto silinsin mi?")) return;
     if (onRemove) await onRemove(id);
   };
 
@@ -281,7 +281,7 @@ export function PhotoGallery({
                       borderRadius: "999px",
                       color: "var(--ink)",
                     }}
-                    aria-label="siktir et"
+                    aria-label="sil"
                   >
                     <X size={12} strokeWidth={2.5} />
                   </button>

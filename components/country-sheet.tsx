@@ -170,7 +170,7 @@ export function CountrySheet({
           style={{ width: "100%", padding: "0.9rem 1.25rem", fontSize: "1rem" }}
         >
           {pending
-            ? "bir dakika aq…"
+            ? "bir dakika…"
             : isVisited
             ? "yok burayı görmedik"
             : "burayı gördük"}
@@ -186,7 +186,7 @@ export function CountrySheet({
             onBlur={onNoteBlur}
             rows={2}
             placeholder={
-              isVisited ? "nasıldı aq?" : "tık önce 'burayı gördük'e bas…"
+              isVisited ? "nasıldı?" : "tık önce 'burayı gördük'e bas…"
             }
             disabled={!isVisited && pending}
             className="field-textarea"

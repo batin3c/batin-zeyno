@@ -93,7 +93,7 @@ function MemberRow({ member, last }: { member: Member; last: boolean }) {
     fd.set("file", file);
     const r = await updateMemberAvatar(fd);
     setUploading(false);
-    if (!r.ok) setUploadErr(r.error ?? "yüklenmedi aq");
+    if (!r.ok) setUploadErr(r.error ?? "yüklenmedi");
   };
 
   return (

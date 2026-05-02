@@ -107,7 +107,7 @@ export function LocationList({
           className="font-bold tracking-tight"
           style={{ fontSize: "1.4rem", color: "var(--ink)" }}
         >
-          bok gibi boş
+tamtakır boş
         </h3>
         <p
           className="text-[0.9rem] leading-relaxed"
@@ -424,12 +424,12 @@ function LocationEntry({
           )}
           <button
             onClick={() => {
-              if (!confirm("bu yeri siktir edelim mi?")) return;
+              if (!confirm("bu yeri silelim mi?")) return;
               startTransition(() => deleteLocation(loc.id, tripId));
             }}
             className="p-1 opacity-60 hover:opacity-100 transition-opacity"
             style={{ color: "var(--text-muted)" }}
-            aria-label="siktir et"
+            aria-label="sil"
           >
             <Trash2 size={14} strokeWidth={2} />
           </button>

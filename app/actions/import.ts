@@ -20,7 +20,7 @@ export async function importKml(formData: FormData): Promise<ImportResult> {
     return { ok: false, count: 0, error: "istek bozuk" };
   }
   if (file.size === 0) {
-    return { ok: false, count: 0, error: "dosya boş aq" };
+    return { ok: false, count: 0, error: "dosya boş" };
   }
   if (file.size > 10 * 1024 * 1024) {
     return { ok: false, count: 0, error: "dosya devasa lan (max 10 MB)" };
@@ -30,12 +30,12 @@ export async function importKml(formData: FormData): Promise<ImportResult> {
   try {
     text = await file.text();
   } catch {
-    return { ok: false, count: 0, error: "dosya anlaşılmadı aq" };
+    return { ok: false, count: 0, error: "dosya anlaşılmadı" };
   }
 
   const placemarks = parseKml(text);
   if (placemarks.length === 0) {
-    return { ok: false, count: 0, error: "kml'de hiç yer yok aq" };
+    return { ok: false, count: 0, error: "kml'de hiç yer yok" };
   }
 
   const rows = placemarks.map((p) => ({

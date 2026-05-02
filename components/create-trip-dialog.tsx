@@ -93,7 +93,7 @@ export function CreateTripButton() {
             className="btn-primary w-full mt-2"
             style={{ padding: "0.95rem 1.25rem" }}
           >
-            {pending ? "açıyor aq…" : "aç gitsin"}
+            {pending ? "açıyor…" : "aç gitsin"}
           </button>
         </form>
       </SimpleDialog>

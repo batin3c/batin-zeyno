@@ -208,7 +208,7 @@ aha girdin
         )}
         {phase === "idle" && pattern.length === 0 && (
           <span className="text-sm" style={{ color: "var(--text-dim)" }}>
-çiz bakalım aq
+çiz bakalım
           </span>
         )}
       </div>
@@ -218,8 +218,8 @@ aha girdin
 
 function wrongLine(n: number): string {
   if (n === 1) return "ıııh, değil";
-  if (n === 2) return "hadi aq";
+  if (n === 2) return "hadi ya";
   if (n === 3) return "sen baze'nin sahibi değilsin galiba";
-  if (n >= 4) return "siktir git artık";
-  return "yanlış lan";
+  if (n >= 4) return "git artık";
+  return "yanlış";
 }

@@ -65,7 +65,7 @@ export function MapView({
         className="p-6 text-sm text-center"
         style={{ color: "var(--text-muted)" }}
       >
-harita gelmedi aq.
+harita gelmedi.
       </div>
     );
   }
