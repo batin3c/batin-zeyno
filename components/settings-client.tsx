@@ -9,6 +9,7 @@ import {
   updateMemberAvatar,
 } from "@/app/actions/settings";
 import { PushToggle } from "./push-toggle";
+import { ThemeToggle } from "./theme-toggle";
 import type { Member } from "@/lib/types";
 
 export function SettingsClient({
@@ -26,6 +27,10 @@ export function SettingsClient({
             <MemberRow key={m.id} member={m} last={i === members.length - 1} />
           ))}
         </div>
+      </Section>
+
+      <Section title="görünüm">
+        <ThemeToggle />
       </Section>
 
       <Section title="bildirim">

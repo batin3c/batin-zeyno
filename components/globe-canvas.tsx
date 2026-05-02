@@ -31,14 +31,61 @@ export type RouteArc = {
   endLng: number;
 };
 
-const OCEAN = "#a8d8e8";
-const BORDER = "#1f1a14";
-const FILL_UNVISITED = "rgba(255, 247, 232, 0.92)";
-const FILL_VISITED = "rgba(255, 107, 157, 0.92)";
-const SIDE_COLOR = "rgba(31, 26, 20, 0.25)";
-const CITY_COLOR = "#5dc9b1";
 const IDLE_TIMEOUT_MS = 4000;
 const AUTO_ROTATE_SPEED = 0.35;
+
+function readVar(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return v || fallback;
+}
+
+function useThemeColors() {
+  const [palette, setPalette] = useState(() => ({
+    ocean: "#a8d8e8",
+    border: "#1f1a14",
+    landUnvisited: "rgba(255, 247, 232, 0.92)",
+    landVisited: "rgba(255, 107, 157, 0.92)",
+    side: "rgba(31, 26, 20, 0.25)",
+    city: "#5dc9b1",
+    arc: "rgba(31, 26, 20, 0.55)",
+    cityHaloCap: "rgba(93, 201, 177, 0.9)",
+    cityHaloSide: "rgba(93, 201, 177, 0.6)",
+  }));
+
+  useEffect(() => {
+    const refresh = () => {
+      setPalette({
+        ocean: readVar("--globe-ocean", "#a8d8e8"),
+        border: readVar("--globe-border", "#1f1a14"),
+        landUnvisited: readVar("--globe-land-unvisited", "#fff7e8"),
+        landVisited: readVar("--globe-land-visited", "#ff6b9d"),
+        side:
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "rgba(251, 247, 238, 0.18)"
+            : "rgba(31, 26, 20, 0.25)",
+        city: readVar("--accent-2", "#5dc9b1"),
+        arc:
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "rgba(251, 247, 238, 0.35)"
+            : "rgba(31, 26, 20, 0.55)",
+        cityHaloCap: "rgba(93, 201, 177, 0.9)",
+        cityHaloSide: "rgba(93, 201, 177, 0.6)",
+      });
+    };
+    refresh();
+    const obs = new MutationObserver(refresh);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => obs.disconnect();
+  }, []);
+
+  return palette;
+}
 
 export function GlobeCanvas({
   visitedCodes,
@@ -63,14 +110,15 @@ export function GlobeCanvas({
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   const features = useMemo(() => loadCountryFeatures().features as CF[], []);
+  const palette = useThemeColors();
   const oceanMaterial = useMemo(
     () =>
       new MeshPhongMaterial({
-        color: new Color(OCEAN),
+        color: new Color(palette.ocean),
         shininess: 0,
         flatShading: false,
       }),
-    []
+    [palette.ocean]
   );
 
   useEffect(() => {
@@ -190,22 +238,22 @@ export function GlobeCanvas({
 
   const polygonCapColor = useCallback(
     (f: object) => {
-      if (isCityBoundary(f)) return "rgba(93, 201, 177, 0.9)";
+      if (isCityBoundary(f)) return palette.cityHaloCap;
       const feat = f as CF;
       return visitedCodes.has(feat.properties?.iso2 ?? "")
-        ? FILL_VISITED
-        : FILL_UNVISITED;
+        ? palette.landVisited
+        : palette.landUnvisited;
     },
-    [visitedCodes]
+    [visitedCodes, palette]
   );
 
   const polygonSideColor = useCallback(
     (f: object) =>
-      isCityBoundary(f) ? "rgba(93, 201, 177, 0.6)" : SIDE_COLOR,
-    []
+      isCityBoundary(f) ? palette.cityHaloSide : palette.side,
+    [palette]
   );
 
-  const polygonStrokeColor = useCallback(() => BORDER, []);
+  const polygonStrokeColor = useCallback(() => palette.border, [palette.border]);
 
   const polygonAltitude = useCallback(
     (f: object) => {
@@ -224,14 +272,20 @@ export function GlobeCanvas({
     [selectedCityId]
   );
 
-  const pointColor = useCallback(() => CITY_COLOR, []);
+  const pointColor = useCallback(() => palette.city, [palette.city]);
 
-  const arcColor = useCallback(() => "rgba(31, 26, 20, 0.55)", []);
+  const arcColor = useCallback(() => palette.arc, [palette.arc]);
 
-  const pointLabel = useCallback((p: object) => {
-    const c = p as CityPoint;
-    return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
-  }, []);
+  const pointLabel = useCallback(
+    (p: object) => {
+      const c = p as CityPoint;
+      const fg = palette.border === "#fbf7ee" || palette.border === "#FBF7EE"
+        ? "#1f1a14"
+        : "#fbf7ee";
+      return `<div style="background:${palette.border};color:${fg};padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
+    },
+    [palette.border]
+  );
 
   return (
     <div

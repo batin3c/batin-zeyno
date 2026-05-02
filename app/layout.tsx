@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, JetBrains_Mono } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
+import { ThemeScript } from "@/components/theme-script";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -36,7 +37,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fbf7ee",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf7ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#16120e" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -52,7 +56,11 @@ export default function RootLayout({
     <html
       lang="tr"
       className={`${fredoka.variable} ${jetbrains.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <BottomNav />
