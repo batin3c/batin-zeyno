@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decryptFromToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
-// pages anonymous visitors can reach: /giris (login + signup), /katil/[code]
-// (invite landing — confirms group, then bounces to /giris if no session)
+// Pages anonymous visitors can reach.
 const PUBLIC_PATHS = new Set(["/giris", "/pick-member", "/puzzle", "/katil"]);
 const PUBLIC_PREFIXES = ["/katil/", "/grup-kur/"];
 
@@ -26,19 +25,18 @@ export async function proxy(req: NextRequest) {
     PUBLIC_PATHS.has(pathname) ||
     PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
+  // No session → bounce protected paths to /giris.
   if (!session && !isPublic) {
     const url = req.nextUrl.clone();
     url.pathname = "/giris";
     return NextResponse.redirect(url);
   }
 
-  // bounce already-signed-in users away from /giris — no need to log in again
-  if (session?.memberId && (pathname === "/giris" || pathname === "/pick-member")) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
-
+  // Don't auto-bounce signed-in users away from /giris. If their cookie is
+  // stale (memberId points to a deleted row, e.g. after a data wipe), pages
+  // that requireCurrentMember will redirect them HERE — bouncing them back
+  // to "/" would create an infinite loop. Letting /giris render lets them
+  // sign in fresh; createSession overwrites the bad cookie.
   return NextResponse.next();
 }
 
