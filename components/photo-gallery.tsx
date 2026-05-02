@@ -191,15 +191,14 @@ export function PhotoGallery({
                   }}
                 >
                   {it.isExternal ? (
-                    // Google's CDN URL (lh3.googleusercontent.com / maps.googleapis.com).
-                    // next/image needs them whitelisted in remotePatterns; cheaper to skip
-                    // optimization since Google already serves a sized thumbnail.
+                    // Google PhotoService URLs are referer-bound (r_url param),
+                    // so we let the browser send its default referer. next/image
+                    // would also need these in remotePatterns, so plain <img>.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={it.url}
                       alt=""
                       loading="lazy"
-                      referrerPolicy="no-referrer"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                   ) : (
