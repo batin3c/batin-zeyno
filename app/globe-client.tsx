@@ -161,15 +161,23 @@ export function GlobeClient({
           onSelectCity={(id) => setSelection({ kind: "city", id })}
         />
       ) : (
+        // PersistentGlobe wraps us in a position:fixed shell with no scroll —
+        // album view renders potentially-tall grid, so this container needs
+        // to be the scroller.
         <div
-          className="max-w-3xl w-full mx-auto px-4 pt-4 pb-24"
-          style={{ minHeight: "100%" }}
+          className="absolute inset-0 overflow-y-auto"
+          style={{ WebkitOverflowScrolling: "touch" }}
         >
-          <AlbumGrid
-            cities={cities}
-            photos={cityPhotos}
-            onSelectCity={(id) => setSelection({ kind: "city", id })}
-          />
+          <div
+            className="max-w-3xl w-full mx-auto px-4 pt-16 pb-24"
+            style={{ minHeight: "100%" }}
+          >
+            <AlbumGrid
+              cities={cities}
+              photos={cityPhotos}
+              onSelectCity={(id) => setSelection({ kind: "city", id })}
+            />
+          </div>
         </div>
       )}
 
