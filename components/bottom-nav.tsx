@@ -28,13 +28,18 @@ const TABS = [
 export function BottomNav() {
   const pathname = usePathname();
 
-  // hide on auth screens
+  // hide on auth + onboarding screens — and DO NOT just visually hide;
+  // returning null also kills the fixed bar's hit area, which was eating
+  // taps on form buttons stacked behind it.
   if (
+    pathname === "/giris" ||
+    pathname === "/pick-member" ||
     pathname === "/puzzle" ||
     pathname === "/select-group" ||
     pathname === "/yeni-grup" ||
     pathname === "/katil" ||
-    pathname.startsWith("/katil/")
+    pathname.startsWith("/katil/") ||
+    pathname.startsWith("/grup-kur/")
   )
     return null;
 
