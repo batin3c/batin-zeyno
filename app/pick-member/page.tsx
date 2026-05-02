@@ -43,14 +43,15 @@ export default async function PickMemberPage() {
         </div>
         <PickMemberForm members={members} />
         <div
-          className="w-full flex flex-col gap-2 pt-3 mt-2"
+          className="w-full flex justify-center pt-3 mt-1"
           style={{ borderTop: "2px dashed var(--line-soft)" }}
         >
-          <Link href="/yeni-grup" className="btn-chip w-full justify-center">
-            yeni grup oluştur
-          </Link>
-          <Link href="/katil" className="btn-chip w-full justify-center">
-            gruba katıl
+          <Link
+            href="/katil"
+            className="text-sm font-medium underline decoration-2 underline-offset-4"
+            style={{ color: "var(--text-muted)" }}
+          >
+            davet kodum var
           </Link>
         </div>
       </div>

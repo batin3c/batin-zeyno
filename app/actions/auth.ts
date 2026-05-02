@@ -24,7 +24,53 @@ export async function pickMember(memberId: string): Promise<{
     .maybeSingle();
   const activeGroupId = (link as { group_id?: string } | null)?.group_id ?? null;
   await createSession(memberId, activeGroupId);
-  redirect("/");
+  redirect(activeGroupId ? "/" : "/yeni-grup");
+}
+
+/**
+ * Create a brand-new account (member row) and sign in as it. No group is
+ * attached — the new account lands on /yeni-grup so they can either create
+ * a group or paste an invite code.
+ */
+export async function createAccount(name: string): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return { ok: false, error: "adın boş" };
+  if (trimmed.length > 40) return { ok: false, error: "ad çok uzun" };
+
+  const baseHandle =
+    trimmed
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^\w]+/g, "_")
+      .slice(0, 30) || "uye";
+
+  // handles must be unique — append a numeric suffix if needed
+  let handle = baseHandle;
+  for (let i = 0; i < 25; i++) {
+    const { data: clash } = await db
+      .from("members")
+      .select("id")
+      .eq("handle", handle)
+      .maybeSingle();
+    if (!clash) break;
+    handle = `${baseHandle}_${Math.floor(Math.random() * 10000)}`;
+  }
+
+  const { data, error } = await db
+    .from("members")
+    .insert({ name: trimmed, handle, is_active: true })
+    .select("id")
+    .single();
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "üye oluşturulamadı" };
+  }
+  const memberId = (data as { id: string }).id;
+
+  await createSession(memberId, null);
+  redirect("/yeni-grup");
 }
 
 /**
