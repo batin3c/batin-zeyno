@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "20mb",
     },
+    // keep RSC payloads in client cache so tab switches feel instant
+    staleTimes: {
+      dynamic: 120,
+      static: 300,
+    },
   },
   images: {
     remotePatterns: [

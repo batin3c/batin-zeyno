@@ -138,7 +138,22 @@ export function GlobeCanvas({
     const g = globeRef.current;
     if (!g || size.w === 0) return;
 
-    g.pointOfView({ lat: 39, lng: 35, altitude: 2.2 }, 0);
+    // restore previous camera if user navigated away and back
+    let initialPov = { lat: 39, lng: 35, altitude: 2.2 };
+    try {
+      const saved = sessionStorage.getItem("globe-pov");
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (
+          typeof p.lat === "number" &&
+          typeof p.lng === "number" &&
+          typeof p.altitude === "number"
+        ) {
+          initialPov = p;
+        }
+      }
+    } catch {}
+    g.pointOfView(initialPov, 0);
 
     const controls = g.controls() as unknown as {
       autoRotate: boolean;
@@ -175,23 +190,40 @@ export function GlobeCanvas({
       }, IDLE_TIMEOUT_MS);
     };
 
+    const persistPov = () => {
+      try {
+        const pov = g.pointOfView();
+        sessionStorage.setItem("globe-pov", JSON.stringify(pov));
+      } catch {}
+    };
+
     const onDown = () => stopRotate();
-    const onUp = () => scheduleResume();
+    const onUp = () => {
+      scheduleResume();
+      persistPov();
+    };
     const onWheel = () => {
       stopRotate();
       scheduleResume();
+      persistPov();
     };
 
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointerup", onUp);
     el.addEventListener("pointercancel", onUp);
     el.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("pagehide", persistPov);
+    document.addEventListener("visibilitychange", persistPov);
 
     return () => {
+      // persist on unmount too
+      persistPov();
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointercancel", onUp);
       el.removeEventListener("wheel", onWheel);
+      window.removeEventListener("pagehide", persistPov);
+      document.removeEventListener("visibilitychange", persistPov);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [size.w]);

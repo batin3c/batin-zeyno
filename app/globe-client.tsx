@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Geometry } from "geojson";
 import { Globe2, Images } from "lucide-react";
@@ -61,7 +61,17 @@ export function GlobeClient({
   cityPhotos: CityPhoto[];
 }) {
   const [selection, setSelection] = useState<Selection>(null);
-  const [view, setView] = useState<"globe" | "album">("globe");
+  const [view, setView] = useState<"globe" | "album">(() => {
+    if (typeof window === "undefined") return "globe";
+    const saved = sessionStorage.getItem("globe-view");
+    return saved === "album" ? "album" : "globe";
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("globe-view", view);
+    } catch {}
+  }, [view]);
 
   const visitedCodes = useMemo(
     () => new Set(visited.map((v) => v.code)),
