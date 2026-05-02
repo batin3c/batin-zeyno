@@ -5,6 +5,17 @@ import { db } from "@/lib/supabase";
 import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { iso2 } from "@/lib/form-helpers";
+import { notifyOthers } from "./push";
+
+// ISO2 → human-friendly Turkish country label for push notifications
+function countryNameTr(code: string): string {
+  const dn = new Intl.DisplayNames(["tr"], { type: "region" });
+  try {
+    return dn.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 // invalidate just this group's globe-data cache (matches the tag set in
 // app/layout.tsx: `globe-data:${groupId}`). Other groups' caches stay warm.
@@ -54,6 +65,12 @@ export async function toggleVisitedCountry(
   if (error) return { ok: false, visited: false, error: error.message };
   bustGlobe(groupId);
   revalidatePath("/tatiller"); // country count changed → home stats
+  notifyOthers({
+    title: `${me.name.toLowerCase()} ülke ekledi 🌍`,
+    body: countryNameTr(c),
+    url: `/`,
+    tag: `country-${groupId}`,
+  }).catch(() => {});
   return { ok: true, visited: true };
 }
 
@@ -114,6 +131,12 @@ export async function addCountryPhoto(
     if (error) return { ok: false, error: error.message };
     bustGlobe(groupId);
     if (countryCreated) revalidatePath("/tatiller");
+    notifyOthers({
+      title: `${me.name.toLowerCase()} foto attı 📸`,
+      body: countryNameTr(code),
+      url: `/`,
+      tag: `country-photo-${code}`,
+    }).catch(() => {});
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

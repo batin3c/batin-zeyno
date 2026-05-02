@@ -201,7 +201,12 @@ function AlbumCard({
   index: number;
   onSelect: (id: string) => void;
 }) {
-  const first = cityPhotos[0];
+  // user-picked cover wins; otherwise fall back to first photo (newest first
+  // because the layout query orders city_photos by added_at desc)
+  const first =
+    (city.cover_photo_id
+      ? cityPhotos.find((p) => p.id === city.cover_photo_id)
+      : null) ?? cityPhotos[0];
   const flag = city.country_code ? isoToFlag(city.country_code) : "📍";
   const pillBg = PILL_COLORS[index % PILL_COLORS.length];
   return (

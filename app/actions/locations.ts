@@ -187,6 +187,54 @@ export async function createLocationsBatch(
   return { ok: true, inserted: rows.length };
 }
 
+/**
+ * One-shot backfill: persist Google photo URLs (resolved client-side via
+ * JS SDK) onto a location's google_photo_urls. Server-side downloads via
+ * uploadImageFromUrl bypass Google's referer restrictions.
+ */
+export async function backfillLocationPhotosFromUrls(
+  locationId: string,
+  urls: string[]
+): Promise<{ ok: boolean; inserted: number; error?: string }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!locationId || !Array.isArray(urls) || urls.length === 0) {
+    return { ok: false, inserted: 0, error: "boş istek" };
+  }
+  const { data: loc } = await db
+    .from("locations")
+    .select("trip_id, google_photo_urls")
+    .eq("id", locationId)
+    .maybeSingle();
+  if (!loc) return { ok: false, inserted: 0, error: "yer yok" };
+  if (!(await tripBelongsToActiveGroup(loc.trip_id as string, groupId))) {
+    return { ok: false, inserted: 0, error: "yetkisiz" };
+  }
+
+  const persisted = await Promise.all(
+    urls.slice(0, 5).map((u) =>
+      uploadImageFromUrl(u, `google/${loc.trip_id}`, {
+        referer: refererFromGoogleUrl(u),
+      })
+    )
+  );
+  const ok = persisted.filter((u): u is string => !!u);
+  if (ok.length === 0) return { ok: false, inserted: 0, error: "indirilemedi" };
+
+  const existing = (loc.google_photo_urls as string[]) ?? [];
+  const next = [...existing, ...ok];
+  const { error } = await db
+    .from("locations")
+    .update({
+      google_photo_urls: next,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", locationId);
+  if (error) return { ok: false, inserted: 0, error: error.message };
+  revalidatePath(`/trips/${loc.trip_id}`);
+  return { ok: true, inserted: ok.length };
+}
+
 // Allowlist of hostnames whose share URLs we are willing to follow on the
 // server. Anything else gets rejected up front to keep this action from
 // being repurposed as an SSRF probe against internal infra.

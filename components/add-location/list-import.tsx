@@ -78,65 +78,104 @@ export function ListImport({
       document.createElement("div")
     );
     const detailsFields = ["rating", "user_ratings_total", "photos", "types"];
-    const enrichOne = (place: EnrichedPlace) =>
-      new Promise<void>((resolve) => {
-        if (!place.google_place_id) {
-          resolve();
-          return;
-        }
-        svc.getDetails(
-          { placeId: place.google_place_id, fields: detailsFields },
-          (res, status) => {
+
+    // The list-scrape returns Google's *internal* placeId (often hex /
+    // feature-id format) that PlacesService.getDetails refuses. When that
+    // happens, recover by findPlaceFromQuery on the name + a tight location
+    // bias around the listed coords, then retry getDetails on that.
+    const findRealPlaceId = (place: EnrichedPlace): Promise<string | null> =>
+      new Promise((resolve) => {
+        svc.findPlaceFromQuery(
+          {
+            query: place.name,
+            fields: ["place_id"],
+            locationBias: new google.maps.Circle({
+              center: { lat: place.lat, lng: place.lng },
+              radius: 200,
+            }),
+          },
+          (results, status) => {
             if (
               status === google.maps.places.PlacesServiceStatus.OK &&
-              res
+              results &&
+              results.length > 0 &&
+              results[0].place_id
             ) {
-              const photoUrls =
-                res.photos
-                  ?.slice(0, 3)
-                  .map((ph) => {
-                    try {
-                      return ph.getUrl({ maxWidth: 1200 });
-                    } catch {
-                      return null;
-                    }
-                  })
-                  .filter(
-                    (u): u is string =>
-                      typeof u === "string" && u.length > 0
-                  ) ?? [];
-              const nextRating =
-                typeof res.rating === "number" ? res.rating : null;
-              const nextCount =
-                typeof res.user_ratings_total === "number"
-                  ? res.user_ratings_total
-                  : null;
-              const nextCategory = pickCategoryFromGoogleTypes(res.types);
-              setPlaces((prev) =>
-                prev
-                  ? prev.map((p) =>
-                      p.google_place_id === place.google_place_id
-                        ? {
-                            ...p,
-                            rating: nextRating,
-                            rating_count: nextCount,
-                            google_photo_urls: photoUrls,
-                            category: nextCategory,
-                          }
-                        : p
-                    )
-                  : prev
-              );
-            } else if (
-              status === google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT
-            ) {
-              setTimeout(() => enrichOne(place).then(resolve), 400);
-              return;
+              resolve(results[0].place_id);
+            } else {
+              resolve(null);
             }
-            resolve();
           }
         );
       });
+
+    const fetchDetails = (
+      placeId: string
+    ): Promise<google.maps.places.PlaceResult | null> =>
+      new Promise((resolve) => {
+        svc.getDetails(
+          { placeId, fields: detailsFields },
+          (res, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && res) {
+              resolve(res);
+            } else if (
+              status === google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT
+            ) {
+              setTimeout(() => fetchDetails(placeId).then(resolve), 400);
+            } else {
+              resolve(null);
+            }
+          }
+        );
+      });
+
+    const enrichOne = async (place: EnrichedPlace): Promise<void> => {
+      // 1) try the id we got from the list scrape
+      let res: google.maps.places.PlaceResult | null = place.google_place_id
+        ? await fetchDetails(place.google_place_id)
+        : null;
+
+      // 2) fallback: ask Google for the real ChIJ-style id by name + coords
+      if (!res) {
+        const realId = await findRealPlaceId(place);
+        if (realId) res = await fetchDetails(realId);
+      }
+      if (!res) return;
+
+      const photoUrls =
+        res.photos
+          ?.slice(0, 3)
+          .map((ph) => {
+            try {
+              return ph.getUrl({ maxWidth: 1200 });
+            } catch {
+              return null;
+            }
+          })
+          .filter((u): u is string => typeof u === "string" && u.length > 0) ??
+        [];
+      const nextRating = typeof res.rating === "number" ? res.rating : null;
+      const nextCount =
+        typeof res.user_ratings_total === "number"
+          ? res.user_ratings_total
+          : null;
+      const nextCategory = pickCategoryFromGoogleTypes(res.types);
+      setPlaces((prev) =>
+        prev
+          ? prev.map((p) =>
+              p.google_place_id === place.google_place_id
+                ? {
+                    ...p,
+                    rating: nextRating,
+                    rating_count: nextCount,
+                    google_photo_urls: photoUrls,
+                    category: nextCategory,
+                  }
+                : p
+            )
+          : prev
+      );
+    };
     const CONCURRENCY = 4;
     let cursor = 0;
     const workers = Array.from({ length: CONCURRENCY }, async () => {

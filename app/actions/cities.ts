@@ -3,9 +3,10 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
-import { uploadImage, removeByUrl } from "@/lib/storage";
+import { uploadImage, uploadImageFromUrl, removeByUrl } from "@/lib/storage";
 import { fetchCityBoundary, type GeoJsonGeometry } from "@/lib/osm";
 import { iso2 } from "@/lib/form-helpers";
+import { notifyOthers } from "./push";
 
 // invalidate just this group's globe-data cache (matches the tag set in
 // app/layout.tsx: `globe-data:${groupId}`). Other groups' caches stay warm.
@@ -81,7 +82,99 @@ export async function addCity(input: {
 
   bustGlobe(groupId);
   revalidatePath("/tatiller");
+  notifyOthers({
+    title: `${me.name.toLowerCase()} yeni şehir ekledi 🌍`,
+    body: name,
+    url: `/`,
+    tag: `city-${groupId}`,
+  }).catch(() => {});
   return { ok: true, id: data.id as string };
+}
+
+function refererFromGoogleUrl(url: string): string | undefined {
+  try {
+    const u = new URL(url);
+    const r = u.searchParams.get("r_url");
+    return r ? r + "/" : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * One-shot backfill: take Google photo URLs already resolved by the JS SDK
+ * on the client and persist them as city_photos. Server-side download
+ * bypasses Google's referer restrictions thanks to uploadImageFromUrl.
+ */
+export async function backfillCityPhotosFromUrls(
+  cityId: string,
+  urls: string[]
+): Promise<{ ok: boolean; inserted: number; error?: string }> {
+  const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!cityId || !Array.isArray(urls) || urls.length === 0) {
+    return { ok: false, inserted: 0, error: "boş istek" };
+  }
+  const { data: city } = await db
+    .from("visited_cities")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("id", cityId)
+    .maybeSingle();
+  if (!city) return { ok: false, inserted: 0, error: "yetkisiz" };
+
+  const persisted = await Promise.all(
+    urls.slice(0, 5).map((u) =>
+      uploadImageFromUrl(u, `cities/${cityId}`, {
+        referer: refererFromGoogleUrl(u),
+      })
+    )
+  );
+  const ok = persisted.filter((u): u is string => !!u);
+  if (ok.length === 0) return { ok: false, inserted: 0, error: "indirilemedi" };
+
+  const rows = ok.map((url) => ({
+    city_id: cityId,
+    url,
+    added_by: me.id,
+    group_id: groupId,
+  }));
+  const { error } = await db.from("city_photos").insert(rows);
+  if (error) return { ok: false, inserted: 0, error: error.message };
+  bustGlobe(groupId);
+  return { ok: true, inserted: ok.length };
+}
+
+/**
+ * Pick which photo represents this city in the album grid. Pass null to
+ * fall back to "first photo by added_at". Verifies the photo belongs to
+ * the same city (and group) so a forged id can't pin someone else's photo.
+ */
+export async function setCityCoverPhoto(
+  cityId: string,
+  photoId: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!cityId) return { ok: false, error: "id yok" };
+  if (photoId) {
+    const { data: photo } = await db
+      .from("city_photos")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("id", photoId)
+      .eq("city_id", cityId)
+      .maybeSingle();
+    if (!photo) return { ok: false, error: "yetkisiz" };
+  }
+  const { error } = await db
+    .from("visited_cities")
+    .update({ cover_photo_id: photoId, updated_at: new Date().toISOString() })
+    .eq("group_id", groupId)
+    .eq("id", cityId);
+  if (error) return { ok: false, error: error.message };
+  bustGlobe(groupId);
+  return { ok: true };
 }
 
 export async function updateCityNote(
@@ -160,7 +253,18 @@ export async function addCityPhoto(
     });
     if (error) return { ok: false, error: error.message };
     bustGlobe(groupId);
-    // photo upload doesn't change city count → no home revalidate
+    // city name for the push body
+    const { data: city } = await db
+      .from("visited_cities")
+      .select("name")
+      .eq("id", cityId)
+      .maybeSingle();
+    notifyOthers({
+      title: `${me.name.toLowerCase()} foto attı 📸`,
+      body: (city?.name as string) ?? "albüm",
+      url: `/`,
+      tag: `city-photo-${cityId}`,
+    }).catch(() => {});
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

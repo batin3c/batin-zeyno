@@ -136,6 +136,7 @@ export type VisitedCity = {
   added_at: string;
   updated_at: string;
   sort_order: number;
+  cover_photo_id: string | null;
 };
 
 export type CityPhoto = {

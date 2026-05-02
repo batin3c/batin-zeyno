@@ -10,6 +10,7 @@ import {
   removeCityPhoto,
   removeCityPhotosBulk,
   deleteCity,
+  setCityCoverPhoto,
 } from "@/app/actions/cities";
 import type { VisitedCity, CityPhoto } from "@/lib/types";
 import { PhotoGallery, type GalleryItem } from "./photo-gallery";
@@ -152,6 +153,14 @@ export function CitySheet({
           />
         </div>
 
+        {photos.length > 1 && (
+          <CoverPicker
+            cityId={city.id}
+            photos={photos}
+            currentCoverId={city.cover_photo_id}
+          />
+        )}
+
         <div
           className="mt-2 pt-4"
           style={{ borderTop: "2px solid var(--line-soft)" }}
@@ -169,5 +178,82 @@ export function CitySheet({
         </div>
       </div>
     </SimpleDialog>
+  );
+}
+
+function CoverPicker({
+  cityId,
+  photos,
+  currentCoverId,
+}: {
+  cityId: string;
+  photos: CityPhoto[];
+  currentCoverId: string | null;
+}) {
+  const [pending, startTransition] = useTransition();
+  // optimistic — flip immediately, server sync in background
+  const [picked, setPicked] = useState<string | null>(currentCoverId);
+
+  const choose = (id: string) => {
+    if (pending) return;
+    const next = picked === id ? null : id; // tap again → unset → fall back to default
+    setPicked(next);
+    startTransition(async () => {
+      await setCityCoverPhoto(cityId, next);
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="label" style={{ fontSize: "0.62rem" }}>
+        albüm kapağı
+      </span>
+      <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1">
+        {photos.map((p) => {
+          const isCover = picked === p.id || (picked === null && photos[0].id === p.id);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => choose(p.id)}
+              disabled={pending}
+              className="relative flex-shrink-0 overflow-hidden p-0 disabled:opacity-60"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 12,
+                border: `2px solid ${isCover ? "var(--accent)" : "var(--ink)"}`,
+                boxShadow: isCover ? "var(--shadow-pop-sm)" : "none",
+                cursor: pending ? "default" : "pointer",
+              }}
+              aria-label={isCover ? "kapak" : "kapak yap"}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.url}
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {isCover && (
+                <span
+                  className="absolute top-0.5 right-0.5 flex items-center justify-center text-[0.6rem] font-bold"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    background: "var(--accent)",
+                    border: "1.5px solid var(--ink)",
+                    borderRadius: 999,
+                    color: "var(--ink)",
+                  }}
+                >
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
