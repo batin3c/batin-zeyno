@@ -26,20 +26,17 @@ export async function toggleVisitedCountry(
   if (selErr) return { ok: false, visited: false, error: selErr.message };
 
   if (existing) {
-    // grab photos first for storage cleanup, then delete row (cascade handles photo rows)
     const { data: photos } = await db
       .from("country_photos")
       .select("url")
       .eq("code", c);
     const { error } = await db.from("visited_countries").delete().eq("code", c);
     if (error) return { ok: false, visited: false, error: error.message };
-    for (const p of (photos ?? []) as { url: string }[]) {
-      try {
-        await removeByUrl(p.url);
-      } catch {}
-    }
+    await Promise.allSettled(
+      ((photos ?? []) as { url: string }[]).map((p) => removeByUrl(p.url))
+    );
     revalidatePath("/globe");
-  revalidatePath("/");
+    revalidatePath("/"); // country count changed → home stats
     return { ok: true, visited: false };
   }
 
@@ -49,7 +46,7 @@ export async function toggleVisitedCountry(
   });
   if (error) return { ok: false, visited: false, error: error.message };
   revalidatePath("/globe");
-  revalidatePath("/");
+  revalidatePath("/"); // country count changed → home stats
   return { ok: true, visited: true };
 }
 
@@ -68,7 +65,7 @@ export async function updateCountryNote(
     .eq("code", c);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/globe");
-  revalidatePath("/");
+  // note doesn't affect any count → no home revalidate
   return { ok: true };
 }
 
@@ -82,7 +79,7 @@ export async function addCountryPhoto(
     return { ok: false, error: "istek bozuk" };
   }
   try {
-    // ensure visited row exists (photo FK requires it)
+    let countryCreated = false;
     const { data: existing } = await db
       .from("visited_countries")
       .select("code")
@@ -93,6 +90,7 @@ export async function addCountryPhoto(
         .from("visited_countries")
         .insert({ code, added_by: me.id });
       if (insErr) return { ok: false, error: insErr.message };
+      countryCreated = true;
     }
 
     const url = await uploadImage(file, `countries/${code}`);
@@ -103,7 +101,7 @@ export async function addCountryPhoto(
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/globe");
-  revalidatePath("/");
+    if (countryCreated) revalidatePath("/");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -121,16 +119,13 @@ export async function removeCountryPhotosBulk(
     .from("country_photos")
     .select("id, url")
     .in("id", ids);
-  const { error } = await db
-    .from("country_photos")
-    .delete()
-    .in("id", ids);
+  const { error } = await db.from("country_photos").delete().in("id", ids);
   if (error) return { ok: false, error: error.message };
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
   revalidatePath("/globe");
-  revalidatePath("/");
+  // photo deletion doesn't affect home stats
   return { ok: true };
 }
 
@@ -152,6 +147,5 @@ export async function removeCountryPhoto(
     } catch {}
   }
   revalidatePath("/globe");
-  revalidatePath("/");
   return { ok: true };
 }

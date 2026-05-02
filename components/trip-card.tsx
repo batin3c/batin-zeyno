@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Trip } from "@/lib/types";
 import { TripDeleteButton } from "./trip-delete-button";
 
@@ -44,13 +45,13 @@ export function TripCard({
           }}
         >
           {trip.cover_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={trip.cover_url}
               alt={trip.name}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-cover"
+              priority={index < 2}
             />
           ) : (
             <EmptyCover />

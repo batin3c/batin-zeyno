@@ -74,7 +74,7 @@ export async function updateCityNote(
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/globe");
-  revalidatePath("/");
+  // note doesn't affect counts → no home revalidate
   return { ok: true };
 }
 
@@ -117,7 +117,7 @@ export async function addCityPhoto(
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/globe");
-  revalidatePath("/");
+    // photo upload doesn't change city count → no home revalidate
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -176,7 +176,7 @@ export async function removeCityPhotosBulk(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
   revalidatePath("/globe");
-  revalidatePath("/");
+  // photo deletion doesn't affect city count
   return { ok: true };
 }
 
@@ -198,6 +198,5 @@ export async function removeCityPhoto(
     } catch {}
   }
   revalidatePath("/globe");
-  revalidatePath("/");
   return { ok: true };
 }

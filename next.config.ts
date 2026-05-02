@@ -7,6 +7,18 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "20mb",
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "vpczoygfaeurizkfqnba.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "maps.googleapis.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

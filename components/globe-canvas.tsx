@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GlobeMethods } from "react-globe.gl";
 import Globe from "react-globe.gl";
 import { MeshPhongMaterial, Color } from "three";
@@ -148,28 +148,34 @@ export function GlobeCanvas({
     };
   }, [size.w]);
 
-  const handleCountryClick = (f: object) => {
-    if (isCityBoundary(f)) return;
-    const feat = f as CF;
-    const iso2 = feat.properties?.iso2;
-    if (!iso2) return;
-    const g = globeRef.current;
-    if (g) {
-      const [lng, lat] = centroid(feat);
-      g.pointOfView({ lat, lng, altitude: 1.8 }, 800);
-    }
-    onSelectCountry(iso2);
-  };
+  const handleCountryClick = useCallback(
+    (f: object) => {
+      if (isCityBoundary(f)) return;
+      const feat = f as CF;
+      const iso2 = feat.properties?.iso2;
+      if (!iso2) return;
+      const g = globeRef.current;
+      if (g) {
+        const [lng, lat] = centroid(feat);
+        g.pointOfView({ lat, lng, altitude: 1.8 }, 800);
+      }
+      onSelectCountry(iso2);
+    },
+    [onSelectCountry]
+  );
 
-  const handlePointClick = (p: object) => {
-    const city = p as CityPoint;
-    if (!city?.id) return;
-    const g = globeRef.current;
-    if (g) {
-      g.pointOfView({ lat: city.lat, lng: city.lng, altitude: 1.4 }, 800);
-    }
-    onSelectCity(city.id);
-  };
+  const handlePointClick = useCallback(
+    (p: object) => {
+      const city = p as CityPoint;
+      if (!city?.id) return;
+      const g = globeRef.current;
+      if (g) {
+        g.pointOfView({ lat: city.lat, lng: city.lng, altitude: 1.4 }, 800);
+      }
+      onSelectCity(city.id);
+    },
+    [onSelectCity]
+  );
 
   const polygons = useMemo(() => {
     const base = features as unknown as AnyPoly[];
@@ -182,36 +188,50 @@ export function GlobeCanvas({
     return [...base, boundaryFeature];
   }, [features, selectedCityBoundary]);
 
-  const isCityBoundary = (f: object): boolean => {
-    const feat = f as AnyPoly;
-    return (
-      typeof feat.properties === "object" &&
-      feat.properties !== null &&
-      "kind" in feat.properties &&
-      feat.properties.kind === "city-boundary"
-    );
-  };
+  const polygonCapColor = useCallback(
+    (f: object) => {
+      if (isCityBoundary(f)) return "rgba(93, 201, 177, 0.9)";
+      const feat = f as CF;
+      return visitedCodes.has(feat.properties?.iso2 ?? "")
+        ? FILL_VISITED
+        : FILL_UNVISITED;
+    },
+    [visitedCodes]
+  );
 
-  const polygonCapColor = (f: object) => {
-    if (isCityBoundary(f)) return "rgba(93, 201, 177, 0.9)";
-    const feat = f as CF;
-    return visitedCodes.has(feat.properties?.iso2 ?? "")
-      ? FILL_VISITED
-      : FILL_UNVISITED;
-  };
+  const polygonSideColor = useCallback(
+    (f: object) =>
+      isCityBoundary(f) ? "rgba(93, 201, 177, 0.6)" : SIDE_COLOR,
+    []
+  );
 
-  const polygonSideColor = (f: object) =>
-    isCityBoundary(f) ? "rgba(93, 201, 177, 0.6)" : SIDE_COLOR;
+  const polygonStrokeColor = useCallback(() => BORDER, []);
 
-  const polygonStrokeColor = (f: object) =>
-    isCityBoundary(f) ? BORDER : BORDER;
+  const polygonAltitude = useCallback(
+    (f: object) => {
+      if (isCityBoundary(f)) return 0.06;
+      const feat = f as CF;
+      return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.004 : 0.002;
+    },
+    [visitedCodes]
+  );
 
-  const polygonAltitude = (f: object) => {
-    if (isCityBoundary(f)) return 0.06;
-    const feat = f as CF;
-    // keep countries very flat so they never occlude city dots/halos
-    return visitedCodes.has(feat.properties?.iso2 ?? "") ? 0.004 : 0.002;
-  };
+  const pointAltitude = useCallback(
+    (p: object) => {
+      const c = p as CityPoint;
+      return selectedCityId === c.id ? 0 : 0.018;
+    },
+    [selectedCityId]
+  );
+
+  const pointColor = useCallback(() => CITY_COLOR, []);
+
+  const arcColor = useCallback(() => "rgba(31, 26, 20, 0.55)", []);
+
+  const pointLabel = useCallback((p: object) => {
+    const c = p as CityPoint;
+    return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
+  }, []);
 
   return (
     <div
@@ -242,24 +262,18 @@ export function GlobeCanvas({
           pointsData={cities as unknown as object[]}
           pointLat="lat"
           pointLng="lng"
-          pointColor={() => CITY_COLOR}
-          pointAltitude={(p: object) => {
-            const c = p as CityPoint;
-            return selectedCityId === c.id ? 0 : 0.018;
-          }}
+          pointColor={pointColor}
+          pointAltitude={pointAltitude}
           pointRadius={0.55}
           pointResolution={12}
-          pointLabel={(p: object) => {
-            const c = p as CityPoint;
-            return `<div style="background:#1f1a14;color:#fbf7ee;padding:4px 9px;border-radius:999px;font-family:Fredoka,sans-serif;font-weight:600;font-size:12px;">📍 ${escapeHtml(c.name)}</div>`;
-          }}
+          pointLabel={pointLabel}
           onPointClick={handlePointClick}
           arcsData={routes as unknown as object[]}
           arcStartLat="startLat"
           arcStartLng="startLng"
           arcEndLat="endLat"
           arcEndLng="endLng"
-          arcColor={() => "rgba(31, 26, 20, 0.55)"}
+          arcColor={arcColor}
           arcAltitudeAutoScale={0.35}
           arcStroke={0.35}
           arcDashLength={0.45}
@@ -268,6 +282,16 @@ export function GlobeCanvas({
         />
       )}
     </div>
+  );
+}
+
+function isCityBoundary(f: object): boolean {
+  const feat = f as AnyPoly;
+  return (
+    typeof feat.properties === "object" &&
+    feat.properties !== null &&
+    "kind" in feat.properties &&
+    feat.properties.kind === "city-boundary"
   );
 }
 
