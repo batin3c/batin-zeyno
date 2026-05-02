@@ -94,6 +94,9 @@ async function loadGlobeData(groupId: string) {
       .from("visited_cities")
       .select("*")
       .eq("group_id", groupId)
+      // album view is drag-reorderable; sort_order is the manual override,
+      // added_at is the tiebreaker (newest first for any city not yet moved)
+      .order("sort_order", { ascending: true })
       .order("added_at", { ascending: false }),
     db
       .from("city_photos")

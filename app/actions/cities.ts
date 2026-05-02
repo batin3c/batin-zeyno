@@ -11,6 +11,28 @@ import { iso2 } from "@/lib/form-helpers";
 // app/layout.tsx: `globe-data:${groupId}`). Other groups' caches stay warm.
 const bustGlobe = (groupId: string) => updateTag(`globe-data:${groupId}`);
 
+/**
+ * Drag-reorder of album cards. Single SQL via Postgres function — see
+ * supabase/migrations/0015_city_sort_order.sql. Group_id scoped server-side
+ * so a member can't reorder another group's cities.
+ */
+export async function reorderVisitedCities(
+  orderedIds: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return { ok: false, error: "boş istek" };
+  }
+  const { error } = await db.rpc("reorder_visited_cities", {
+    p_group_id: groupId,
+    p_ids: orderedIds,
+  });
+  if (error) return { ok: false, error: error.message };
+  bustGlobe(groupId);
+  return { ok: true };
+}
+
 export async function addCity(input: {
   name: string;
   lat: number;
