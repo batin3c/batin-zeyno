@@ -144,15 +144,14 @@ export async function reorderTrips(
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
     return { ok: false, error: "bozuk istek" };
   }
-  const now = new Date().toISOString();
-  for (let i = 0; i < orderedIds.length; i++) {
-    const { error } = await db
-      .from("trips")
-      .update({ sort_order: (i + 1) * 100, updated_at: now })
-      .eq("id", orderedIds[i])
-      .eq("group_id", groupId);
-    if (error) return { ok: false, error: error.message };
-  }
+  // Single-statement renumber via Postgres function (see migration 0014).
+  // The RPC's group_id filter prevents a forged id from another group from
+  // sneaking into this group's ordering.
+  const { error } = await db.rpc("reorder_trips", {
+    p_group_id: groupId,
+    p_ids: orderedIds,
+  });
+  if (error) return { ok: false, error: error.message };
   revalidatePath("/tatiller");
   return { ok: true };
 }

@@ -37,7 +37,7 @@ export function SettingsClient({
         currentMemberId={currentMemberId}
       />
 
-      <Section title="biz">
+      <Section title="üyeler">
         <div className="flex flex-col">
           {members.map((m, i) => (
             <MemberRow key={m.id} member={m} last={i === members.length - 1} />

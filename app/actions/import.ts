@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/supabase";
-import { requireCurrentMember } from "@/lib/dal";
+import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { parseKml } from "@/lib/kml";
 
 export type ImportResult = {
@@ -11,13 +11,35 @@ export type ImportResult = {
   error?: string;
 };
 
+/**
+ * Verifies that the given trip belongs to the active group. Mirrors the
+ * helper of the same name in `locations.ts` — kept inline here to avoid
+ * cross-action imports.
+ */
+async function tripBelongsToActiveGroup(
+  tripId: string,
+  groupId: string
+): Promise<boolean> {
+  if (!tripId) return false;
+  const { data: trip } = await db
+    .from("trips")
+    .select("group_id")
+    .eq("id", tripId)
+    .maybeSingle();
+  return !!trip && (trip.group_id as string) === groupId;
+}
+
 export async function importKml(formData: FormData): Promise<ImportResult> {
   const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
   const tripId = String(formData.get("trip_id") ?? "");
   const file = formData.get("file");
 
   if (!tripId || !(file instanceof File)) {
     return { ok: false, count: 0, error: "istek bozuk" };
+  }
+  if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
+    return { ok: false, count: 0, error: "yetkisiz" };
   }
   if (file.size === 0) {
     return { ok: false, count: 0, error: "dosya boş" };

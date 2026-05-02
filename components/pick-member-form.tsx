@@ -2,14 +2,11 @@
 
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createAccount, signInByName } from "@/app/actions/auth";
-
-type Mode = "create" | "signin";
+import { createAccount } from "@/app/actions/auth";
 
 export function PickMemberForm() {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<Mode>("create");
   const [name, setName] = useState("");
   const router = useRouter();
 
@@ -23,21 +20,13 @@ export function PickMemberForm() {
     }
     setError(null);
     startTransition(async () => {
-      const r =
-        mode === "create"
-          ? await createAccount(trimmed)
-          : await signInByName(trimmed);
+      const r = await createAccount(trimmed);
       if (r && !r.ok) {
         setError(r.error ?? "olmadı");
         return;
       }
       router.refresh();
     });
-  };
-
-  const swap = () => {
-    setMode((m) => (m === "create" ? "signin" : "create"));
-    setError(null);
   };
 
   return (
@@ -51,7 +40,7 @@ export function PickMemberForm() {
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder={mode === "create" ? "yeni isim" : "kayıtlı ismin"}
+        placeholder="yeni isim"
         maxLength={40}
         autoFocus
         disabled={pending}
@@ -67,22 +56,7 @@ export function PickMemberForm() {
         className="btn-primary w-full justify-center"
         style={{ padding: "0.85rem 1.25rem" }}
       >
-        {pending
-          ? mode === "create"
-            ? "açıyorum…"
-            : "geçiyor…"
-          : mode === "create"
-          ? "hesap aç"
-          : "gir"}
-      </button>
-      <button
-        type="button"
-        onClick={swap}
-        disabled={pending}
-        className="text-sm font-medium underline decoration-2 underline-offset-4 self-center"
-        style={{ color: "var(--text-muted)" }}
-      >
-        {mode === "create" ? "zaten hesabım var" : "yeni hesap aç"}
+        {pending ? "açıyorum…" : "hesap aç"}
       </button>
     </form>
   );

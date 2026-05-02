@@ -3,15 +3,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { setActiveGroup } from "@/lib/session";
-
-// helper for invite codes (6 chars, no confusing chars)
-function newInviteCode(): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  for (let i = 0; i < 6; i++)
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return out;
-}
+import { makeInviteCode } from "@/lib/invite";
 
 export async function createGroup(
   name: string,
@@ -23,7 +15,7 @@ export async function createGroup(
   if (trimmed.length > 60) return { ok: false, error: "isim çok uzun" };
   // retry on invite_code collision (very rare)
   for (let attempt = 0; attempt < 5; attempt++) {
-    const code = newInviteCode();
+    const code = makeInviteCode();
     const { data, error } = await db
       .from("groups")
       .insert({
@@ -189,7 +181,7 @@ export async function regenerateInviteCode(
     .maybeSingle();
   if (meRow?.role !== "owner") return { ok: false, error: "yetkin yok" };
   for (let i = 0; i < 5; i++) {
-    const code = newInviteCode();
+    const code = makeInviteCode();
     const { error } = await db
       .from("groups")
       .update({ invite_code: code })

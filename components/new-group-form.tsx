@@ -59,7 +59,7 @@ export function NewGroupForm({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="batın & zeynep"
+          placeholder="grubun adı"
           maxLength={60}
           autoFocus
           disabled={pending}
@@ -77,7 +77,7 @@ export function NewGroupForm({
             type="text"
             value={memberName}
             onChange={(e) => setMemberName(e.target.value)}
-            placeholder="batın"
+            placeholder="adın"
             maxLength={40}
             disabled={pending}
           />

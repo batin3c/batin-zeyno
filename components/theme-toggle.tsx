@@ -16,6 +16,11 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // hydration guard: theme lives in localStorage / data-theme attribute,
+    // both unavailable during SSR. Read after mount so hydration matches the
+    // server-rendered (light) initial state, then flip to the real theme.
+    // This is the "subscribe to external system" exception in the rule docs.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     setTheme(readTheme());
   }, []);

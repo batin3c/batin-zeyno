@@ -18,6 +18,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
     null
   );
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const onCoverPick = (file: File | null) => {
@@ -53,8 +54,8 @@ export function EditTripButton({ trip }: { trip: Trip }) {
     });
   };
 
-  const onDelete = () => {
-    if (!confirm(`"${trip.name}" silinsin mi? tüm yerler de gider.`)) return;
+  const doDelete = () => {
+    setDeleteOpen(false);
     const fd = new FormData();
     fd.set("id", trip.id);
     startTransition(() => deleteTrip(fd));
@@ -149,7 +150,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
             </span>
             <button
               type="button"
-              onClick={onDelete}
+              onClick={() => setDeleteOpen(true)}
               disabled={pending}
               className="flex items-center justify-center gap-2 w-full font-bold disabled:opacity-40"
               style={{
@@ -167,6 +168,43 @@ export function EditTripButton({ trip }: { trip: Trip }) {
             </button>
           </div>
         </form>
+        {deleteOpen && (
+          <SimpleDialog
+            open
+            onClose={() => setDeleteOpen(false)}
+            title="tatili sil"
+          >
+            <p
+              className="mb-5 text-[0.95rem] leading-relaxed"
+              style={{ color: "var(--text)" }}
+            >
+              &ldquo;{trip.name}&rdquo; silinecek. tüm yerler, harcamalar ve
+              fotoğraflar da gider. emin misin?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(false)}
+                className="btn-chip flex-1 justify-center"
+                style={{ padding: "0.75rem 1rem" }}
+              >
+                vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={doDelete}
+                className="btn-primary flex-1 justify-center"
+                style={{
+                  padding: "0.75rem 1rem",
+                  background: "var(--danger)",
+                  color: "#fff",
+                }}
+              >
+                sil
+              </button>
+            </div>
+          </SimpleDialog>
+        )}
       </SimpleDialog>
     </>
   );

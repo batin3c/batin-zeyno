@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   Heart,
   Check,
@@ -63,12 +63,18 @@ export function LocationList({
   tripId: string;
   draggable?: boolean;
 }) {
-  const [order, setOrder] = useState<string[]>(locations.map((l) => l.id));
+  const ids = locations.map((l) => l.id);
+  const idsKey = ids.join(",");
+  // store-prop-in-state pattern from React 19 docs: hold the last seen key
+  // alongside the order. When the server pushes a new id set (add, delete,
+  // remote reorder) we resync during render — no effect, no extra render.
+  const [lastIdsKey, setLastIdsKey] = useState(idsKey);
+  const [order, setOrder] = useState<string[]>(ids);
+  if (idsKey !== lastIdsKey) {
+    setLastIdsKey(idsKey);
+    setOrder(ids);
+  }
   const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    setOrder(locations.map((l) => l.id));
-  }, [locations]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

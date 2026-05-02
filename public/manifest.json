@@ -1,7 +1,7 @@
 {
   "name": "baze",
   "short_name": "baze",
-  "description": "ikimize özel tatil günlüğü",
+  "description": "yer keşfet, hesap böl, küre boya — gruplara özel tatil günlüğü",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

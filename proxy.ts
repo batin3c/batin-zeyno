@@ -37,6 +37,20 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // bounce already-signed-in users away from /pick-member — they don't need to
+  // pick again. /yeni-grup and /katil stay reachable so they can create or
+  // join more groups while signed in.
+  if (
+    session &&
+    session.memberId &&
+    session.activeGroupId &&
+    pathname === "/pick-member"
+  ) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 

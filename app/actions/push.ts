@@ -37,12 +37,13 @@ export async function saveSubscription(sub: {
 export async function deleteSubscription(
   endpoint: string
 ): Promise<{ ok: boolean; error?: string }> {
-  await requireCurrentMember();
+  const me = await requireCurrentMember();
   if (!endpoint) return { ok: false, error: "endpoint yok" };
   const { error } = await db
     .from("push_subscriptions")
     .delete()
-    .eq("endpoint", endpoint);
+    .eq("endpoint", endpoint)
+    .eq("member_id", me.id);
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }

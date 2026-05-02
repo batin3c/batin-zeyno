@@ -161,6 +161,7 @@ function ActiveGroupCard({
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
   const [leaveErr, setLeaveErr] = useState<string | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   const onCopy = async () => {
     try {
@@ -172,9 +173,8 @@ function ActiveGroupCard({
     }
   };
 
-  const onLeave = () => {
-    if (!confirm(`"${group.name}" grubundan ayrılmak istediğine emin misin?`))
-      return;
+  const doLeave = () => {
+    setLeaveOpen(false);
     setLeaveErr(null);
     startTransition(async () => {
       const r = await leaveGroup(group.id);
@@ -269,7 +269,7 @@ function ActiveGroupCard({
       >
         <button
           type="button"
-          onClick={onLeave}
+          onClick={() => setLeaveOpen(true)}
           disabled={pending}
           className="text-[0.82rem] font-semibold disabled:opacity-50"
           style={{ color: "var(--danger)" }}
@@ -285,7 +285,65 @@ function ActiveGroupCard({
           </span>
         )}
       </div>
+      {leaveOpen && (
+        <ConfirmDialog
+          title="gruptan ayrıl"
+          body={`"${group.name}" grubundan ayrılmak istediğine emin misin?`}
+          confirmLabel="ayrıl"
+          onCancel={() => setLeaveOpen(false)}
+          onConfirm={doLeave}
+        />
+      )}
     </div>
+  );
+}
+
+// ---------- Reusable confirm dialog ----------
+
+function ConfirmDialog({
+  title,
+  body,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <SimpleDialog open onClose={onCancel} title={title}>
+      <p
+        className="mb-5 text-[0.95rem] leading-relaxed"
+        style={{ color: "var(--text)" }}
+      >
+        {body}
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-chip flex-1 justify-center"
+          style={{ padding: "0.75rem 1rem" }}
+        >
+          vazgeç
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="btn-primary flex-1 justify-center"
+          style={{
+            padding: "0.75rem 1rem",
+            background: "var(--danger)",
+            color: "#fff",
+          }}
+        >
+          {confirmLabel}
+        </button>
+      </div>
+    </SimpleDialog>
   );
 }
 
@@ -346,13 +404,13 @@ function MemberRow({
 }) {
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [kickOpen, setKickOpen] = useState(false);
   // we don't get role per-member from the parent, so we approximate:
   // for the kick/promote actions the server still verifies. We render the
   // promote button on everyone except yourself; the action is idempotent.
 
-  const onKick = () => {
-    if (!confirm(`"${member.name}", "${groupName}" grubundan atılsın mı?`))
-      return;
+  const doKick = () => {
+    setKickOpen(false);
     setErr(null);
     startTransition(async () => {
       const r = await kickMember(groupId, member.id);
@@ -404,7 +462,7 @@ function MemberRow({
           </button>
           <button
             type="button"
-            onClick={onKick}
+            onClick={() => setKickOpen(true)}
             disabled={pending}
             className="btn-icon"
             aria-label="çıkar"
@@ -423,6 +481,15 @@ function MemberRow({
         >
           {err}
         </span>
+      )}
+      {kickOpen && (
+        <ConfirmDialog
+          title="üyeyi çıkar"
+          body={`"${member.name}" "${groupName}" grubundan çıkarılsın mı?`}
+          confirmLabel="çıkar"
+          onCancel={() => setKickOpen(false)}
+          onConfirm={doKick}
+        />
       )}
     </div>
   );
@@ -517,15 +584,17 @@ function SwitchDialog({
 
 // ---------- Edit group dialog ----------
 
+// Same palette as `components/new-group-form.tsx` — keep in sync so the
+// chip swatches the user picked when creating a group still match here.
 const COLOR_PRESETS = [
-  "#FFB5A7",
-  "#FFD6A5",
-  "#FDFFB6",
-  "#CAFFBF",
-  "#9BF6FF",
-  "#A0C4FF",
-  "#BDB2FF",
-  "#FFC6FF",
+  "#ff6b9d",
+  "#4ecdc4",
+  "#ffd166",
+  "#a78bfa",
+  "#06d6a0",
+  "#f4845f",
+  "#118ab2",
+  "#ef476f",
 ];
 
 function EditGroupDialog({
@@ -543,6 +612,7 @@ function EditGroupDialog({
   const [pending, startTransition] = useTransition();
   const [regenerating, startRegen] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [regenOpen, setRegenOpen] = useState(false);
 
   const onSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -557,9 +627,8 @@ function EditGroupDialog({
     });
   };
 
-  const onRegen = () => {
-    if (!confirm("yeni davet kodu üretilsin mi? eskisi siktir olup gider."))
-      return;
+  const doRegen = () => {
+    setRegenOpen(false);
     setErr(null);
     startRegen(async () => {
       const r = await regenerateInviteCode(group.id);
@@ -591,7 +660,7 @@ function EditGroupDialog({
           <span className="label" style={{ fontSize: "0.62rem" }}>
             renk
           </span>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {COLOR_PRESETS.map((c) => {
               const selected = color === c;
               return (
@@ -611,18 +680,39 @@ function EditGroupDialog({
                       : "var(--shadow-pop-sm)",
                     transform: selected ? "translate(-1px,-1px)" : undefined,
                     cursor: "pointer",
+                    position: "relative",
                   }}
-                />
+                >
+                  {selected && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--ink)",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        lineHeight: 1,
+                      }}
+                    >
+                      ✓
+                    </span>
+                  )}
+                </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => setColor("")}
-              className="text-[0.72rem] font-semibold ml-1"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {color ? "siktir et" : "sıfır"}
-            </button>
+            {color && (
+              <button
+                type="button"
+                onClick={() => setColor("")}
+                className="text-[0.72rem] font-semibold ml-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                temizle
+              </button>
+            )}
           </div>
         </div>
 
@@ -643,7 +733,7 @@ function EditGroupDialog({
             </span>
             <button
               type="button"
-              onClick={onRegen}
+              onClick={() => setRegenOpen(true)}
               disabled={regenerating}
               className="btn-ghost"
               style={{ padding: "0.55rem 0.85rem", fontSize: "0.8rem" }}
@@ -672,6 +762,15 @@ function EditGroupDialog({
           {pending ? "kayıt…" : "kaydet"}
         </button>
       </form>
+      {regenOpen && (
+        <ConfirmDialog
+          title="yeni davet kodu"
+          body="yeni davet kodu üretilsin mi? eskisi geçersiz olur."
+          confirmLabel="yenile"
+          onCancel={() => setRegenOpen(false)}
+          onConfirm={doRegen}
+        />
+      )}
     </SimpleDialog>
   );
 }

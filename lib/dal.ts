@@ -1,7 +1,6 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { createHash } from "crypto";
 import { readSession } from "./session";
 import { db } from "./supabase";
 import type { Member, Group } from "./types";
@@ -105,57 +104,3 @@ export const getActiveGroupMembers = cache(async (): Promise<Member[]> => {
     .sort((a, b) => a.sort_order - b.sort_order);
 });
 
-// ---------- pattern hash + lookup ----------
-
-/**
- * Hash a puzzle pattern with the SESSION_SECRET as salt. Patterns are short
- * (3-9 dots), so plain hash is acceptable for the trusted-circle threat model;
- * the salt prevents naive rainbow lookups against the DB column.
- */
-export function hashPattern(pattern: number[]): string {
-  const secret = process.env.SESSION_SECRET ?? "";
-  return createHash("sha256")
-    .update(JSON.stringify(pattern) + ":" + secret)
-    .digest("hex");
-}
-
-/**
- * Find the (active) member whose stored pattern_hash matches this attempt.
- * Returns null if no match — the caller should treat that as wrong pattern.
- */
-export async function findMemberByPattern(
-  pattern: number[]
-): Promise<Member | null> {
-  if (!Array.isArray(pattern) || pattern.length < 3) return null;
-  const hash = hashPattern(pattern);
-  const { data } = await db
-    .from("members")
-    .select("*")
-    .eq("pattern_hash", hash)
-    .eq("is_active", true)
-    .maybeSingle();
-  return (data as Member) ?? null;
-}
-
-// ---------- legacy puzzle helpers (kept for /setup migration) ----------
-
-export async function getPuzzlePattern(): Promise<number[]> {
-  const { data, error } = await db
-    .from("app_config")
-    .select("value")
-    .eq("key", "puzzle_pattern")
-    .single();
-  if (error) throw error;
-  const value = data?.value;
-  if (!Array.isArray(value)) return [];
-  return value.filter((n) => typeof n === "number");
-}
-
-export async function setPuzzlePattern(pattern: number[]) {
-  const { error } = await db.from("app_config").upsert({
-    key: "puzzle_pattern",
-    value: pattern,
-    updated_at: new Date().toISOString(),
-  });
-  if (error) throw error;
-}

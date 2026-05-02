@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, Check, Trash2, X } from "lucide-react";
 import { PhotoLightbox } from "./photo-lightbox";
@@ -51,17 +51,35 @@ export function PhotoGallery({
 
   const { state, start } = usePhotoUpload({ upload: onUpload });
 
-  // exit select mode when item set changes (e.g. after delete)
-  useEffect(() => {
+  // when the item set changes (delete, upload, swap), drop any selected ids
+  // that no longer exist and exit select mode if the list emptied. We use
+  // the React 19 store-prop-in-state pattern: a parallel `lastItemKey`
+  // state lets us run the resync during render without an effect.
+  const itemKey = items.map((i) => i.id ?? i.url).join(",");
+  const [lastItemKey, setLastItemKey] = useState(itemKey);
+  if (itemKey !== lastItemKey) {
+    setLastItemKey(itemKey);
     if (selectMode && items.length === 0) setSelectMode(false);
     setSelected((prev) => {
       const next = new Set<string>();
       for (const id of prev) {
         if (items.some((i) => i.id === id)) next.add(id);
       }
+      // bail out of the setState if nothing changed, so React skips the
+      // re-render
+      if (next.size === prev.size) {
+        let same = true;
+        for (const id of prev) {
+          if (!next.has(id)) {
+            same = false;
+            break;
+          }
+        }
+        if (same) return prev;
+      }
       return next;
     });
-  }, [items, selectMode]);
+  }
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {

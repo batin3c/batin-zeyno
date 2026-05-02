@@ -58,7 +58,7 @@ export default async function NewGroupPage() {
             className="text-sm font-medium underline decoration-2 underline-offset-4"
             style={{ color: "var(--text-muted)" }}
           >
-            siktir et, gruplarıma dön
+            vazgeç, gruplarıma dön
           </Link>
         )}
       </div>

@@ -187,8 +187,27 @@ export async function createLocationsBatch(
   return { ok: true, inserted: rows.length };
 }
 
+// Allowlist of hostnames whose share URLs we are willing to follow on the
+// server. Anything else gets rejected up front to keep this action from
+// being repurposed as an SSRF probe against internal infra.
+const SHARE_URL_HOST_ALLOWLIST = new Set([
+  "maps.app.goo.gl",
+  "goo.gl",
+  "google.com",
+  "maps.google.com",
+  "www.google.com",
+]);
+
 export async function resolveShareUrl(url: string) {
+  await requireCurrentMember();
   if (!url) return null;
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (!SHARE_URL_HOST_ALLOWLIST.has(host)) return null;
   return resolveMapsShareUrl(url);
 }
 
@@ -317,18 +336,14 @@ export async function reorderLocations(
   if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
     return { ok: false, error: "yetkisiz" };
   }
-  // update each row's sort_order sequentially (small N, acceptable)
-  const now = new Date().toISOString();
-  for (let i = 0; i < orderedIds.length; i++) {
-    const id = orderedIds[i];
-    const sort_order = (i + 1) * 100;
-    const { error } = await db
-      .from("locations")
-      .update({ sort_order, updated_at: now })
-      .eq("id", id)
-      .eq("trip_id", tripId);
-    if (error) return { ok: false, error: error.message };
-  }
+  // Single-statement renumber via Postgres function (see migration 0014).
+  // The RPC also enforces the trip_id filter so a forged id from another
+  // trip can't be silently slotted into this one's ordering.
+  const { error } = await db.rpc("reorder_locations", {
+    p_trip_id: tripId,
+    p_ids: orderedIds,
+  });
+  if (error) return { ok: false, error: error.message };
   revalidatePath(`/trips/${tripId}`);
   return { ok: true };
 }

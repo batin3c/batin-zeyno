@@ -16,7 +16,13 @@ export function SimpleDialog({
   children: React.ReactNode;
 }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // hydration guard: createPortal needs document.body, which doesn't exist
+    // during SSR. Flipping a state on first effect is the standard React 19
+    // workaround; "subscribe to external system" exception applies.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;

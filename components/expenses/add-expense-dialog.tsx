@@ -155,6 +155,7 @@ export function AddExpenseDialog({
           </div>
         </div>
 
+        {members.length > 1 && (
         <div>
           <div className="label mb-2" style={{ fontSize: "0.62rem" }}>
             nasıl bölüşelim
@@ -170,7 +171,7 @@ export function AddExpenseDialog({
                 fontWeight: splitMode === "half" ? 700 : 500,
               }}
             >
-              yarı yarı
+              eşit pay
             </button>
             <button
               type="button"
@@ -182,7 +183,7 @@ export function AddExpenseDialog({
                 fontWeight: splitMode === "full" ? 700 : 500,
               }}
             >
-              karşı tam ödesin
+              ben ödedim, başkası bölüşsün
             </button>
             <button
               type="button"
@@ -239,6 +240,7 @@ export function AddExpenseDialog({
             </div>
           )}
         </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>

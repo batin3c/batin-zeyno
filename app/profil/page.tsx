@@ -51,7 +51,7 @@ export default async function ProfilPage() {
           className="text-center mt-8 text-[0.72rem]"
           style={{ color: "var(--text-dim)" }}
         >
-          ikimize özel · 2026
+          gruplara özel · 2026
         </p>
       </main>
     </>

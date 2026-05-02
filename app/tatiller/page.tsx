@@ -337,15 +337,15 @@ function EmptyState({ memberName }: { memberName: string }) {
           className="font-bold tracking-tight"
           style={{ fontSize: "1.5rem", color: "var(--ink)" }}
         >
-          naaber {memberName.toLowerCase()}
+          hoş geldin {memberName.toLowerCase()}
         </h3>
         <p
           className="text-[0.95rem] leading-relaxed"
           style={{ color: "var(--text-muted)" }}
         >
-          daha hiçbir yere gitmemişiz. aşağıdan{" "}
+          daha bir tatil yok. aşağıdan{" "}
           <span style={{ color: "var(--ink)", fontWeight: 600 }}>yeni tatil</span>&apos;e
-          bas da başlayalım.
+          bas da ilkini at.
         </p>
       </div>
     </div>

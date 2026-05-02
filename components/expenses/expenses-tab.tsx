@@ -17,6 +17,7 @@ import {
   SettleUpDialog,
   type SettlementPreset,
 } from "./settle-up-dialog";
+import { SimpleDialog } from "../simple-dialog";
 
 type FeedItem =
   | { kind: "expense"; date: string; data: Expense }
@@ -218,17 +219,18 @@ function ExpenseRow({
   tripId: string;
 }) {
   const [, startTransition] = useTransition();
-  const onDelete = () => {
-    if (!confirm(`"${e.title}" silinsin mi?`)) return;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const doDelete = () => {
+    setConfirmOpen(false);
     startTransition(async () => {
       await deleteExpense(e.id, tripId);
     });
   };
   const splitLabel =
     e.split_mode === "half"
-      ? "yarı yarı"
+      ? "eşit pay"
       : e.split_mode === "full"
-      ? "karşı tam"
+      ? "ödedim, başkası bölüşsün"
       : "özel";
   const customLine =
     e.split_mode === "custom" && e.shares
@@ -322,13 +324,49 @@ function ExpenseRow({
         </div>
       </div>
       <button
-        onClick={onDelete}
+        onClick={() => setConfirmOpen(true)}
         className="p-1 opacity-50 hover:opacity-100 shrink-0"
         style={{ color: "var(--text-muted)" }}
         aria-label="sil"
       >
         <Trash2 size={14} strokeWidth={2} />
       </button>
+      {confirmOpen && (
+        <SimpleDialog
+          open
+          onClose={() => setConfirmOpen(false)}
+          title="harcamayı sil"
+        >
+          <p
+            className="mb-5 text-[0.95rem] leading-relaxed"
+            style={{ color: "var(--text)" }}
+          >
+            &ldquo;{e.title}&rdquo; silinecek. emin misin?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              className="btn-chip flex-1 justify-center"
+              style={{ padding: "0.75rem 1rem" }}
+            >
+              vazgeç
+            </button>
+            <button
+              type="button"
+              onClick={doDelete}
+              className="btn-primary flex-1 justify-center"
+              style={{
+                padding: "0.75rem 1rem",
+                background: "var(--danger)",
+                color: "#fff",
+              }}
+            >
+              sil
+            </button>
+          </div>
+        </SimpleDialog>
+      )}
     </article>
   );
 }

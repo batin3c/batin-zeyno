@@ -58,31 +58,13 @@ openssl rand -base64 32
 npm run dev
 ```
 
-http://localhost:3000 → açılışta `/puzzle`'a yönlenirsin.
+http://localhost:3000 → açılışta `/pick-member` ekranı açılır.
 
 ## İlk giriş
 
-**Varsayılan desen:** X şekli → sırayla nokta `0 → 4 → 8 → 6 → 2`.
-
-```
-0 · 1 · 2
-·       ·
-3 · 4 · 5
-·       ·
-6 · 7 · 8
-```
-
-Doğru çizersen `/who` ekranına gidersin, avatarını seç → ana sayfaya düşersin.
-
-### Deseni değiştirmek
-
-Supabase SQL Editor'da:
-
-```sql
-update app_config
-set value = '[1, 3, 4, 5, 7]'::jsonb  -- senin deseninin nokta sırası
-where key = 'puzzle_pattern';
-```
+- http://localhost:3000 → `/pick-member` ekranı açılır
+- Adını yaz, "hesap aç" tıkla → yeni grup oluştur veya davet kodu ile katıl
+- Cookie 30 gün sürer; aynı tarayıcıda otomatik giriş
 
 ### İsimleri / avatarları değiştirmek
 
@@ -98,8 +80,8 @@ Fotoğraflar için `public/avatars/` klasörüne `batin.jpg` ve `zeynep.jpg` koy
 - **Next.js 16** (App Router) + **Turbopack**
 - **Supabase** (Postgres) — tüm erişim server-side, `service_role` key ile
 - **Google Maps JS API** — harita görüntüleme + Places autocomplete
-- **Session auth:** puzzle doğru → `baze_puzzle_ok` kısa ömürlü cookie → avatar seç → `baze_session` JWT cookie (30 gün, HttpOnly)
-- **Proxy:** `proxy.ts` — oturumsuz istekleri `/puzzle`'a yönlendirir
+- **Session auth:** üye seç → `baze_session` JWT cookie (30 gün, HttpOnly)
+- **Proxy:** `proxy.ts` — oturumsuz istekleri `/pick-member`'a yönlendirir
 
 ## Özellikler
 
@@ -120,7 +102,6 @@ Fotoğraflar için `public/avatars/` klasörüne `batin.jpg` ve `zeynep.jpg` koy
 - [ ] Lokasyon fotoğrafları (Supabase Storage)
 - [ ] Kategori filtresi harita + listede
 - [ ] Gün planlayıcı (tarih aralığı içinde drag-drop)
-- [ ] Setup ekranı (puzzle deseni UI'dan değiştirme)
 
 ## Deploy (hazır olunca)
 

@@ -7,7 +7,9 @@ import { uploadImage, removeByUrl } from "@/lib/storage";
 import { fetchCityBoundary, type GeoJsonGeometry } from "@/lib/osm";
 import { iso2 } from "@/lib/form-helpers";
 
-const bust = () => updateTag("globe-data");
+// invalidate just this group's globe-data cache (matches the tag set in
+// app/layout.tsx: `globe-data:${groupId}`). Other groups' caches stay warm.
+const bustGlobe = (groupId: string) => updateTag(`globe-data:${groupId}`);
 
 export async function addCity(input: {
   name: string;
@@ -55,7 +57,7 @@ export async function addCity(input: {
     .single();
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   revalidatePath("/tatiller");
   return { ok: true, id: data.id as string };
 }
@@ -75,7 +77,7 @@ export async function updateCityNote(
     .eq("group_id", groupId)
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   // note doesn't affect counts → no home revalidate
   return { ok: true };
 }
@@ -102,7 +104,7 @@ export async function deleteCity(
       await removeByUrl(p.url);
     } catch {}
   }
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   revalidatePath("/tatiller");
   return { ok: true };
 }
@@ -135,7 +137,7 @@ export async function addCityPhoto(
       group_id: groupId,
     });
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/"); bust();
+    bustGlobe(groupId);
     // photo upload doesn't change city count → no home revalidate
     return { ok: true };
   } catch (e) {
@@ -203,7 +205,7 @@ export async function removeCityPhotosBulk(
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   // photo deletion doesn't affect city count
   return { ok: true };
 }
@@ -231,6 +233,6 @@ export async function removeCityPhoto(
       await removeByUrl(row.url);
     } catch {}
   }
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   return { ok: true };
 }

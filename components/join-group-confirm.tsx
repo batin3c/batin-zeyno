@@ -104,7 +104,7 @@ export function JoinGroupConfirm({
             type="text"
             value={memberName}
             onChange={(e) => setMemberName(e.target.value)}
-            placeholder="batın"
+            placeholder="adın"
             maxLength={40}
             disabled={pending}
             autoFocus

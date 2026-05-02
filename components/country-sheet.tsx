@@ -44,20 +44,22 @@ export function CountrySheet({
   onOpenCity: (id: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const [noteDraft, setNoteDraft] = useState<string>("");
-  const [noteSaved, setNoteSaved] = useState(false);
-  const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (data?.visited?.note !== undefined) {
-      setNoteDraft(data.visited?.note ?? "");
-    } else {
-      setNoteDraft("");
-    }
+  // store-prop-in-state pattern from React 19 docs: hold the code in state
+  // alongside the draft + picker, and resync during render whenever the
+  // parent opens a different country. No effect, no extra render.
+  const incomingCode = data?.code ?? null;
+  const [lastCode, setLastCode] = useState<string | null>(incomingCode);
+  const [noteDraft, setNoteDraft] = useState<string>(data?.visited?.note ?? "");
+  const [noteSaved, setNoteSaved] = useState(false);
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  if (incomingCode !== lastCode) {
+    setLastCode(incomingCode);
+    setNoteDraft(data?.visited?.note ?? "");
     setNoteSaved(false);
     setCityPickerOpen(false);
-  }, [data?.code, data?.visited?.note]);
+  }
 
   if (!data) {
     return (

@@ -31,7 +31,7 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "baze",
-  description: "ikimize özel tatil günlüğü",
+  description: "yer keşfet, hesap böl, küre boya — gruplara özel tatil günlüğü",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -44,6 +44,18 @@ export const metadata: Metadata = {
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  openGraph: {
+    title: "baze",
+    description: "yer keşfet, hesap böl, küre boya",
+    type: "website",
+    locale: "tr_TR",
+    siteName: "baze",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "baze",
+    description: "yer keşfet, hesap böl, küre boya",
   },
 };
 
@@ -58,70 +70,78 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-// cached for 60s, invalidated by tag from country/city actions.
-// groupId is part of the cache key (unstable_cache hashes function args),
-// so each group has its own cached payload. The tag stays "globe-data" —
-// today mutations bust ALL groups' caches; per-group invalidation can be
-// added later with updateTag.
-const getGlobeData = unstable_cache(
-  async (groupId: string) => {
-    const [
-      { data: visited },
-      { data: photos },
-      { data: cities },
-      { data: cityPhotos },
-    ] = await Promise.all([
-      db
-        .from("visited_countries")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("added_at", { ascending: false }),
-      db
-        .from("country_photos")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("added_at", { ascending: false }),
-      db
-        .from("visited_cities")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("added_at", { ascending: false }),
-      db
-        .from("city_photos")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("added_at", { ascending: false }),
-    ]);
-    return {
-      visited: (visited ?? []) as VisitedCountry[],
-      photos: (photos ?? []) as CountryPhoto[],
-      cities: (cities ?? []) as VisitedCity[],
-      cityPhotos: (cityPhotos ?? []) as CityPhoto[],
-    };
-  },
-  ["globe-data"],
-  { revalidate: 60, tags: ["globe-data"] }
-);
+// cached for 60s, invalidated per-group via updateTag(`globe-data:${groupId}`)
+// in country/city actions. The cache key includes groupId AND we attach a
+// per-group tag so a mutation in group A no longer flushes group B's cache.
+async function loadGlobeData(groupId: string) {
+  const [
+    { data: visited },
+    { data: photos },
+    { data: cities },
+    { data: cityPhotos },
+  ] = await Promise.all([
+    db
+      .from("visited_countries")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("added_at", { ascending: false }),
+    db
+      .from("country_photos")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("added_at", { ascending: false }),
+    db
+      .from("visited_cities")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("added_at", { ascending: false }),
+    db
+      .from("city_photos")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("added_at", { ascending: false }),
+  ]);
+  return {
+    visited: (visited ?? []) as VisitedCountry[],
+    photos: (photos ?? []) as CountryPhoto[],
+    cities: (cities ?? []) as VisitedCity[],
+    cityPhotos: (cityPhotos ?? []) as CityPhoto[],
+  };
+}
+
+function getGlobeData(groupId: string) {
+  return unstable_cache(
+    () => loadGlobeData(groupId),
+    ["globe-data", groupId],
+    { revalidate: 60, tags: [`globe-data:${groupId}`] }
+  )();
+}
 
 async function GlobeShell() {
+  // The try/catch only wraps awaited fetches (auth lookup + cached query),
+  // not render. If any of those throw, we silently render nothing rather
+  // than blowing up the whole layout. The lint rule about JSX-in-try/catch
+  // doesn't apply because <PersistentGlobe /> is constructed AFTER the
+  // try block exits successfully.
+  let data: Awaited<ReturnType<typeof getGlobeData>> | null = null;
   try {
     const me = await getCurrentMember();
     if (!me) return null;
     const groupId = await getActiveGroupId();
     // user is between login and group selection — no globe to show yet
     if (!groupId) return null;
-    const data = await getGlobeData(groupId);
-    return (
-      <PersistentGlobe
-        visited={data.visited}
-        photos={data.photos}
-        cities={data.cities}
-        cityPhotos={data.cityPhotos}
-      />
-    );
+    data = await getGlobeData(groupId);
   } catch {
     return null;
   }
+  return (
+    <PersistentGlobe
+      visited={data.visited}
+      photos={data.photos}
+      cities={data.cities}
+      cityPhotos={data.cityPhotos}
+    />
+  );
 }
 
 export default function RootLayout({

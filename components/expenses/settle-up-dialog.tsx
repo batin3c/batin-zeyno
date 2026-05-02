@@ -174,7 +174,7 @@ export function SettleUpDialog({
           className="btn-primary w-full"
           style={{ padding: "0.95rem 1.25rem" }}
         >
-          {pending ? "kayıt…" : "kapat"}
+          {pending ? "kayıt…" : "ödeme yapıldı"}
         </button>
       </div>
     </SimpleDialog>

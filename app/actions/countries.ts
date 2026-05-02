@@ -6,7 +6,9 @@ import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { iso2 } from "@/lib/form-helpers";
 
-const bust = () => updateTag("globe-data");
+// invalidate just this group's globe-data cache (matches the tag set in
+// app/layout.tsx: `globe-data:${groupId}`). Other groups' caches stay warm.
+const bustGlobe = (groupId: string) => updateTag(`globe-data:${groupId}`);
 
 export async function toggleVisitedCountry(
   code: string
@@ -39,7 +41,7 @@ export async function toggleVisitedCountry(
     await Promise.allSettled(
       ((photos ?? []) as { url: string }[]).map((p) => removeByUrl(p.url))
     );
-    revalidatePath("/"); bust();
+    bustGlobe(groupId);
     revalidatePath("/tatiller"); // country count changed → home stats
     return { ok: true, visited: false };
   }
@@ -50,7 +52,7 @@ export async function toggleVisitedCountry(
     group_id: groupId,
   });
   if (error) return { ok: false, visited: false, error: error.message };
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   revalidatePath("/tatiller"); // country count changed → home stats
   return { ok: true, visited: true };
 }
@@ -71,7 +73,7 @@ export async function updateCountryNote(
     .eq("group_id", groupId)
     .eq("code", c);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   // note doesn't affect any count → no home revalidate
   return { ok: true };
 }
@@ -110,7 +112,7 @@ export async function addCountryPhoto(
       group_id: groupId,
     });
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/"); bust();
+    bustGlobe(groupId);
     if (countryCreated) revalidatePath("/tatiller");
     return { ok: true };
   } catch (e) {
@@ -140,7 +142,7 @@ export async function removeCountryPhotosBulk(
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   // photo deletion doesn't affect home stats
   return { ok: true };
 }
@@ -168,6 +170,6 @@ export async function removeCountryPhoto(
       await removeByUrl(row.url);
     } catch {}
   }
-  revalidatePath("/"); bust();
+  bustGlobe(groupId);
   return { ok: true };
 }

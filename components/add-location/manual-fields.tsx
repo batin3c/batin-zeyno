@@ -27,7 +27,11 @@ export function ManualFields({
         </div>
         <input
           type="number"
+          inputMode="decimal"
           step="any"
+          min={-90}
+          max={90}
+          placeholder="41.0082"
           value={draft.lat ?? ""}
           onChange={(e) =>
             setDraft({
@@ -44,7 +48,11 @@ export function ManualFields({
         </div>
         <input
           type="number"
+          inputMode="decimal"
           step="any"
+          min={-180}
+          max={180}
+          placeholder="28.9784"
           value={draft.lng ?? ""}
           onChange={(e) =>
             setDraft({

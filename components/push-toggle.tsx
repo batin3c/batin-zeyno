@@ -50,6 +50,12 @@ export function PushToggle() {
   }, []);
 
   useEffect(() => {
+    // sync from the browser's PushManager / Notification.permission, which
+    // are external state outside React. The setState calls inside refresh()
+    // ARE the "subscribe to external system" pattern the rule docs
+    // explicitly exempt — there's no way to derive these without touching
+    // window.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
 

@@ -11,8 +11,8 @@ export function LogoutButton() {
       onClick={() => startTransition(() => logout())}
       disabled={pending}
       className="btn-icon disabled:opacity-50"
-      aria-label="s'tir"
-      title="s'tir"
+      aria-label="çık"
+      title="çık"
     >
       <LogOut size={17} strokeWidth={2} />
     </button>
@@ -35,10 +35,10 @@ export function LogoutLargeButton() {
         fontSize: "1rem",
         boxShadow: "var(--shadow-pop)",
       }}
-      aria-label="s'tir"
+      aria-label="çık"
     >
       <LogOut size={18} strokeWidth={2.5} />
-      s&apos;tir
+      çık
     </button>
   );
 }

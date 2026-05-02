@@ -5,7 +5,6 @@ export type Member = {
   sort_order: number;
   created_at: string;
   handle: string | null;
-  pattern_hash: string | null;
   is_active: boolean;
   color: string | null;
 };
@@ -15,7 +14,6 @@ export type Group = {
   name: string;
   color: string | null;
   invite_code: string;
-  pattern_hash: string | null;
   created_by: string | null;
   created_at: string;
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { MapPin, Trash2 } from "lucide-react";
 import { SimpleDialog } from "./simple-dialog";
 import { isoToFlag, COUNTRY_BY_NUMERIC } from "@/lib/country-codes";
@@ -37,14 +37,20 @@ export function CitySheet({
   onClose: () => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const [noteDraft, setNoteDraft] = useState<string>("");
-  const [noteSaved, setNoteSaved] = useState(false);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  // store-prop-in-state pattern from React 19 docs: keep the city id in
+  // state alongside the draft, and resync the draft during render whenever
+  // the parent opens a different city. No effect, no extra render.
+  const cityId = data?.city?.id ?? null;
+  const [lastCityId, setLastCityId] = useState<string | null>(cityId);
+  const [noteDraft, setNoteDraft] = useState<string>(data?.city?.note ?? "");
+  const [noteSaved, setNoteSaved] = useState(false);
+  if (cityId !== lastCityId) {
+    setLastCityId(cityId);
     setNoteDraft(data?.city?.note ?? "");
     setNoteSaved(false);
-  }, [data?.city?.id, data?.city?.note]);
+  }
 
   if (!data) {
     return (

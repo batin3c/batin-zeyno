@@ -14,7 +14,7 @@ export default function PickMemberPage() {
       </div>
       <div className="absolute top-8 left-6 right-6 flex items-center justify-between pointer-events-none">
         <span className="label">baze</span>
-        <span className="label">private</span>
+        <span className="label">gizli</span>
       </div>
       <div className="flex flex-col items-center gap-7 w-full max-w-sm">
         <div className="text-center anim-reveal">

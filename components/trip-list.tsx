@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { GripVertical } from "lucide-react";
 import {
   DndContext,
@@ -25,12 +25,18 @@ import type { Trip } from "@/lib/types";
 type Item = { trip: Trip; count: number };
 
 export function TripList({ items }: { items: Item[] }) {
-  const [order, setOrder] = useState<string[]>(items.map((i) => i.trip.id));
+  const ids = items.map((i) => i.trip.id);
+  const idsKey = ids.join(",");
+  // store-prop-in-state pattern from React 19 docs: hold the last seen key
+  // alongside the order. When the parent passes a new id set (add, remove,
+  // remote reorder) we resync during render — no effect, no extra render.
+  const [lastIdsKey, setLastIdsKey] = useState(idsKey);
+  const [order, setOrder] = useState<string[]>(ids);
+  if (idsKey !== lastIdsKey) {
+    setLastIdsKey(idsKey);
+    setOrder(ids);
+  }
   const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    setOrder(items.map((i) => i.trip.id));
-  }, [items]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
