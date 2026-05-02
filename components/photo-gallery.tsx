@@ -159,7 +159,7 @@ export function PhotoGallery({
             const id = it.id;
             const isSelected = id ? selected.has(id) : false;
             return (
-              <div key={id ?? it.url} className="relative flex-shrink-0">
+              <div key={id ?? it.url} data-photo-card className="relative flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => onItemClick(id, i)}
@@ -191,15 +191,26 @@ export function PhotoGallery({
                   }}
                 >
                   {it.isExternal ? (
-                    // Google PhotoService URLs are referer-bound (r_url param),
-                    // so we let the browser send its default referer. next/image
-                    // would also need these in remotePatterns, so plain <img>.
+                    // Google JS SDK URLs are session-bound and expire — we render
+                    // them with plain <img> (next/image would need remotePatterns)
+                    // and hide the broken-placeholder return (Google's 100x100 png).
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={it.url}
                       alt=""
                       loading="lazy"
                       className="absolute inset-0 w-full h-full object-cover"
+                      onLoad={(e) => {
+                        const el = e.currentTarget;
+                        if (el.naturalWidth <= 120 && el.naturalHeight <= 120) {
+                          const card = el.closest('[data-photo-card]') as HTMLElement | null;
+                          if (card) card.style.display = 'none';
+                        }
+                      }}
+                      onError={(e) => {
+                        const card = (e.currentTarget.closest('[data-photo-card]') as HTMLElement | null);
+                        if (card) card.style.display = 'none';
+                      }}
                     />
                   ) : (
                     <Image
