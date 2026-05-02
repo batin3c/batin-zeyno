@@ -6,9 +6,45 @@ import { requireCurrentMember, getCurrentMember, getSession } from "@/lib/dal";
 import { db } from "@/lib/supabase";
 
 /**
- * Sign in as a specific member. No password — anyone can pick anyone.
- * Sets the session memberId and (if the member is in any group) sets that
- * as the active group; otherwise activeGroupId stays null.
+ * Sign in by name (matched against name OR handle, case-insensitive).
+ * Trusted-circle model: no password, but at least the entry screen doesn't
+ * leak the member list to strangers — you have to know the name to sign in.
+ */
+export async function signInByName(name: string): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  const q = (name ?? "").trim();
+  if (!q) return { ok: false, error: "adı yaz" };
+
+  const lower = q.toLowerCase();
+  const { data } = await db
+    .from("members")
+    .select("id, name, handle")
+    .eq("is_active", true)
+    .or(`name.ilike.${q},handle.eq.${lower}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return { ok: false, error: "böyle bir hesap yok" };
+  const memberId = (data as { id: string }).id;
+
+  const { data: link } = await db
+    .from("group_members")
+    .select("group_id")
+    .eq("member_id", memberId)
+    .order("joined_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const activeGroupId = (link as { group_id?: string } | null)?.group_id ?? null;
+
+  await createSession(memberId, activeGroupId);
+  redirect(activeGroupId ? "/" : "/yeni-grup");
+}
+
+/**
+ * Legacy: sign in by member id (pick from a list). Kept for the profil
+ * page's group switcher; no longer called from /pick-member.
  */
 export async function pickMember(memberId: string): Promise<{
   ok: boolean;
