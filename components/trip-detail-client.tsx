@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Map as MapIcon, List } from "lucide-react";
 import { MapView } from "./map-view";
 import { LocationList } from "./location-list";
-import { AddLocationButton } from "./add-location-dialog";
+import { AddLocationButton } from "./add-location";
 import { ImportKmlButton } from "./import-kml-dialog";
 import { CATEGORIES } from "@/lib/types";
 import type { Location, Member, Category } from "@/lib/types";
