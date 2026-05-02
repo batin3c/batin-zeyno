@@ -91,6 +91,8 @@ export type CountryPhoto = {
   added_at: string;
 };
 
+import type { GeoJsonGeometry } from "./osm";
+
 export type VisitedCity = {
   id: string;
   name: string;
@@ -99,7 +101,7 @@ export type VisitedCity = {
   lng: number;
   google_place_id: string | null;
   note: string | null;
-  boundary_geojson: unknown | null;
+  boundary_geojson: GeoJsonGeometry | null;
   boundary_fetched_at: string | null;
   added_by: string | null;
   added_at: string;

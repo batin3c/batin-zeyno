@@ -4,18 +4,13 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
-
-function normCode(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim().toUpperCase();
-  return /^[A-Z]{2}$/.test(s) ? s : null;
-}
+import { iso2 } from "@/lib/form-helpers";
 
 export async function toggleVisitedCountry(
   code: string
 ): Promise<{ ok: boolean; visited: boolean; error?: string }> {
   const me = await requireCurrentMember();
-  const c = normCode(code);
+  const c = iso2(code);
   if (!c) return { ok: false, visited: false, error: "geçersiz kod" };
 
   const { data: existing, error: selErr } = await db
@@ -55,7 +50,7 @@ export async function updateCountryNote(
   note: string | null
 ): Promise<{ ok: boolean; error?: string }> {
   await requireCurrentMember();
-  const c = normCode(code);
+  const c = iso2(code);
   if (!c) return { ok: false, error: "geçersiz kod" };
   const clean =
     typeof note === "string" && note.trim().length > 0 ? note.trim() : null;
@@ -73,7 +68,7 @@ export async function addCountryPhoto(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string }> {
   const me = await requireCurrentMember();
-  const code = normCode(formData.get("code"));
+  const code = iso2(formData.get("code"));
   const file = formData.get("file");
   if (!code || !(file instanceof File)) {
     return { ok: false, error: "istek bozuk" };

@@ -5,12 +5,7 @@ import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { fetchCityBoundary, type GeoJsonGeometry } from "@/lib/osm";
-
-function normCountry(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim().toUpperCase();
-  return /^[A-Z]{2}$/.test(s) ? s : null;
-}
+import { iso2 } from "@/lib/form-helpers";
 
 export async function addCity(input: {
   name: string;
@@ -25,7 +20,7 @@ export async function addCity(input: {
   if (typeof input.lat !== "number" || typeof input.lng !== "number") {
     return { ok: false, error: "koordinat yok" };
   }
-  const code = normCountry(input.country_code ?? null);
+  const code = iso2(input.country_code ?? null);
 
   // auto-mark country as visited if a code is present
   if (code) {

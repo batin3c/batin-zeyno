@@ -5,17 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
-
-function str(v: FormDataEntryValue | null) {
-  const s = typeof v === "string" ? v.trim() : "";
-  return s.length > 0 ? s : null;
-}
-
-function num(v: FormDataEntryValue | null): number | null {
-  const s = typeof v === "string" ? v : "";
-  const n = parseFloat(s);
-  return Number.isFinite(n) ? n : null;
-}
+import { str, num } from "@/lib/form-helpers";
 
 async function uploadCoverIfAny(
   formData: FormData

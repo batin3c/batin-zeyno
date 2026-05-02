@@ -6,19 +6,9 @@ import { requireCurrentMember } from "@/lib/dal";
 import { resolveMapsShareUrl } from "@/lib/google-maps";
 import { resolveGoogleList, type GoogleListResult } from "@/lib/google-list";
 import { uploadImage, removeByUrl } from "@/lib/storage";
+import { str, num } from "@/lib/form-helpers";
 import { notifyOthers } from "./push";
 import type { Category, LocationStatus } from "@/lib/types";
-
-function str(v: FormDataEntryValue | null): string | null {
-  const s = typeof v === "string" ? v.trim() : "";
-  return s.length > 0 ? s : null;
-}
-
-function num(v: FormDataEntryValue | null): number | null {
-  const s = typeof v === "string" ? v : "";
-  const n = parseFloat(s);
-  return Number.isFinite(n) ? n : null;
-}
 
 export async function createLocation(formData: FormData) {
   const me = await requireCurrentMember();
