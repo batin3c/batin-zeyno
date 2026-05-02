@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentMember, getMemberGroups } from "@/lib/dal";
-import { setActiveGroup } from "@/lib/session";
 import { selectGroup } from "@/app/actions/auth";
 
 export default async function SelectGroupPage() {
@@ -13,10 +12,9 @@ export default async function SelectGroupPage() {
   if (groups.length === 0) {
     redirect("/yeni-grup");
   }
-  if (groups.length === 1) {
-    await setActiveGroup(groups[0].id);
-    redirect("/");
-  }
+  // server components can't write cookies — even for the 1-group case,
+  // the user clicks the form button (which fires the selectGroup server
+  // action) to set the active group.
 
   return (
     <main className="flex-1 relative flex flex-col items-center justify-center px-6 py-12 overflow-hidden">
