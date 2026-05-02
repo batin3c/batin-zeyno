@@ -1,10 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { iso2 } from "@/lib/form-helpers";
+
+const bust = () => updateTag("globe-data");
 
 export async function toggleVisitedCountry(
   code: string
@@ -30,7 +32,7 @@ export async function toggleVisitedCountry(
     await Promise.allSettled(
       ((photos ?? []) as { url: string }[]).map((p) => removeByUrl(p.url))
     );
-    revalidatePath("/");
+    revalidatePath("/"); bust();
     revalidatePath("/tatiller"); // country count changed → home stats
     return { ok: true, visited: false };
   }
@@ -40,7 +42,7 @@ export async function toggleVisitedCountry(
     added_by: me.id,
   });
   if (error) return { ok: false, visited: false, error: error.message };
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   revalidatePath("/tatiller"); // country count changed → home stats
   return { ok: true, visited: true };
 }
@@ -59,7 +61,7 @@ export async function updateCountryNote(
     .update({ note: clean, updated_at: new Date().toISOString() })
     .eq("code", c);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   // note doesn't affect any count → no home revalidate
   return { ok: true };
 }
@@ -95,7 +97,7 @@ export async function addCountryPhoto(
       added_by: me.id,
     });
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/");
+    revalidatePath("/"); bust();
     if (countryCreated) revalidatePath("/tatiller");
     return { ok: true };
   } catch (e) {
@@ -119,7 +121,7 @@ export async function removeCountryPhotosBulk(
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   // photo deletion doesn't affect home stats
   return { ok: true };
 }
@@ -141,6 +143,6 @@ export async function removeCountryPhoto(
       await removeByUrl(row.url);
     } catch {}
   }
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   return { ok: true };
 }

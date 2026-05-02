@@ -1,11 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
 import { fetchCityBoundary, type GeoJsonGeometry } from "@/lib/osm";
 import { iso2 } from "@/lib/form-helpers";
+
+const bust = () => updateTag("globe-data");
 
 export async function addCity(input: {
   name: string;
@@ -50,7 +52,7 @@ export async function addCity(input: {
     .single();
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   revalidatePath("/tatiller");
   return { ok: true, id: data.id as string };
 }
@@ -68,7 +70,7 @@ export async function updateCityNote(
     .update({ note: clean, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   // note doesn't affect counts → no home revalidate
   return { ok: true };
 }
@@ -89,7 +91,7 @@ export async function deleteCity(
       await removeByUrl(p.url);
     } catch {}
   }
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   revalidatePath("/tatiller");
   return { ok: true };
 }
@@ -111,7 +113,7 @@ export async function addCityPhoto(
       added_by: me.id,
     });
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/");
+    revalidatePath("/"); bust();
     // photo upload doesn't change city count → no home revalidate
     return { ok: true };
   } catch (e) {
@@ -170,7 +172,7 @@ export async function removeCityPhotosBulk(
   await Promise.allSettled(
     (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
   );
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   // photo deletion doesn't affect city count
   return { ok: true };
 }
@@ -192,6 +194,6 @@ export async function removeCityPhoto(
       await removeByUrl(row.url);
     } catch {}
   }
-  revalidatePath("/");
+  revalidatePath("/"); bust();
   return { ok: true };
 }
