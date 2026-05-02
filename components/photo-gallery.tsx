@@ -6,6 +6,15 @@ import { Camera, Check, Trash2, X } from "lucide-react";
 import { PhotoLightbox } from "./photo-lightbox";
 import { usePhotoUpload } from "@/hooks/use-photo-upload";
 
+function isGoogleHostedUrl(url: string): boolean {
+  try {
+    const h = new URL(url).hostname;
+    return h.endsWith("googleapis.com") || h.endsWith("googleusercontent.com");
+  } catch {
+    return false;
+  }
+}
+
 export type GalleryItem = {
   /** stable id (for user-uploaded photos) — optional for Google photos */
   id?: string;
@@ -190,10 +199,10 @@ export function PhotoGallery({
                     transition: "transform 140ms",
                   }}
                 >
-                  {it.isExternal ? (
-                    // Google JS SDK URLs are session-bound and expire — we render
-                    // them with plain <img> (next/image would need remotePatterns)
-                    // and hide the broken-placeholder return (Google's 100x100 png).
+                  {isGoogleHostedUrl(it.url) ? (
+                    // Legacy Google JS SDK URL still in DB — token has likely expired.
+                    // Render with plain <img> (not in next/image remotePatterns) and
+                    // hide if it 404s or returns the 100x100 "denied" placeholder.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={it.url}
@@ -203,13 +212,17 @@ export function PhotoGallery({
                       onLoad={(e) => {
                         const el = e.currentTarget;
                         if (el.naturalWidth <= 120 && el.naturalHeight <= 120) {
-                          const card = el.closest('[data-photo-card]') as HTMLElement | null;
-                          if (card) card.style.display = 'none';
+                          const card = el.closest(
+                            "[data-photo-card]"
+                          ) as HTMLElement | null;
+                          if (card) card.style.display = "none";
                         }
                       }}
                       onError={(e) => {
-                        const card = (e.currentTarget.closest('[data-photo-card]') as HTMLElement | null);
-                        if (card) card.style.display = 'none';
+                        const card = e.currentTarget.closest(
+                          "[data-photo-card]"
+                        ) as HTMLElement | null;
+                        if (card) card.style.display = "none";
                       }}
                     />
                   ) : (

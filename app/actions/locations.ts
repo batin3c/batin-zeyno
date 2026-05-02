@@ -5,10 +5,43 @@ import { db } from "@/lib/supabase";
 import { requireCurrentMember } from "@/lib/dal";
 import { resolveMapsShareUrl } from "@/lib/google-maps";
 import { resolveGoogleList, type GoogleListResult } from "@/lib/google-list";
-import { uploadImage, removeByUrl } from "@/lib/storage";
+import { uploadImage, uploadImageFromUrl, removeByUrl } from "@/lib/storage";
 import { str, num } from "@/lib/form-helpers";
 import { notifyOthers } from "./push";
 import type { Category, LocationStatus } from "@/lib/types";
+
+/**
+ * Google JS SDK photo URLs have an `r_url` query param that pins the image
+ * to a referer. We must echo that as our outgoing Referer so Google returns
+ * the real bytes instead of its 100x100 "denied" placeholder.
+ */
+function refererFromGoogleUrl(url: string): string | undefined {
+  try {
+    const u = new URL(url);
+    const r = u.searchParams.get("r_url");
+    return r ? r + "/" : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * For each Google JS SDK photo URL, download once and persist a Supabase
+ * copy. Returns only successfully persisted Supabase URLs — Google JS SDK
+ * tokens expire fast, so anything that fails to fetch is silently dropped.
+ */
+async function persistGooglePhotos(
+  urls: string[],
+  folder: string
+): Promise<string[]> {
+  if (urls.length === 0) return [];
+  const out = await Promise.all(
+    urls.map((u) =>
+      uploadImageFromUrl(u, folder, { referer: refererFromGoogleUrl(u) })
+    )
+  );
+  return out.filter((u): u is string => !!u);
+}
 
 export async function createLocation(formData: FormData) {
   const me = await requireCurrentMember();
@@ -41,6 +74,11 @@ export async function createLocation(formData: FormData) {
       ? currencyRaw.toUpperCase()
       : null;
 
+  const persisted_google_photo_urls = await persistGooglePhotos(
+    google_photo_urls,
+    `google/${trip_id}`
+  );
+
   const { error } = await db.from("locations").insert({
     trip_id,
     name,
@@ -52,7 +90,7 @@ export async function createLocation(formData: FormData) {
     category: (str(formData.get("category")) ?? "other") as Category,
     note: str(formData.get("note")),
     visit_date: str(formData.get("visit_date")),
-    google_photo_urls,
+    google_photo_urls: persisted_google_photo_urls,
     rating,
     rating_count,
     amount,
@@ -93,32 +131,37 @@ export async function createLocationsBatch(
   if (!tripId || !Array.isArray(items) || items.length === 0) {
     return { ok: false, inserted: 0, error: "boş toplu istek" };
   }
-  const rows = items
-    .filter(
-      (it) =>
-        it &&
-        typeof it.name === "string" &&
-        it.name.trim().length > 0 &&
-        typeof it.lat === "number" &&
-        typeof it.lng === "number"
+  const valid = items.filter(
+    (it) =>
+      it &&
+      typeof it.name === "string" &&
+      it.name.trim().length > 0 &&
+      typeof it.lat === "number" &&
+      typeof it.lng === "number"
+  );
+  const persistedPhotos = await Promise.all(
+    valid.map((it) =>
+      persistGooglePhotos(
+        Array.isArray(it.google_photo_urls) ? it.google_photo_urls : [],
+        `google/${tripId}`
+      )
     )
-    .map((it) => ({
-      trip_id: tripId,
-      name: it.name.trim(),
-      address: it.address ?? null,
-      lat: it.lat,
-      lng: it.lng,
-      google_place_id: it.google_place_id ?? null,
-      google_maps_url: it.google_maps_url ?? null,
-      google_photo_urls: Array.isArray(it.google_photo_urls)
-        ? it.google_photo_urls
-        : [],
-      category: (it.category ?? "other") as Category,
-      rating: it.rating ?? null,
-      rating_count: it.rating_count ?? null,
-      status: "want" as LocationStatus,
-      added_by: me.id,
-    }));
+  );
+  const rows = valid.map((it, i) => ({
+    trip_id: tripId,
+    name: it.name.trim(),
+    address: it.address ?? null,
+    lat: it.lat,
+    lng: it.lng,
+    google_place_id: it.google_place_id ?? null,
+    google_maps_url: it.google_maps_url ?? null,
+    google_photo_urls: persistedPhotos[i],
+    category: (it.category ?? "other") as Category,
+    rating: it.rating ?? null,
+    rating_count: it.rating_count ?? null,
+    status: "want" as LocationStatus,
+    added_by: me.id,
+  }));
   if (rows.length === 0) {
     return { ok: false, inserted: 0, error: "geçerli yer yok" };
   }
@@ -255,21 +298,20 @@ export async function reorderLocations(
 
 export async function deleteLocation(id: string, tripId: string) {
   await requireCurrentMember();
-  // grab photos so we can remove them from storage too
+  // grab photos so we can remove them from storage too — both user uploads
+  // and Google copies live in our bucket now
   const { data: row } = await db
     .from("locations")
-    .select("photo_urls")
+    .select("photo_urls, google_photo_urls")
     .eq("id", id)
     .single();
   const { error } = await db.from("locations").delete().eq("id", id);
   if (error) throw error;
-  if (row?.photo_urls) {
-    for (const u of row.photo_urls as string[]) {
-      try {
-        await removeByUrl(u);
-      } catch {}
-    }
-  }
+  const all = [
+    ...((row?.photo_urls ?? []) as string[]),
+    ...((row?.google_photo_urls ?? []) as string[]),
+  ];
+  await Promise.allSettled(all.map((u) => removeByUrl(u)));
   revalidatePath(`/trips/${tripId}`);
 }
 
