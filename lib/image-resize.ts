@@ -2,8 +2,8 @@
 // iPhone HEIC: browser converts to PNG/JPEG via createImageBitmap.
 // Returns a JPEG Blob at most MAX_DIM on its longest edge.
 
-const MAX_DIM = 2400;
-const QUALITY = 0.85;
+const MAX_DIM = 1920;
+const QUALITY = 0.82;
 
 export async function resizeForUpload(file: File): Promise<File> {
   // skip non-images and tiny files

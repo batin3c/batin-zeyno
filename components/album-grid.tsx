@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { MapPin } from "lucide-react";
 import { isoToFlag } from "@/lib/country-codes";
 import type { VisitedCity, CityPhoto } from "@/lib/types";
@@ -80,13 +81,12 @@ export function AlbumGrid({
               }}
             >
               {first ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={first.url}
                   alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 50vw, 384px"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

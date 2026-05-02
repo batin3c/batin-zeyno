@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Camera, Check, Trash2, X } from "lucide-react";
 import { PhotoLightbox } from "./photo-lightbox";
 import { usePhotoUpload } from "@/hooks/use-photo-upload";
@@ -180,7 +181,7 @@ export function PhotoGallery({
                     target.addEventListener("touchmove", cancel);
                     target.addEventListener("touchcancel", cancel);
                   }}
-                  className="block overflow-hidden p-0"
+                  className="block overflow-hidden p-0 relative w-24 h-24"
                   style={{
                     borderRadius: "14px",
                     border: `2px solid ${isSelected ? "var(--accent)" : "var(--ink)"}`,
@@ -189,13 +190,12 @@ export function PhotoGallery({
                     transition: "transform 140ms",
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={it.url}
                     alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="w-24 h-24 object-cover"
+                    fill
+                    sizes="96px"
+                    className="object-cover"
                   />
                 </button>
 
