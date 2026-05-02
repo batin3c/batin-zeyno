@@ -161,6 +161,7 @@ export function ExpensesTab({
                 e={it.data}
                 index={i}
                 paidBy={memberById(it.data.paid_by)}
+                members={members}
                 location={locationById(it.data.location_id) ?? undefined}
                 tripId={tripId}
               />
@@ -203,12 +204,14 @@ function ExpenseRow({
   e,
   index,
   paidBy,
+  members,
   location,
   tripId,
 }: {
   e: Expense;
   index: number;
   paidBy: Member | undefined;
+  members: Member[];
   location: Location | undefined;
   tripId: string;
 }) {
@@ -219,6 +222,26 @@ function ExpenseRow({
       await deleteExpense(e.id, tripId);
     });
   };
+  const splitLabel =
+    e.split_mode === "half"
+      ? "yarı yarı"
+      : e.split_mode === "full"
+      ? "karşı tam"
+      : "özel";
+  const customLine =
+    e.split_mode === "custom" && e.shares
+      ? members
+          .map((m) => {
+            const s = Number(e.shares?.[m.id] ?? 0);
+            if (s <= 0) return null;
+            return `${m.name.toLowerCase()} ${s.toLocaleString("tr-TR", {
+              minimumFractionDigits: s % 1 === 0 ? 0 : 2,
+              maximumFractionDigits: 2,
+            })}`;
+          })
+          .filter(Boolean)
+          .join(" · ")
+      : null;
   return (
     <article
       className="anim-reveal flex items-center gap-3 p-3"
@@ -253,8 +276,7 @@ function ExpenseRow({
           className="text-[0.8rem] mt-0.5 truncate"
           style={{ color: "var(--text-muted)" }}
         >
-          {paidBy?.name.toLowerCase() ?? "?"} ödedi ·{" "}
-          {e.split_mode === "half" ? "yarı yarı" : "karşı tam"}
+          {paidBy?.name.toLowerCase() ?? "?"} ödedi · {splitLabel}
           {location && (
             <>
               {" · "}
@@ -262,6 +284,14 @@ function ExpenseRow({
             </>
           )}
         </div>
+        {customLine && (
+          <div
+            className="text-[0.78rem] mt-0.5 truncate"
+            style={{ color: "var(--text-dim)" }}
+          >
+            {customLine}
+          </div>
+        )}
         {e.note && (
           <div
             className="text-[0.78rem] mt-0.5 italic truncate"

@@ -20,6 +20,8 @@ export async function createExpense(
     currency: string;
     paid_by: string;
     split_mode: ExpenseSplitMode;
+    /** required when split_mode='custom': sum across members must equal `amount` */
+    shares?: Record<string, number> | null;
     spent_at?: string | null;
     note?: string | null;
     location_id?: string | null;
@@ -35,8 +37,36 @@ export async function createExpense(
   }
   if (!CURRENCY_RE.test(currency)) return { ok: false, error: "para birimi" };
   if (!input.paid_by) return { ok: false, error: "kim ödedi?" };
-  if (input.split_mode !== "half" && input.split_mode !== "full") {
+  if (
+    input.split_mode !== "half" &&
+    input.split_mode !== "full" &&
+    input.split_mode !== "custom"
+  ) {
     return { ok: false, error: "split mode" };
+  }
+
+  let shares: Record<string, number> | null = null;
+  if (input.split_mode === "custom") {
+    if (!input.shares || typeof input.shares !== "object") {
+      return { ok: false, error: "özel bölüşüm boş" };
+    }
+    shares = {};
+    let sum = 0;
+    for (const [memberId, raw] of Object.entries(input.shares)) {
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) {
+        return { ok: false, error: "geçersiz pay" };
+      }
+      shares[memberId] = n;
+      sum += n;
+    }
+    // tolerate small float errors
+    if (Math.abs(sum - input.amount) > 0.01) {
+      return {
+        ok: false,
+        error: `paylar toplamı (${sum.toFixed(2)}) tutarla (${input.amount}) eşleşmiyor`,
+      };
+    }
   }
 
   const { error } = await db.from("expenses").insert({
@@ -46,6 +76,7 @@ export async function createExpense(
     currency,
     paid_by: input.paid_by,
     split_mode: input.split_mode,
+    shares,
     spent_at: input.spent_at && /^\d{4}-\d{2}-\d{2}$/.test(input.spent_at)
       ? input.spent_at
       : null,

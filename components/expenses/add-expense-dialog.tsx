@@ -24,15 +24,35 @@ export function AddExpenseDialog({
   const [currency, setCurrency] = useState("EUR");
   const [paidBy, setPaidBy] = useState(currentMemberId);
   const [splitMode, setSplitMode] = useState<ExpenseSplitMode>("half");
+  const [shares, setShares] = useState<Record<string, string>>(() =>
+    Object.fromEntries(members.map((m) => [m.id, ""]))
+  );
   const [spentAt, setSpentAt] = useState(() => new Date().toISOString().slice(0, 10));
   const [locationId, setLocationId] = useState<string>("");
   const [note, setNote] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const amt = parseFloat(amount);
+  const customSum = members.reduce(
+    (acc, m) => acc + (parseFloat(shares[m.id]) || 0),
+    0
+  );
+  const customMismatch =
+    splitMode === "custom" &&
+    Number.isFinite(amt) &&
+    Math.abs(customSum - amt) > 0.01;
+
   const submit = () => {
-    const amt = parseFloat(amount);
     if (!title.trim() || !Number.isFinite(amt) || amt <= 0) return;
+    if (splitMode === "custom" && customMismatch) return;
+    let sharesPayload: Record<string, number> | null = null;
+    if (splitMode === "custom") {
+      sharesPayload = {};
+      for (const m of members) {
+        sharesPayload[m.id] = parseFloat(shares[m.id]) || 0;
+      }
+    }
     startTransition(async () => {
       const r = await createExpense(tripId, {
         title: title.trim(),
@@ -40,6 +60,7 @@ export function AddExpenseDialog({
         currency,
         paid_by: paidBy,
         split_mode: splitMode,
+        shares: sharesPayload,
         spent_at: spentAt || null,
         note: note.trim() || null,
         location_id: locationId || null,
@@ -50,6 +71,17 @@ export function AddExpenseDialog({
       }
       onClose();
     });
+  };
+
+  // when entering custom mode (or amount changes), seed shares with an even split
+  // unless user already typed something
+  const onPickCustom = () => {
+    setSplitMode("custom");
+    const allEmpty = members.every((m) => !shares[m.id]);
+    if (allEmpty && Number.isFinite(amt) && amt > 0 && members.length > 0) {
+      const half = (amt / members.length).toFixed(2);
+      setShares(Object.fromEntries(members.map((m) => [m.id, half])));
+    }
   };
 
   return (
@@ -152,7 +184,60 @@ export function AddExpenseDialog({
             >
               karşı tam ödesin
             </button>
+            <button
+              type="button"
+              onClick={onPickCustom}
+              className="btn-chip"
+              style={{
+                background:
+                  splitMode === "custom" ? "var(--accent-2)" : "var(--surface)",
+                fontWeight: splitMode === "custom" ? 700 : 500,
+              }}
+            >
+              özel
+            </button>
           </div>
+          {splitMode === "custom" && (
+            <div className="flex flex-col gap-2 mt-3">
+              {members.map((m) => (
+                <div key={m.id} className="flex items-center gap-2">
+                  <span
+                    className="text-[0.92rem] font-medium flex-1"
+                    style={{ color: "var(--ink)" }}
+                  >
+                    {m.name.toLowerCase()}
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    value={shares[m.id] ?? ""}
+                    onChange={(e) =>
+                      setShares({ ...shares, [m.id]: e.target.value })
+                    }
+                    placeholder="0"
+                    className="field-input"
+                    style={{ width: "120px" }}
+                  />
+                </div>
+              ))}
+              <div
+                className="text-[0.78rem] flex items-center justify-between mt-1"
+                style={{ color: customMismatch ? "var(--danger)" : "var(--text-muted)" }}
+              >
+                <span>toplam pay:</span>
+                <span style={{ fontWeight: 600 }}>
+                  {customSum.toFixed(2)}
+                  {Number.isFinite(amt) && amt > 0 && (
+                    <>
+                      {" / "}
+                      {amt.toFixed(2)}
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -209,7 +294,12 @@ export function AddExpenseDialog({
 
         <button
           onClick={submit}
-          disabled={pending || !title.trim() || !amount.trim()}
+          disabled={
+            pending ||
+            !title.trim() ||
+            !amount.trim() ||
+            (splitMode === "custom" && customMismatch)
+          }
           className="btn-primary w-full"
           style={{ padding: "0.95rem 1.25rem" }}
         >

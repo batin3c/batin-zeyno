@@ -116,7 +116,7 @@ export type CityPhoto = {
   added_at: string;
 };
 
-export type ExpenseSplitMode = "half" | "full";
+export type ExpenseSplitMode = "half" | "full" | "custom";
 
 export type Expense = {
   id: string;
@@ -126,6 +126,8 @@ export type Expense = {
   currency: string;
   paid_by: string;
   split_mode: ExpenseSplitMode;
+  /** when split_mode='custom', maps memberId → that member's share in `currency` */
+  shares: Record<string, number> | null;
   location_id: string | null;
   spent_at: string;
   note: string | null;

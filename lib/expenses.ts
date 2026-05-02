@@ -26,10 +26,17 @@ export function computeBalances(
 
   for (const e of expenses) {
     if (e.amount <= 0) continue;
-    // 'half' = non-payer owes amount/2; 'full' = non-payer owes amount
-    const owed = e.split_mode === "full" ? e.amount : e.amount / 2;
-    if (owed <= 0) continue;
     const other = e.paid_by === a ? b : a;
+    // owed = the non-payer's share of the expense
+    let owed: number;
+    if (e.split_mode === "custom" && e.shares) {
+      owed = Number(e.shares[other]) || 0;
+    } else if (e.split_mode === "full") {
+      owed = e.amount;
+    } else {
+      owed = e.amount / 2; // 'half'
+    }
+    if (owed <= 0) continue;
     const c = ensure(e.currency);
     c[e.paid_by] += owed;
     c[other] -= owed;
