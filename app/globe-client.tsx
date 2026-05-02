@@ -147,7 +147,7 @@ export function GlobeClient({
   }, [selection, cities]);
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       {view === "globe" ? (
         <GlobeCanvas
           visitedCodes={visitedCodes}
