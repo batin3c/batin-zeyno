@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/dal";
 import { db } from "@/lib/supabase";
 import { JoinGroupConfirm } from "@/components/join-group-confirm";
@@ -13,8 +12,9 @@ export default async function JoinByCodePage({
   const { code: rawCode } = await params;
   const code = decodeURIComponent(rawCode ?? "").trim().toUpperCase();
 
+  // anonymous-friendly: a fresh visitor without a session can also land here
+  // and create a member identity in one go via the join form
   const me = await getCurrentMember();
-  if (!me) redirect("/puzzle");
 
   const { data: group } = await db
     .from("groups")
@@ -41,6 +41,7 @@ export default async function JoinByCodePage({
           inviteCode={code}
           groupName={(group as Group).name}
           groupColor={(group as Group).color}
+          needsMemberName={!me}
         />
       ) : (
         <div className="flex flex-col items-center gap-7 w-full max-w-sm anim-reveal">

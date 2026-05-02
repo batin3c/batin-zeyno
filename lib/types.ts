@@ -15,6 +15,7 @@ export type Group = {
   name: string;
   color: string | null;
   invite_code: string;
+  pattern_hash: string | null;
   created_by: string | null;
   created_at: string;
 };
@@ -92,8 +93,9 @@ export type AppConfig = {
 };
 
 export type SessionPayload = {
-  memberId: string;
-  /** active group for this session — switched via /select-group */
+  /** null while pattern matched a group but the user hasn't picked their identity yet */
+  memberId: string | null;
+  /** active group for this session — set by puzzle pattern match */
   activeGroupId: string | null;
   expiresAt: number;
 };

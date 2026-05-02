@@ -28,7 +28,7 @@ export const getMembers = cache(async (): Promise<Member[]> => {
 
 export const getCurrentMember = cache(async (): Promise<Member | null> => {
   const session = await getSession();
-  if (!session) return null;
+  if (!session?.memberId) return null;
   const { data, error } = await db
     .from("members")
     .select("*")
@@ -39,6 +39,10 @@ export const getCurrentMember = cache(async (): Promise<Member | null> => {
 });
 
 export const requireCurrentMember = cache(async (): Promise<Member> => {
+  const session = await getSession();
+  if (!session) redirect("/puzzle");
+  // pattern-matched a group but identity not picked yet
+  if (!session.memberId && session.activeGroupId) redirect("/pick-member");
   const member = await getCurrentMember();
   if (!member) redirect("/puzzle");
   return member;

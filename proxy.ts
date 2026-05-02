@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decryptFromToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
-const PUBLIC_PATHS = new Set(["/puzzle"]);
+// pages that anonymous visitors must be able to reach: puzzle (login),
+// yeni-grup + katil (signup paths), grup-kur (one-shot legacy setup)
+const PUBLIC_PATHS = new Set(["/puzzle", "/yeni-grup", "/katil"]);
+const PUBLIC_PREFIXES = ["/katil/", "/grup-kur/", "/pick-member"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -20,7 +23,9 @@ export async function proxy(req: NextRequest) {
 
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = await decryptFromToken(token);
-  const isPublic = PUBLIC_PATHS.has(pathname);
+  const isPublic =
+    PUBLIC_PATHS.has(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!session && !isPublic) {
     const url = req.nextUrl.clone();
@@ -28,7 +33,9 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (session && isPublic) {
+  // signed-in user re-hits /puzzle → bounce home, but NOT for the other
+  // public pages (a logged-in user can still want /yeni-grup, /katil/*)
+  if (session && session.memberId && pathname === "/puzzle") {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

@@ -9,21 +9,31 @@ type Props = {
   inviteCode: string;
   groupName: string;
   groupColor: string | null;
+  needsMemberName?: boolean;
 };
 
 export function JoinGroupConfirm({
   inviteCode,
   groupName,
   groupColor,
+  needsMemberName = false,
 }: Props) {
+  const [memberName, setMemberName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
   const join = () => {
+    if (needsMemberName && !memberName.trim()) {
+      setError("adın boş");
+      return;
+    }
     setError(null);
     startTransition(async () => {
-      const result = await joinGroup(inviteCode);
+      const result = await joinGroup({
+        inviteCode,
+        memberName: needsMemberName ? memberName.trim() : undefined,
+      });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -82,6 +92,25 @@ export function JoinGroupConfirm({
           {groupName}
         </span>
       </div>
+
+      {needsMemberName && (
+        <div className="w-full flex flex-col gap-2">
+          <label className="label" htmlFor="join-name">
+            adın
+          </label>
+          <input
+            id="join-name"
+            className="field-input"
+            type="text"
+            value={memberName}
+            onChange={(e) => setMemberName(e.target.value)}
+            placeholder="batın"
+            maxLength={40}
+            disabled={pending}
+            autoFocus
+          />
+        </div>
+      )}
 
       {error && (
         <p

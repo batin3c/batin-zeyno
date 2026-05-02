@@ -29,26 +29,20 @@ async function decrypt(token: string): Promise<SessionPayload | null> {
     const { payload } = await jwtVerify(token, getKey(), {
       algorithms: ["HS256"],
     });
-    if (
-      typeof payload.memberId === "string" &&
-      typeof payload.expiresAt === "number"
-    ) {
-      const activeGroupId =
-        typeof payload.activeGroupId === "string" ? payload.activeGroupId : null;
-      return {
-        memberId: payload.memberId,
-        activeGroupId,
-        expiresAt: payload.expiresAt,
-      };
-    }
-    return null;
+    if (typeof payload.expiresAt !== "number") return null;
+    const memberId =
+      typeof payload.memberId === "string" ? payload.memberId : null;
+    const activeGroupId =
+      typeof payload.activeGroupId === "string" ? payload.activeGroupId : null;
+    if (!memberId && !activeGroupId) return null;
+    return { memberId, activeGroupId, expiresAt: payload.expiresAt };
   } catch {
     return null;
   }
 }
 
 export async function createSession(
-  memberId: string,
+  memberId: string | null,
   activeGroupId: string | null = null
 ) {
   const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
