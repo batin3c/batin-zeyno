@@ -350,3 +350,33 @@ export async function removeLocationPhoto(
   } catch {}
   revalidatePath(`/trips/${tripId}`);
 }
+
+export async function removeLocationPhotosBulk(
+  id: string,
+  tripId: string,
+  urls: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  if (!id || !Array.isArray(urls) || urls.length === 0) {
+    return { ok: false, error: "boş istek" };
+  }
+  const { data: row } = await db
+    .from("locations")
+    .select("photo_urls")
+    .eq("id", id)
+    .single();
+  const current = (row?.photo_urls ?? []) as string[];
+  const removeSet = new Set(urls);
+  const next = current.filter((u) => !removeSet.has(u));
+  const { error } = await db
+    .from("locations")
+    .update({
+      photo_urls: next,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await Promise.allSettled(urls.map((u) => removeByUrl(u)));
+  revalidatePath(`/trips/${tripId}`);
+  return { ok: true };
+}

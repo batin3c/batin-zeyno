@@ -159,6 +159,27 @@ export async function getCityBoundary(
   return fetched;
 }
 
+export async function removeCityPhotosBulk(
+  ids: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { ok: false, error: "boş istek" };
+  }
+  const { data: rows } = await db
+    .from("city_photos")
+    .select("id, url")
+    .in("id", ids);
+  const { error } = await db.from("city_photos").delete().in("id", ids);
+  if (error) return { ok: false, error: error.message };
+  await Promise.allSettled(
+    (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
+  );
+  revalidatePath("/globe");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function removeCityPhoto(
   id: string
 ): Promise<{ ok: boolean; error?: string }> {

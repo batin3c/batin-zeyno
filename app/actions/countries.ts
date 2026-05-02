@@ -110,6 +110,30 @@ export async function addCountryPhoto(
   }
 }
 
+export async function removeCountryPhotosBulk(
+  ids: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { ok: false, error: "boş istek" };
+  }
+  const { data: rows } = await db
+    .from("country_photos")
+    .select("id, url")
+    .in("id", ids);
+  const { error } = await db
+    .from("country_photos")
+    .delete()
+    .in("id", ids);
+  if (error) return { ok: false, error: error.message };
+  await Promise.allSettled(
+    (rows ?? []).map((r: { url: string }) => removeByUrl(r.url))
+  );
+  revalidatePath("/globe");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function removeCountryPhoto(
   id: string
 ): Promise<{ ok: boolean; error?: string }> {

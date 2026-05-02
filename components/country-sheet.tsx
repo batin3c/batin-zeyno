@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Camera, Check, MapPin, Plus, X } from "lucide-react";
+import { Check, MapPin, Plus } from "lucide-react";
 import { useJsApiLoader } from "@react-google-maps/api";
 import { SimpleDialog } from "./simple-dialog";
 import { COUNTRY_BY_NUMERIC, isoToFlag } from "@/lib/country-codes";
@@ -10,9 +10,10 @@ import {
   updateCountryNote,
   addCountryPhoto,
   removeCountryPhoto,
+  removeCountryPhotosBulk,
 } from "@/app/actions/countries";
 import { addCity } from "@/app/actions/cities";
-import { PhotoLightbox } from "./photo-lightbox";
+import { PhotoGallery, type GalleryItem } from "./photo-gallery";
 import type { VisitedCountry, CountryPhoto, VisitedCity } from "@/lib/types";
 
 const LIBRARIES: ("places")[] = ["places"];
@@ -43,12 +44,9 @@ export function CountrySheet({
   onOpenCity: (id: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState<string>("");
   const [noteSaved, setNoteSaved] = useState(false);
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -57,7 +55,6 @@ export function CountrySheet({
     } else {
       setNoteDraft("");
     }
-    setUploadErr(null);
     setNoteSaved(false);
     setCityPickerOpen(false);
   }, [data?.code, data?.visited?.note]);
@@ -102,29 +99,25 @@ export function CountrySheet({
     });
   };
 
-  const onUpload = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setUploadErr(null);
-    startTransition(async () => {
-      for (const file of Array.from(files)) {
-        const fd = new FormData();
-        fd.set("code", code);
-        fd.set("file", file);
-        const r = await addCountryPhoto(fd);
-        if (!r.ok) {
-          setUploadErr(r.error ?? "yüklenmedi aq");
-          break;
-        }
-      }
-    });
+  const onUpload = async (file: File) => {
+    const fd = new FormData();
+    fd.set("code", code);
+    fd.set("file", file);
+    return addCountryPhoto(fd);
   };
 
-  const onRemovePhoto = (id: string) => {
-    if (!confirm("foto sikilsin mi?")) return;
-    startTransition(() => {
-      removeCountryPhoto(id);
-    });
+  const onRemove = async (id: string) => {
+    return removeCountryPhoto(id);
   };
+
+  const onRemoveBulk = async (ids: string[]) => {
+    return removeCountryPhotosBulk(ids);
+  };
+
+  const galleryItems: GalleryItem[] = photos.map((p) => ({
+    id: p.id,
+    url: p.url,
+  }));
 
   const onCityPicked = (city: {
     name: string;
@@ -251,93 +244,15 @@ export function CountrySheet({
           <span className="label" style={{ fontSize: "0.62rem" }}>
             fotolar
           </span>
-          {photos.length === 0 && (
-            <p className="text-[0.8rem]" style={{ color: "var(--text-dim)" }}>
-              daha foto yok. aşağıdan at.
-            </p>
-          )}
-          {photos.length > 0 && (
-            <div className="flex gap-2.5 overflow-x-auto -mx-5 px-5 pb-2 pt-1">
-              {photos.map((p, i) => (
-                <div key={p.id} className="relative flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setLightboxIdx(i)}
-                    className="block overflow-hidden p-0"
-                    style={{
-                      borderRadius: "14px",
-                      border: "2px solid var(--ink)",
-                      boxShadow: "var(--shadow-pop-sm)",
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.url}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="w-24 h-24 object-cover"
-                    />
-                  </button>
-                  <button
-                    onClick={() => onRemovePhoto(p.id)}
-                    className="absolute -top-2 -right-2 flex items-center justify-center"
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      background: "var(--danger-soft)",
-                      border: "2px solid var(--ink)",
-                      borderRadius: "999px",
-                      color: "var(--ink)",
-                    }}
-                    aria-label="siktir et"
-                  >
-                    <X size={12} strokeWidth={2.5} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <button
-            onClick={() => inputRef.current?.click()}
-            disabled={pending}
-            className="btn-ghost disabled:opacity-50"
-            style={{ width: "100%" }}
-          >
-            <Camera size={16} strokeWidth={2} />
-            foto at
-          </button>
-          {uploadErr && (
-            <p
-              className="text-[0.75rem] mt-0.5"
-              style={{ color: "var(--danger)" }}
-            >
-              {uploadErr}
-            </p>
-          )}
-          {pending && (
-            <p
-              className="text-[0.75rem] mt-0.5"
-              style={{ color: "var(--text-dim)" }}
-            >
-              yükleniyor…
-            </p>
-          )}
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => onUpload(e.target.files)}
+          <PhotoGallery
+            items={galleryItems}
+            onUpload={onUpload}
+            onRemove={onRemove}
+            onRemoveBulk={onRemoveBulk}
+            variant="sheet"
           />
         </div>
       </div>
-      <PhotoLightbox
-        urls={photos.map((p) => p.url)}
-        index={lightboxIdx}
-        onClose={() => setLightboxIdx(null)}
-      />
     </SimpleDialog>
   );
 }
