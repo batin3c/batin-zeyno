@@ -146,6 +146,237 @@ export async function backfillCityPhotosFromUrls(
 }
 
 /**
+ * Server-side backfill from Google Place Photos REST API. Requires the
+ * `GOOGLE_PLACES_API_KEY` env var — a NEW key separate from the
+ * client-side maps key, with NO referer restriction (Google's REST API
+ * refuses referer-restricted keys server-side).
+ *
+ * Walks the active group's cities; for each one with no photos in DB and
+ * a valid place_id, pulls up to 3 photos via Places Details + Photo APIs,
+ * uploads them to Supabase, persists city_photos rows.
+ */
+export async function backfillAllCitiesFromGoogle(): Promise<{
+  ok: boolean;
+  done: number;
+  total: number;
+  added: number;
+  error?: string;
+}> {
+  const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  const KEY = process.env.GOOGLE_PLACES_API_KEY;
+  if (!KEY) {
+    return {
+      ok: false,
+      done: 0,
+      total: 0,
+      added: 0,
+      error: "GOOGLE_PLACES_API_KEY env var yok",
+    };
+  }
+
+  const { data: cities } = await db
+    .from("visited_cities")
+    .select("id, name, country_code, google_place_id, lat, lng")
+    .eq("group_id", groupId);
+  if (!cities || cities.length === 0) {
+    return { ok: true, done: 0, total: 0, added: 0 };
+  }
+  const { data: existingPhotos } = await db
+    .from("city_photos")
+    .select("city_id")
+    .eq("group_id", groupId);
+  const haveSet = new Set(
+    (existingPhotos ?? []).map((r) => r.city_id as string)
+  );
+  const need = cities.filter((c) => !haveSet.has(c.id as string));
+  if (need.length === 0) return { ok: true, done: 0, total: 0, added: 0 };
+
+  let done = 0;
+  let added = 0;
+  for (const c of need) {
+    let placeId = c.google_place_id as string | null;
+    // if the stored id is the bad list-scrape one (numeric, no ChIJ),
+    // resolve a real id via findplacefromtext
+    if (placeId && !placeId.startsWith("ChIJ")) {
+      placeId = await findPlaceIdByName(
+        c.name as string,
+        c.lat as number,
+        c.lng as number,
+        KEY
+      );
+    } else if (!placeId) {
+      placeId = await findPlaceIdByName(
+        c.name as string,
+        c.lat as number,
+        c.lng as number,
+        KEY
+      );
+    }
+    if (!placeId) continue;
+
+    const refs = await fetchPlacePhotoRefs(placeId, KEY);
+    if (refs.length === 0) continue;
+
+    const persisted: string[] = [];
+    for (const ref of refs.slice(0, 3)) {
+      const url = await downloadPlacePhoto(ref, KEY, `cities/${c.id}`);
+      if (url) persisted.push(url);
+    }
+    if (persisted.length === 0) continue;
+
+    const rows = persisted.map((url) => ({
+      city_id: c.id,
+      url,
+      added_by: me.id,
+      group_id: groupId,
+    }));
+    const { error } = await db.from("city_photos").insert(rows);
+    if (!error) {
+      done++;
+      added += persisted.length;
+    }
+  }
+  bustGlobe(groupId);
+  return { ok: true, done, total: need.length, added };
+}
+
+/**
+ * Same idea as backfillAllCitiesFromGoogle but for `locations` rows whose
+ * google_photo_urls is empty. Uses the same server-side Google REST path.
+ */
+export async function backfillAllLocationsFromGoogle(): Promise<{
+  ok: boolean;
+  done: number;
+  total: number;
+  added: number;
+  error?: string;
+}> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  const KEY = process.env.GOOGLE_PLACES_API_KEY;
+  if (!KEY) {
+    return {
+      ok: false,
+      done: 0,
+      total: 0,
+      added: 0,
+      error: "GOOGLE_PLACES_API_KEY env var yok",
+    };
+  }
+
+  // join locations + parent trip for the group filter
+  const { data: locsRaw } = await db
+    .from("locations")
+    .select("id, name, lat, lng, google_place_id, google_photo_urls, trip_id, trips!inner(group_id)")
+    .eq("trips.group_id", groupId);
+  const locs = (locsRaw ?? []) as Array<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    google_place_id: string | null;
+    google_photo_urls: string[] | null;
+    trip_id: string;
+  }>;
+  const need = locs.filter(
+    (l) => !Array.isArray(l.google_photo_urls) || l.google_photo_urls.length === 0
+  );
+  if (need.length === 0) return { ok: true, done: 0, total: 0, added: 0 };
+
+  let done = 0;
+  let added = 0;
+  for (const l of need) {
+    let placeId = l.google_place_id;
+    if (placeId && !placeId.startsWith("ChIJ")) {
+      placeId = await findPlaceIdByName(l.name, l.lat, l.lng, KEY);
+    } else if (!placeId) {
+      placeId = await findPlaceIdByName(l.name, l.lat, l.lng, KEY);
+    }
+    if (!placeId) continue;
+    const refs = await fetchPlacePhotoRefs(placeId, KEY);
+    if (refs.length === 0) continue;
+    const persisted: string[] = [];
+    for (const ref of refs.slice(0, 3)) {
+      const url = await downloadPlacePhoto(ref, KEY, `google/${l.trip_id}`);
+      if (url) persisted.push(url);
+    }
+    if (persisted.length === 0) continue;
+    const { error } = await db
+      .from("locations")
+      .update({
+        google_photo_urls: persisted,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", l.id);
+    if (!error) {
+      done++;
+      added += persisted.length;
+      revalidatePath(`/trips/${l.trip_id}`);
+    }
+  }
+  return { ok: true, done, total: need.length, added };
+}
+
+async function findPlaceIdByName(
+  name: string,
+  lat: number,
+  lng: number,
+  key: string
+): Promise<string | null> {
+  // Find Place from Text: tightest free option, returns one place_id
+  const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
+    name
+  )}&inputtype=textquery&fields=place_id&locationbias=circle:300@${lat},${lng}&key=${key}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const j = (await res.json()) as {
+      status?: string;
+      candidates?: Array<{ place_id?: string }>;
+    };
+    return j.candidates?.[0]?.place_id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPlacePhotoRefs(
+  placeId: string,
+  key: string
+): Promise<string[]> {
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+    placeId
+  )}&fields=photos&key=${key}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const j = (await res.json()) as {
+      status?: string;
+      result?: { photos?: Array<{ photo_reference?: string }> };
+    };
+    return (j.result?.photos ?? [])
+      .map((p) => p.photo_reference)
+      .filter((r): r is string => typeof r === "string");
+  } catch {
+    return [];
+  }
+}
+
+async function downloadPlacePhoto(
+  ref: string,
+  key: string,
+  folder: string
+): Promise<string | null> {
+  // Place Photo API 302s to lh3.googleusercontent.com; uploadImageFromUrl
+  // follows the redirect, downloads, uploads to our bucket
+  const url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1600&photoreference=${encodeURIComponent(
+    ref
+  )}&key=${key}`;
+  return uploadImageFromUrl(url, folder);
+}
+
+/**
  * Pick which photo represents this city in the album grid. Pass null to
  * fall back to "first photo by added_at". Verifies the photo belongs to
  * the same city (and group) so a forged id can't pin someone else's photo.

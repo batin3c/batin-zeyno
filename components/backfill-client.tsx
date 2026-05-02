@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useJsApiLoader } from "@react-google-maps/api";
 import {
   backfillCityPhotosFromUrls,
+  backfillAllCitiesFromGoogle,
+  backfillAllLocationsFromGoogle,
 } from "@/app/actions/cities";
 import {
   backfillLocationPhotosFromUrls,
@@ -163,30 +166,90 @@ export function BackfillClient({
   ).length;
   const total = cities.length + locations.length;
 
+  const router = useRouter();
+  const [serverResult, setServerResult] = useState<string | null>(null);
+  const [serverPending, startServerTx] = useTransition();
+  const runServerBackfill = () => {
+    setServerResult(null);
+    startServerTx(async () => {
+      const cityR = await backfillAllCitiesFromGoogle();
+      const locR = await backfillAllLocationsFromGoogle();
+      if (!cityR.ok && !locR.ok) {
+        setServerResult(
+          `hata: ${cityR.error ?? locR.error ?? "bilinmeyen"} — Vercel'de GOOGLE_PLACES_API_KEY env var ekledin mi?`
+        );
+        return;
+      }
+      const parts: string[] = [];
+      if (cityR.ok) {
+        parts.push(`${cityR.done}/${cityR.total} şehir (+${cityR.added} foto)`);
+      }
+      if (locR.ok) {
+        parts.push(`${locR.done}/${locR.total} yer (+${locR.added} foto)`);
+      }
+      setServerResult(parts.join(" · ") || "iş yok");
+      router.refresh();
+    });
+  };
+
   if (total === 0) {
     return (
-      <div
-        className="text-center py-10 px-6"
-        style={{
-          background: "var(--surface)",
-          border: "2px solid var(--ink)",
-          borderRadius: "20px",
-          boxShadow: "var(--shadow-pop)",
-        }}
-      >
-        <div className="text-[3rem] mb-3">✨</div>
-        <p
-          className="text-[1rem] font-semibold"
-          style={{ color: "var(--ink)" }}
+      <div className="flex flex-col gap-4">
+        <div
+          className="text-center py-10 px-6"
+          style={{
+            background: "var(--surface)",
+            border: "2px solid var(--ink)",
+            borderRadius: "20px",
+            boxShadow: "var(--shadow-pop)",
+          }}
         >
-          her yerin fotoğrafı tamam, {memberName.toLowerCase()}!
-        </p>
+          <div className="text-[3rem] mb-3">✨</div>
+          <p
+            className="text-[1rem] font-semibold"
+            style={{ color: "var(--ink)" }}
+          >
+            her yerin fotoğrafı tamam, {memberName.toLowerCase()}!
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={runServerBackfill}
+          disabled={serverPending}
+          className="btn-primary w-full justify-center"
+          style={{
+            padding: "0.95rem 1.25rem",
+            background: "var(--accent-2)",
+          }}
+        >
+          {serverPending
+            ? "google'dan çekiyorum..."
+            : "google'dan hepsini çek (server)"}
+        </button>
+        {serverResult && (
+          <p
+            className="text-[0.85rem] text-center"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {serverResult}
+          </p>
+        )}
+        <p
+          className="text-[0.78rem] text-center"
+          style={{ color: "var(--text-dim)" }}
+        >
+          önce Vercel&apos;e GOOGLE_PLACES_API_KEY env var ekle (referer
+          kısıtlaması olmayan ayrı bir Places API key)
+        </p>
+      </div>
+
       <button
         type="button"
         onClick={runAll}
@@ -198,7 +261,7 @@ export function BackfillClient({
           ? "google yükleniyor..."
           : running || pending
           ? `çekiyorum... ${totalDone + totalSkipped}/${total}`
-          : `${total} yerin fotosunu çek`}
+          : `${total} yerin fotosunu google'dan çek`}
       </button>
 
       <div className="flex flex-col gap-2">
