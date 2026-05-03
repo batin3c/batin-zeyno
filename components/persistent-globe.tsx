@@ -16,12 +16,14 @@ export function PersistentGlobe({
   cities,
   cityPhotos,
   trips,
+  currentMemberId,
 }: {
   visited: VisitedCountry[];
   photos: CountryPhoto[];
   cities: VisitedCity[];
   cityPhotos: CityPhoto[];
   trips: Trip[];
+  currentMemberId: string;
 }) {
   const pathname = usePathname();
   const visible = pathname === "/";
@@ -46,6 +48,7 @@ export function PersistentGlobe({
         cities={cities}
         cityPhotos={cityPhotos}
         trips={trips}
+        currentMemberId={currentMemberId}
       />
     </div>
   );

@@ -16,8 +16,10 @@ import {
 } from "@/app/actions/cities";
 import type { VisitedCity, CityPhoto, Trip } from "@/lib/types";
 import { PhotoGallery, type GalleryItem } from "./photo-gallery";
-import { SharePostButton } from "./share-post-dialog";
+import { SharePostButton, type LocationOption } from "./share-post-dialog";
 import { CommunityCity } from "./community-city";
+import { CityLocations } from "./city-locations";
+import { loadCityLocations } from "@/app/actions/locations";
 
 type SelectedData = {
   city: VisitedCity;
@@ -37,11 +39,13 @@ export function CitySheet({
   open,
   onClose,
   trips = [],
+  currentMemberId,
 }: {
   data: SelectedData | null;
   open: boolean;
   onClose: () => void;
   trips?: Trip[];
+  currentMemberId?: string;
 }) {
   const [pending, startTransition] = useTransition();
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,11 +174,27 @@ export function CitySheet({
           />
         )}
 
+        <CityLocations
+          cityId={city.id}
+          cityCenter={{ lat: city.lat, lng: city.lng }}
+          cityCountry={city.country_code}
+          currentMemberId={currentMemberId ?? ""}
+        />
+
         <div className="mt-1">
           <SharePostButton
             refType="city"
             refId={city.id}
             existingPhotos={photos.map((p) => ({ id: p.id, url: p.url }))}
+            loadLocations={async (): Promise<LocationOption[]> => {
+              const r = await loadCityLocations(city.id);
+              return r.locations.map((l) => ({
+                id: l.id,
+                name: l.name,
+                category: l.category,
+                rating: l.rating,
+              }));
+            }}
             buttonClassName="btn-primary w-full justify-center"
             buttonStyle={{ padding: "0.85rem 1.1rem" }}
           />

@@ -136,9 +136,11 @@ async function GlobeShell() {
   // doesn't apply because <PersistentGlobe /> is constructed AFTER the
   // try block exits successfully.
   let data: Awaited<ReturnType<typeof getGlobeData>> | null = null;
+  let memberId: string | null = null;
   try {
     const me = await getCurrentMember();
     if (!me) return null;
+    memberId = me.id;
     const groupId = await getActiveGroupId();
     // user is between login and group selection — no globe to show yet
     if (!groupId) return null;
@@ -153,6 +155,7 @@ async function GlobeShell() {
       cities={data.cities}
       cityPhotos={data.cityPhotos}
       trips={data.trips}
+      currentMemberId={memberId!}
     />
   );
 }

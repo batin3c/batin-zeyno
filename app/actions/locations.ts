@@ -537,6 +537,76 @@ export async function removeLocationPhotosBulk(
 }
 
 /**
+ * Insert a location attached to a city (no trip). The location's lat/lng come
+ * from a Google Places pick on the client (or from the city centroid if no
+ * place was picked). trip_id stays null — these are "city-only" memories /
+ * recommendations, surfaced in CitySheet's mekanlar section.
+ */
+export async function createLocationForCity(
+  cityId: string,
+  input: {
+    name: string;
+    category?: Category;
+    lat: number;
+    lng: number;
+    address?: string | null;
+    google_place_id?: string | null;
+    google_maps_url?: string | null;
+    rating?: number | null;
+    note?: string | null;
+    is_public?: boolean;
+  }
+): Promise<{ ok: boolean; locationId?: string; error?: string }> {
+  const me = await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!cityId) return { ok: false, error: "şehir id yok" };
+  const name = (input.name ?? "").trim();
+  if (!name) return { ok: false, error: "isim boş" };
+  if (typeof input.lat !== "number" || typeof input.lng !== "number") {
+    return { ok: false, error: "koordinat yok" };
+  }
+  // verify the city is in the active group
+  const { data: city } = await db
+    .from("visited_cities")
+    .select("id, name")
+    .eq("id", cityId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (!city) return { ok: false, error: "yetkisiz" };
+
+  const { data: created, error } = await db
+    .from("locations")
+    .insert({
+      trip_id: null,
+      name,
+      address: input.address ?? null,
+      lat: input.lat,
+      lng: input.lng,
+      google_place_id: input.google_place_id ?? null,
+      google_maps_url: input.google_maps_url ?? null,
+      category: (input.category ?? "other") as Category,
+      note: input.note ?? null,
+      rating: input.rating ?? null,
+      status: "want" as LocationStatus,
+      added_by: me.id,
+      is_public: input.is_public ?? false,
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  notifyOthers({
+    title: `${me.name.toLowerCase()} yeni mekan ekledi 📍`,
+    body: `${city.name}: ${name}`,
+    url: `/album`,
+    tag: `loc-city-${cityId}`,
+  }).catch(() => {});
+
+  revalidatePath("/album");
+  return { ok: true, locationId: created.id as string };
+}
+
+/**
  * Toggle the community-visibility flag on a single location. The location
  * must belong to a trip in the caller's active group; tripId is taken as the
  * authorisation hint, then verified against group membership.
@@ -577,5 +647,74 @@ export async function setLocationIsPublic(
   if (error) return { ok: false, error: error.message };
   if (tripId) revalidatePath(`/trips/${tripId}`);
   return { ok: true };
+}
+
+/**
+ * List locations near a city — for surfacing in CitySheet "mekanlar" section
+ * and SharePostDialog when sharing a city. Returns only locations in the
+ * caller's active group (resolved via trip_id ∈ group's trips OR
+ * trip_id IS NULL AND added_by ∈ group_members).
+ */
+export type CityLocationLite = {
+  id: string;
+  name: string;
+  category: Category;
+  rating: number | null;
+  status: LocationStatus;
+  trip_id: string | null;
+  added_by: string | null;
+  photo_urls: string[];
+  google_photo_urls: string[];
+  is_public: boolean;
+  note: string | null;
+  address: string | null;
+};
+
+export async function loadCityLocations(
+  cityId: string
+): Promise<{ locations: CityLocationLite[] }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!cityId) return { locations: [] };
+  const { data: city } = await db
+    .from("visited_cities")
+    .select("lat, lng")
+    .eq("id", cityId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (!city) return { locations: [] };
+
+  const lat = city.lat as number;
+  const lng = city.lng as number;
+  const minLat = lat - 0.3;
+  const maxLat = lat + 0.3;
+  const minLng = lng - 0.3;
+  const maxLng = lng + 0.3;
+
+  // group's trip ids + group's member ids
+  const [{ data: tripRows }, { data: gmRows }] = await Promise.all([
+    db.from("trips").select("id").eq("group_id", groupId),
+    db.from("group_members").select("member_id").eq("group_id", groupId),
+  ]);
+  const tripIds = (tripRows ?? []).map((t) => t.id as string);
+  const memberIds = (gmRows ?? []).map((g) => g.member_id as string);
+
+  const { data: locs } = await db
+    .from("locations")
+    .select(
+      "id, name, category, rating, status, trip_id, added_by, photo_urls, google_photo_urls, is_public, note, address"
+    )
+    .gte("lat", minLat)
+    .lte("lat", maxLat)
+    .gte("lng", minLng)
+    .lte("lng", maxLng)
+    .order("created_at", { ascending: false });
+  const all = (locs ?? []) as CityLocationLite[];
+  // belongs to group: either trip in group, or no trip + added_by in group
+  const filtered = all.filter((l) => {
+    if (l.trip_id) return tripIds.includes(l.trip_id);
+    return l.added_by ? memberIds.includes(l.added_by) : false;
+  });
+  return { locations: filtered };
 }
 

@@ -165,6 +165,13 @@ export type PostSnapshot = {
   description?: string | null;
   location_count?: number | null;
   city_count?: number | null;
+  // city-specific: optional bundled location list ("istanbul'da 5 yer")
+  locations?: Array<{
+    id: string;
+    name: string;
+    category: Category;
+    rating?: number | null;
+  }> | null;
 };
 
 export type Post = {

@@ -54,12 +54,14 @@ export function GlobeClient({
   cities,
   cityPhotos,
   trips,
+  currentMemberId,
 }: {
   visited: VisitedCountry[];
   photos: CountryPhoto[];
   cities: VisitedCity[];
   cityPhotos: CityPhoto[];
   trips: Trip[];
+  currentMemberId: string;
 }) {
   const [selection, setSelection] = useState<Selection>(null);
 
@@ -179,6 +181,7 @@ export function GlobeClient({
         open={selection?.kind === "city"}
         onClose={() => setSelection(null)}
         trips={trips}
+        currentMemberId={currentMemberId}
       />
     </div>
   );

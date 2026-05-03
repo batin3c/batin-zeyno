@@ -38,6 +38,7 @@ export default async function AlbumPage() {
         cities={(cities ?? []) as VisitedCity[]}
         photos={(cityPhotos ?? []) as CityPhoto[]}
         trips={(trips ?? []) as Trip[]}
+        currentMemberId={me.id}
       />
     </>
   );

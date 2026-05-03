@@ -22,6 +22,8 @@ type CreatePostInput = {
   refId: string;
   caption?: string | null;
   photoUrls?: string[];
+  /** city posts only: bundle a list of location ids into the snapshot */
+  locationIds?: string[];
 };
 
 /**
@@ -33,7 +35,8 @@ async function buildSnapshot(
   refType: PostRefType,
   refId: string,
   groupId: string,
-  extraPhotoUrls: string[]
+  extraPhotoUrls: string[],
+  locationIds: string[]
 ): Promise<{ snapshot: PostSnapshot } | { error: string }> {
   if (refType === "city") {
     const { data: city } = await db
@@ -50,11 +53,41 @@ async function buildSnapshot(
       .limit(10);
     const dbUrls = (photos ?? []).map((p) => p.url as string);
     const photo_urls = extraPhotoUrls.length > 0 ? extraPhotoUrls : dbUrls;
+
+    // bundled location list
+    let locations: PostSnapshot["locations"] = null;
+    if (locationIds.length > 0) {
+      const ids = Array.from(new Set(locationIds)).slice(0, 25);
+      const { data: locs } = await db
+        .from("locations")
+        .select("id, name, category, rating")
+        .in("id", ids);
+      const map = new Map(
+        ((locs ?? []) as Array<{
+          id: string;
+          name: string;
+          category: Category;
+          rating: number | null;
+        }>).map((l) => [l.id, l])
+      );
+      // preserve caller's ordering
+      locations = ids
+        .map((id) => map.get(id))
+        .filter((l): l is { id: string; name: string; category: Category; rating: number | null } => !!l)
+        .map((l) => ({
+          id: l.id,
+          name: l.name,
+          category: l.category,
+          rating: l.rating,
+        }));
+    }
+
     return {
       snapshot: {
         title: city.name as string,
         country_code: (city.country_code as string | null) ?? null,
         photo_urls: photo_urls.slice(0, 10),
+        locations,
       },
     };
   }
@@ -196,6 +229,14 @@ export async function createPost(
   if (photoUrls.length > 10) {
     return { ok: false, error: "max 10 foto" };
   }
+  const locationIds = Array.isArray(input.locationIds)
+    ? input.locationIds.filter(
+        (u): u is string => typeof u === "string" && u.length > 0
+      )
+    : [];
+  if (locationIds.length > 25) {
+    return { ok: false, error: "max 25 mekan" };
+  }
 
   // resolve the group via the source row — caller's active group must match
   let sourceGroupId: string | null = null;
@@ -243,7 +284,8 @@ export async function createPost(
     input.refType,
     input.refId,
     sourceGroupId,
-    photoUrls
+    photoUrls,
+    input.refType === "city" ? locationIds : []
   );
   if ("error" in built) return { ok: false, error: built.error };
 

@@ -254,15 +254,65 @@ function PostBody({
   flag: string | null;
 }) {
   if (post.ref_type === "city") {
+    const locs = post.snapshot.locations ?? [];
     return (
-      <div className="flex items-baseline gap-2 flex-wrap">
-        {flag && <span style={{ fontSize: "1.1rem" }}>{flag}</span>}
-        <h3
-          className="font-bold tracking-tight"
-          style={{ fontSize: "1.15rem", color: "var(--ink)" }}
-        >
-          {post.snapshot.title}
-        </h3>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {flag && <span style={{ fontSize: "1.1rem" }}>{flag}</span>}
+          <h3
+            className="font-bold tracking-tight"
+            style={{ fontSize: "1.15rem", color: "var(--ink)" }}
+          >
+            {post.snapshot.title}
+          </h3>
+          {locs.length > 0 && (
+            <span
+              className="text-[0.82rem]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              · {plural(locs.length, "mekan")}
+            </span>
+          )}
+        </div>
+        {locs.length > 0 && (
+          <div
+            className="flex flex-col gap-1 mt-1 px-3 py-2"
+            style={{
+              background: "var(--accent-3-soft)",
+              border: "2px solid var(--ink)",
+              borderRadius: "12px",
+            }}
+          >
+            {locs.map((l) => {
+              const cat = CATEGORIES.find((c) => c.key === l.category);
+              const r = formatRating(l.rating ?? null);
+              return (
+                <div
+                  key={l.id}
+                  className="flex items-center gap-2 text-[0.88rem]"
+                >
+                  <span style={{ fontSize: "1rem" }}>
+                    {cat?.emoji ?? "📍"}
+                  </span>
+                  <span
+                    className="flex-1 truncate font-semibold"
+                    style={{ color: "var(--ink)" }}
+                  >
+                    {l.name}
+                  </span>
+                  {r && (
+                    <span
+                      className="text-[0.78rem] font-bold"
+                      style={{ color: "var(--ink)" }}
+                    >
+                      {r}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }

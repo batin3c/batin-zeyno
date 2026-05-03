@@ -14,10 +14,12 @@ export function AlbumClient({
   cities,
   photos,
   trips,
+  currentMemberId,
 }: {
   cities: VisitedCity[];
   photos: CityPhoto[];
   trips: Trip[];
+  currentMemberId: string;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -114,6 +116,7 @@ export function AlbumClient({
         open={!!selectedId}
         onClose={() => setSelectedId(null)}
         trips={trips}
+        currentMemberId={currentMemberId}
       />
     </>
   );
