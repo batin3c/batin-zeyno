@@ -11,9 +11,13 @@ import {
   removeCityPhotosBulk,
   deleteCity,
   setCityCoverPhoto,
+  setCityTrip,
+  setCityIsPublic,
 } from "@/app/actions/cities";
-import type { VisitedCity, CityPhoto } from "@/lib/types";
+import type { VisitedCity, CityPhoto, Trip } from "@/lib/types";
 import { PhotoGallery, type GalleryItem } from "./photo-gallery";
+import { SharePostButton } from "./share-post-dialog";
+import { CommunityCity } from "./community-city";
 
 type SelectedData = {
   city: VisitedCity;
@@ -32,10 +36,12 @@ export function CitySheet({
   data,
   open,
   onClose,
+  trips = [],
 }: {
   data: SelectedData | null;
   open: boolean;
   onClose: () => void;
+  trips?: Trip[];
 }) {
   const [pending, startTransition] = useTransition();
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,6 +70,7 @@ export function CitySheet({
   const { city, photos } = data;
   const countryLabel = countryName(city.country_code);
   const flag = city.country_code ? isoToFlag(city.country_code) : "📍";
+  void pending;
 
   const onNoteBlur = () => {
     const clean = noteDraft.trim();
@@ -126,6 +133,8 @@ export function CitySheet({
           </span>
         </div>
 
+        <PublicToggle city={city} />
+
         <label className="flex flex-col gap-1.5">
           <span className="label" style={{ fontSize: "0.62rem" }}>
             not {noteSaved && <span style={{ color: "var(--accent)" }}>✓</span>}
@@ -161,6 +170,29 @@ export function CitySheet({
           />
         )}
 
+        <div className="mt-1">
+          <SharePostButton
+            refType="city"
+            refId={city.id}
+            existingPhotos={photos.map((p) => ({ id: p.id, url: p.url }))}
+            buttonClassName="btn-primary w-full justify-center"
+            buttonStyle={{ padding: "0.85rem 1.1rem" }}
+          />
+        </div>
+
+        {trips.length > 0 && (
+          <TripTagPicker
+            cityId={city.id}
+            currentTripId={city.trip_id}
+            trips={trips}
+          />
+        )}
+
+        <CommunityCity
+          cityName={city.name}
+          countryCode={city.country_code}
+        />
+
         <div
           className="mt-2 pt-4"
           style={{ borderTop: "2px solid var(--line-soft)" }}
@@ -178,6 +210,135 @@ export function CitySheet({
         </div>
       </div>
     </SimpleDialog>
+  );
+}
+
+function PublicToggle({ city }: { city: VisitedCity }) {
+  const [pending, startTransition] = useTransition();
+  const [isPublic, setIsPublic] = useState(city.is_public);
+  const toggle = () => {
+    if (pending) return;
+    const next = !isPublic;
+    setIsPublic(next);
+    startTransition(async () => {
+      const r = await setCityIsPublic(city.id, next);
+      if (!r.ok) setIsPublic(!next);
+    });
+  };
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={pending}
+      className="flex items-center justify-between gap-3 px-3.5 py-2.5"
+      style={{
+        background: isPublic ? "var(--accent-2-soft)" : "var(--surface)",
+        border: "2px solid var(--ink)",
+        borderRadius: "14px",
+        color: "var(--ink)",
+      }}
+    >
+      <div className="flex flex-col items-start">
+        <span className="font-semibold text-[0.92rem]">
+          {isPublic ? "topluluğa açık 🌍" : "sadece bizim grubumuza"}
+        </span>
+        <span
+          className="text-[0.78rem]"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {isPublic
+            ? "diğer baze kullanıcıları bu şehri topluluk önerilerinde görebilir"
+            : "sadece grup içi · paylaşmak için tıkla"}
+        </span>
+      </div>
+      <span
+        className="flex items-center justify-center text-[0.85rem] font-bold"
+        style={{
+          minWidth: 44,
+          padding: "0.3rem 0.7rem",
+          background: isPublic ? "var(--accent-2)" : "var(--bg)",
+          border: "1.5px solid var(--ink)",
+          borderRadius: 999,
+        }}
+      >
+        {isPublic ? "açık" : "kapalı"}
+      </span>
+    </button>
+  );
+}
+
+function TripTagPicker({
+  cityId,
+  currentTripId,
+  trips,
+}: {
+  cityId: string;
+  currentTripId: string | null;
+  trips: Trip[];
+}) {
+  const [pending, startTransition] = useTransition();
+  const [picked, setPicked] = useState<string | null>(currentTripId);
+
+  const choose = (id: string | null) => {
+    if (pending) return;
+    setPicked(id);
+    startTransition(async () => {
+      await setCityTrip(cityId, id);
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="label" style={{ fontSize: "0.62rem" }}>
+        tatil etiketi
+      </span>
+      <div className="flex gap-1.5 overflow-x-auto -mx-5 px-5 pb-1">
+        <ChipBtn
+          active={picked === null}
+          onClick={() => choose(null)}
+          disabled={pending}
+        >
+          etiketsiz
+        </ChipBtn>
+        {trips.map((t) => (
+          <ChipBtn
+            key={t.id}
+            active={picked === t.id}
+            onClick={() => choose(t.id)}
+            disabled={pending}
+          >
+            {t.name.toLowerCase()}
+          </ChipBtn>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChipBtn({
+  active,
+  onClick,
+  disabled,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="btn-chip flex-shrink-0 disabled:opacity-60"
+      style={{
+        background: active ? "var(--accent-2)" : "var(--surface)",
+        fontWeight: active ? 600 : 500,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

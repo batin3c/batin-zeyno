@@ -1,11 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/supabase";
 import { requireCurrentMember, requireActiveGroupId } from "@/lib/dal";
 import { uploadImage, removeByUrl } from "@/lib/storage";
-import { str, num } from "@/lib/form-helpers";
+import { str } from "@/lib/form-helpers";
+
+// Mirrors the tag scheme in app/actions/cities.ts so trip mutations refresh
+// the album/globe page (which lists trips for chip filtering + sheet tagging).
+const bustGlobe = (groupId: string) => updateTag(`globe-data:${groupId}`);
 
 async function uploadCoverIfAny(
   formData: FormData
@@ -32,9 +36,6 @@ export async function createTrip(formData: FormData) {
     // ignore cover upload failure — create trip anyway
   }
 
-  const center_lat = num(formData.get("center_lat"));
-  const center_lng = num(formData.get("center_lng"));
-
   const { data, error } = await db
     .from("trips")
     .insert({
@@ -43,8 +44,6 @@ export async function createTrip(formData: FormData) {
       start_date,
       end_date,
       cover_url,
-      center_lat,
-      center_lng,
       created_by: me.id,
       group_id: groupId,
     })
@@ -52,7 +51,9 @@ export async function createTrip(formData: FormData) {
     .single();
   if (error) throw error;
 
+  bustGlobe(groupId);
   revalidatePath("/tatiller");
+  revalidatePath("/album");
   redirect(`/trips/${data.id}`);
 }
 
@@ -70,13 +71,6 @@ export async function updateTrip(formData: FormData) {
     end_date: str(formData.get("end_date")),
     updated_at: new Date().toISOString(),
   };
-
-  const center_lat = num(formData.get("center_lat"));
-  const center_lng = num(formData.get("center_lng"));
-  if (center_lat !== null && center_lng !== null) {
-    patch.center_lat = center_lat;
-    patch.center_lng = center_lng;
-  }
 
   try {
     const uploaded = await uploadCoverIfAny(formData);
@@ -107,7 +101,9 @@ export async function updateTrip(formData: FormData) {
     .eq("group_id", groupId);
   if (error) throw error;
 
+  bustGlobe(groupId);
   revalidatePath("/tatiller");
+  revalidatePath("/album");
   revalidatePath(`/trips/${id}`);
 }
 
@@ -136,26 +132,6 @@ export async function removeTripCover(id: string) {
   revalidatePath(`/trips/${id}`);
 }
 
-export async function reorderTrips(
-  orderedIds: string[]
-): Promise<{ ok: boolean; error?: string }> {
-  await requireCurrentMember();
-  const groupId = await requireActiveGroupId();
-  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
-    return { ok: false, error: "bozuk istek" };
-  }
-  // Single-statement renumber via Postgres function (see migration 0014).
-  // The RPC's group_id filter prevents a forged id from another group from
-  // sneaking into this group's ordering.
-  const { error } = await db.rpc("reorder_trips", {
-    p_group_id: groupId,
-    p_ids: orderedIds,
-  });
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/tatiller");
-  return { ok: true };
-}
-
 export async function deleteTrip(formData: FormData) {
   await requireCurrentMember();
   const groupId = await requireActiveGroupId();
@@ -167,6 +143,8 @@ export async function deleteTrip(formData: FormData) {
     .eq("id", id)
     .eq("group_id", groupId);
   if (error) throw error;
+  bustGlobe(groupId);
   revalidatePath("/tatiller");
+  revalidatePath("/album");
   redirect("/tatiller");
 }

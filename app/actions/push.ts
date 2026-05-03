@@ -106,3 +106,48 @@ export async function notifyOthers(
   }
   return { ok: true, sent };
 }
+
+// Send a push to a specific list of member ids (cross-group). Used by social
+// actions (reactions / comments / follows) where the recipients aren't bound
+// to the active group — the followed user, the post author, etc.
+export async function notifyMembers(
+  memberIds: string[],
+  payload: PushPayload
+): Promise<{ ok: boolean; sent: number }> {
+  if (!configure()) return { ok: false, sent: 0 };
+  const ids = Array.from(new Set(memberIds.filter(Boolean)));
+  if (ids.length === 0) return { ok: true, sent: 0 };
+  const { data: subs } = await db
+    .from("push_subscriptions")
+    .select("*")
+    .in("member_id", ids);
+  if (!subs || subs.length === 0) return { ok: true, sent: 0 };
+
+  let sent = 0;
+  const deadEndpoints: string[] = [];
+  for (const s of subs as Array<{
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  }>) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        JSON.stringify(payload)
+      );
+      sent++;
+    } catch (e: unknown) {
+      const err = e as { statusCode?: number };
+      if (err.statusCode === 404 || err.statusCode === 410) {
+        deadEndpoints.push(s.endpoint);
+      }
+    }
+  }
+  if (deadEndpoints.length > 0) {
+    await db
+      .from("push_subscriptions")
+      .delete()
+      .in("endpoint", deadEndpoints);
+  }
+  return { ok: true, sent };
+}

@@ -13,9 +13,6 @@ export function CreateTripButton() {
   const [pending, startTransition] = useTransition();
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
-    null
-  );
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const onCoverPick = (file: File | null) => {
@@ -28,10 +25,6 @@ export function CreateTripButton() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     if (coverFile) fd.set("cover_file", coverFile);
-    if (center) {
-      fd.set("center_lat", String(center.lat));
-      fd.set("center_lng", String(center.lng));
-    }
     startTransition(() => createTrip(fd));
   };
 
@@ -40,7 +33,6 @@ export function CreateTripButton() {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverFile(null);
     setCoverPreview(null);
-    setCenter(null);
   };
 
   return (
@@ -66,10 +58,7 @@ export function CreateTripButton() {
             onPick={onCoverPick}
           />
           <Field label="nereye">
-            <DestinationInput
-              onPick={(lat, lng) => setCenter({ lat, lng })}
-              onClear={() => setCenter(null)}
-            />
+            <DestinationInput />
           </Field>
           <Field label="açıklama">
             <textarea
@@ -119,13 +108,9 @@ function Field({
 }
 
 export function DestinationInput({
-  onPick,
-  onClear,
   defaultValue,
   name = "name",
 }: {
-  onPick: (lat: number, lng: number) => void;
-  onClear: () => void;
   defaultValue?: string;
   name?: string;
 }) {
@@ -135,29 +120,14 @@ export function DestinationInput({
     language: "tr",
   });
   const inputRef = useRef<HTMLInputElement>(null);
-  const pickRef = useRef(onPick);
-  const clearRef = useRef(onClear);
-
-  useEffect(() => {
-    pickRef.current = onPick;
-  }, [onPick]);
-  useEffect(() => {
-    clearRef.current = onClear;
-  }, [onClear]);
 
   useEffect(() => {
     if (!isLoaded || !inputRef.current) return;
     const ac = new google.maps.places.Autocomplete(inputRef.current, {
-      fields: ["name", "formatted_address", "geometry"],
+      fields: ["name", "formatted_address"],
       types: ["(cities)"],
     });
-    const listener = ac.addListener("place_changed", () => {
-      const p = ac.getPlace();
-      if (!p.geometry?.location) return;
-      pickRef.current(p.geometry.location.lat(), p.geometry.location.lng());
-    });
     return () => {
-      listener.remove();
       google.maps.event.clearInstanceListeners(ac);
     };
   }, [isLoaded]);
@@ -182,7 +152,6 @@ export function DestinationInput({
       defaultValue={defaultValue}
       disabled={!isLoaded}
       placeholder={isLoaded ? "nereye gidiyoruz? (Sevilla, Roma…)" : "yükleniyor…"}
-      onChange={() => clearRef.current()}
       className="field-input"
     />
   );

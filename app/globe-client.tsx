@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Geometry } from "geojson";
-import { Globe2, Images } from "lucide-react";
 import { CountrySheet } from "@/components/country-sheet";
 import { CitySheet } from "@/components/city-sheet";
-import { AlbumGrid } from "@/components/album-grid";
 import type {
   VisitedCountry,
   CountryPhoto,
   VisitedCity,
   CityPhoto,
+  Trip,
 } from "@/lib/types";
 
 const GlobeCanvas = dynamic(
@@ -54,24 +53,15 @@ export function GlobeClient({
   photos,
   cities,
   cityPhotos,
+  trips,
 }: {
   visited: VisitedCountry[];
   photos: CountryPhoto[];
   cities: VisitedCity[];
   cityPhotos: CityPhoto[];
+  trips: Trip[];
 }) {
   const [selection, setSelection] = useState<Selection>(null);
-  const [view, setView] = useState<"globe" | "album">(() => {
-    if (typeof window === "undefined") return "globe";
-    const saved = sessionStorage.getItem("globe-view");
-    return saved === "album" ? "album" : "globe";
-  });
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem("globe-view", view);
-    } catch {}
-  }, [view]);
 
   const visitedCodes = useMemo(
     () => new Set(visited.map((v) => v.code)),
@@ -90,7 +80,6 @@ export function GlobeClient({
   );
 
   const routes = useMemo(() => {
-    // chronological by added_at (oldest first), connect consecutive pairs
     const ordered = [...cities].sort((a, b) =>
       (a.added_at ?? "").localeCompare(b.added_at ?? "")
     );
@@ -103,7 +92,6 @@ export function GlobeClient({
     for (let i = 1; i < ordered.length; i++) {
       const a = ordered[i - 1];
       const b = ordered[i];
-      // skip if exact same coords (would be a zero-length arc)
       if (a.lat === b.lat && a.lng === b.lng) continue;
       out.push({
         startLat: a.lat,
@@ -138,7 +126,6 @@ export function GlobeClient({
     return { city, photos: ps };
   }, [selection, cities, cityPhotos]);
 
-  // boundary = halo circle, derived synchronously from selection
   const boundary = useMemo(() => {
     if (selection?.kind !== "city") return null;
     const city = cities.find((c) => c.id === selection.id);
@@ -148,91 +135,39 @@ export function GlobeClient({
 
   return (
     <div className="relative w-full h-full">
-      {view === "globe" ? (
-        <GlobeCanvas
-          visitedCodes={visitedCodes}
-          cities={cityPoints}
-          selectedCityBoundary={boundary}
-          selectedCityId={selection?.kind === "city" ? selection.id : null}
-          routes={routes}
-          onSelectCountry={(code) =>
-            setSelection({ kind: "country", code })
-          }
-          onSelectCity={(id) => setSelection({ kind: "city", id })}
-        />
-      ) : (
-        // PersistentGlobe wraps us in a position:fixed shell with no scroll —
-        // album view renders potentially-tall grid, so this container needs
-        // to be the scroller.
-        <div
-          className="absolute inset-0 overflow-y-auto"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
-          <div
-            className="max-w-3xl w-full mx-auto px-4 pt-16 pb-24"
-            style={{ minHeight: "100%" }}
-          >
-            <AlbumGrid
-              cities={cities}
-              photos={cityPhotos}
-              onSelectCity={(id) => setSelection({ kind: "city", id })}
-            />
-          </div>
-        </div>
-      )}
+      <GlobeCanvas
+        visitedCodes={visitedCodes}
+        cities={cityPoints}
+        selectedCityBoundary={boundary}
+        selectedCityId={selection?.kind === "city" ? selection.id : null}
+        routes={routes}
+        onSelectCountry={(code) => setSelection({ kind: "country", code })}
+        onSelectCity={(id) => setSelection({ kind: "city", id })}
+      />
 
       <div
-        className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 anim-bounce-in"
-        style={{ pointerEvents: "auto" }}
+        className="absolute top-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5"
+        style={{
+          background: "var(--accent-soft)",
+          border: "2px solid var(--ink)",
+          borderRadius: "999px",
+          padding: "0.35rem 0.85rem",
+          boxShadow: "var(--shadow-pop-sm)",
+          fontWeight: 700,
+          fontSize: "0.8rem",
+          color: "var(--ink)",
+        }}
       >
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => setView("globe")}
-            className="btn-chip"
-            style={{
-              background: view === "globe" ? "var(--accent)" : "var(--surface)",
-              fontWeight: view === "globe" ? 700 : 500,
-            }}
-          >
-            <Globe2 size={13} strokeWidth={2.5} /> küre
-          </button>
-          <button
-            onClick={() => setView("album")}
-            className="btn-chip"
-            style={{
-              background: view === "album" ? "var(--accent)" : "var(--surface)",
-              fontWeight: view === "album" ? 700 : 500,
-            }}
-          >
-            <Images size={13} strokeWidth={2.5} /> albüm
-          </button>
-        </div>
+        <span>🌍</span>
+        <span>
+          {visitedCodes.size}
+          <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+            /{TOTAL_COUNTRIES}
+          </span>{" "}
+          ülke · <span>{cities.length}</span> şehir
+        </span>
       </div>
 
-      {view === "globe" && (
-        <div
-          className="absolute top-[3.8rem] left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5"
-          style={{
-            background: "var(--accent-soft)",
-            border: "2px solid var(--ink)",
-            borderRadius: "999px",
-            padding: "0.35rem 0.85rem",
-            boxShadow: "var(--shadow-pop-sm)",
-            fontWeight: 700,
-            fontSize: "0.8rem",
-            color: "var(--ink)",
-          }}
-        >
-          <span>🌍</span>
-          <span>
-            {visitedCodes.size}
-            <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-              /{TOTAL_COUNTRIES}
-            </span>{" "}
-            ülke · <span>{cities.length}</span> şehir
-          </span>
-        </div>
-      )}
       <CountrySheet
         data={countryData}
         open={selection?.kind === "country"}
@@ -243,6 +178,7 @@ export function GlobeClient({
         data={cityData}
         open={selection?.kind === "city"}
         onClose={() => setSelection(null)}
+        trips={trips}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Star,
   GripVertical,
+  Globe,
 } from "lucide-react";
 import {
   DndContext,
@@ -34,8 +35,10 @@ import {
   toggleVisited,
   deleteLocation,
   reorderLocations,
+  setLocationIsPublic,
 } from "@/app/actions/locations";
 import { LocationPhotos } from "./location-photos";
+import { SharePostButton } from "./share-post-dialog";
 
 const CATEGORY_BG: Record<string, string> = {
   restaurant: "var(--accent-soft)",
@@ -409,6 +412,21 @@ function LocationEntry({
           <Check size={14} strokeWidth={2.5} />
           {visited ? "gittik" : "gidilecek"}
         </button>
+        <PublicChip
+          locationId={loc.id}
+          tripId={tripId}
+          initial={loc.is_public}
+        />
+        <SharePostButton
+          refType="location"
+          refId={loc.id}
+          existingPhotos={[
+            ...loc.photo_urls.map((u) => ({ url: u })),
+            ...loc.google_photo_urls.map((u) => ({ url: u })),
+          ]}
+          label="paylaş"
+          buttonClassName="btn-chip"
+        />
 
         <div className="ml-auto flex items-center gap-2">
           {addedBy && (
@@ -442,6 +460,45 @@ function LocationEntry({
         </div>
       </div>
     </article>
+  );
+}
+
+function PublicChip({
+  locationId,
+  tripId,
+  initial,
+}: {
+  locationId: string;
+  tripId: string;
+  initial: boolean;
+}) {
+  const [pending, startTx] = useTransition();
+  const [on, setOn] = useState(initial);
+  const click = () => {
+    if (pending) return;
+    const next = !on;
+    setOn(next);
+    startTx(async () => {
+      const r = await setLocationIsPublic(locationId, tripId, next);
+      if (!r.ok) setOn(!next);
+    });
+  };
+  return (
+    <button
+      type="button"
+      onClick={click}
+      disabled={pending}
+      className="btn-chip"
+      style={
+        on
+          ? { background: "var(--accent-2-soft)", fontWeight: 600 }
+          : undefined
+      }
+      title={on ? "topluluğa açık" : "sadece bizim grup"}
+    >
+      <Globe size={14} strokeWidth={2.5} />
+      {on ? "topluluk" : "özel"}
+    </button>
   );
 }
 

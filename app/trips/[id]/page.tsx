@@ -8,7 +8,8 @@ import {
 import { AppHeader } from "@/components/app-header";
 import { TripDetailClient } from "@/components/trip-detail-client";
 import { EditTripButton } from "@/components/edit-trip-dialog";
-import type { Trip, Location, Expense, Settlement } from "@/lib/types";
+import { SharePostButton } from "@/components/share-post-dialog";
+import type { Trip, Location } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -31,43 +32,16 @@ export default async function TripPage({
     .maybeSingle();
   if (!trip) notFound();
 
-  const [{ data: locations }, { data: expensesRaw }, { data: settlementsRaw }] =
-    await Promise.all([
-      db
-        .from("locations")
-        .select("*")
-        .eq("trip_id", id)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true }),
-      // group_id filter is defense-in-depth; trip_id already constrains
-      // these to the group since we just verified the trip's group above
-      db
-        .from("expenses")
-        .select("*")
-        .eq("trip_id", id)
-        .eq("group_id", groupId)
-        .order("spent_at", { ascending: false })
-        .order("created_at", { ascending: false }),
-      db
-        .from("settlements")
-        .select("*")
-        .eq("trip_id", id)
-        .eq("group_id", groupId)
-        .order("settled_at", { ascending: false })
-        .order("created_at", { ascending: false }),
-    ]);
+  const { data: locations } = await db
+    .from("locations")
+    .select("*")
+    .eq("trip_id", id)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
   const members = await getActiveGroupMembers();
   const tripTyped = trip as Trip;
   const locs = (locations ?? []) as Location[];
-  const expenses = (expensesRaw ?? []).map((e) => ({
-    ...(e as Expense),
-    amount: Number((e as Expense).amount),
-  })) as Expense[];
-  const settlements = (settlementsRaw ?? []).map((s) => ({
-    ...(s as Settlement),
-    amount: Number((s as Settlement).amount),
-  })) as Settlement[];
 
   return (
     <>
@@ -75,15 +49,26 @@ export default async function TripPage({
         member={me}
         title={tripTyped.name}
         back="/tatiller"
-        right={<EditTripButton trip={tripTyped} />}
+        right={
+          <>
+            <SharePostButton
+              refType="trip"
+              refId={tripTyped.id}
+              existingPhotos={
+                tripTyped.cover_url ? [{ url: tripTyped.cover_url }] : []
+              }
+              label=""
+              buttonClassName="btn-icon"
+            />
+            <EditTripButton trip={tripTyped} />
+          </>
+        }
       />
       <TripDetailClient
         tripId={tripTyped.id}
         locations={locs}
         members={members}
         currentMemberId={me.id}
-        expenses={expenses}
-        settlements={settlements}
       />
     </>
   );

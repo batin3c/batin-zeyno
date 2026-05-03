@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { HeaderAvatar } from "./header-avatar";
 import type { Member } from "@/lib/types";
 
 export function AppHeader({
+  member,
   title,
   back,
   right,
@@ -47,8 +49,9 @@ export function AppHeader({
           {title ?? ""}
         </h1>
 
-        <div className="flex items-center gap-1.5 min-w-[40px] justify-end">
+        <div className="flex items-center gap-1.5 justify-end">
           {right}
+          {member && <HeaderAvatar member={member} />}
         </div>
       </div>
     </header>

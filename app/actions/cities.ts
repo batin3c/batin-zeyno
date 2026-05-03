@@ -593,3 +593,56 @@ export async function removeCityPhoto(
   bustGlobe(groupId);
   return { ok: true };
 }
+
+export async function setCityIsPublic(
+  cityId: string,
+  isPublic: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!cityId) return { ok: false, error: "şehir id yok" };
+  const { error } = await db
+    .from("visited_cities")
+    .update({
+      is_public: !!isPublic,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", cityId)
+    .eq("group_id", groupId);
+  if (error) return { ok: false, error: error.message };
+  bustGlobe(groupId);
+  return { ok: true };
+}
+
+/**
+ * Tag (or untag) a city with a trip etiketi. The album view groups cities by
+ * trip via this column. Verifies both the city and the trip belong to the
+ * caller's active group, so a forged id from another group can't slip in.
+ */
+export async function setCityTrip(
+  cityId: string,
+  tripId: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!cityId) return { ok: false, error: "şehir id yok" };
+
+  if (tripId) {
+    const { data: trip } = await db
+      .from("trips")
+      .select("id")
+      .eq("id", tripId)
+      .eq("group_id", groupId)
+      .maybeSingle();
+    if (!trip) return { ok: false, error: "tatil yok" };
+  }
+
+  const { error } = await db
+    .from("visited_cities")
+    .update({ trip_id: tripId, updated_at: new Date().toISOString() })
+    .eq("id", cityId)
+    .eq("group_id", groupId);
+  if (error) return { ok: false, error: error.message };
+  bustGlobe(groupId);
+  return { ok: true };
+}

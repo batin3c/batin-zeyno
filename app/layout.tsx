@@ -12,6 +12,7 @@ import type {
   CountryPhoto,
   VisitedCity,
   CityPhoto,
+  Trip,
 } from "@/lib/types";
 import "./globals.css";
 
@@ -79,6 +80,7 @@ async function loadGlobeData(groupId: string) {
     { data: photos },
     { data: cities },
     { data: cityPhotos },
+    { data: trips },
   ] = await Promise.all([
     db
       .from("visited_countries")
@@ -103,12 +105,19 @@ async function loadGlobeData(groupId: string) {
       .select("*")
       .eq("group_id", groupId)
       .order("added_at", { ascending: false }),
+    db
+      .from("trips")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("start_date", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false }),
   ]);
   return {
     visited: (visited ?? []) as VisitedCountry[],
     photos: (photos ?? []) as CountryPhoto[],
     cities: (cities ?? []) as VisitedCity[],
     cityPhotos: (cityPhotos ?? []) as CityPhoto[],
+    trips: (trips ?? []) as Trip[],
   };
 }
 
@@ -143,6 +152,7 @@ async function GlobeShell() {
       photos={data.photos}
       cities={data.cities}
       cityPhotos={data.cityPhotos}
+      trips={data.trips}
     />
   );
 }

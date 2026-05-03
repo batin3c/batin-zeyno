@@ -7,6 +7,7 @@ import type {
   CountryPhoto,
   VisitedCity,
   CityPhoto,
+  Trip,
 } from "@/lib/types";
 
 export function PersistentGlobe({
@@ -14,11 +15,13 @@ export function PersistentGlobe({
   photos,
   cities,
   cityPhotos,
+  trips,
 }: {
   visited: VisitedCountry[];
   photos: CountryPhoto[];
   cities: VisitedCity[];
   cityPhotos: CityPhoto[];
+  trips: Trip[];
 }) {
   const pathname = usePathname();
   const visible = pathname === "/";
@@ -42,6 +45,7 @@ export function PersistentGlobe({
         photos={photos}
         cities={cities}
         cityPhotos={cityPhotos}
+        trips={trips}
       />
     </div>
   );

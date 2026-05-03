@@ -2,26 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, Globe2, UserCircle2 } from "lucide-react";
+import { Globe2, Images, Heart } from "lucide-react";
 
 const TABS = [
   {
-    href: "/tatiller",
-    icon: Briefcase,
-    label: "tatiller",
-    color: "var(--accent-3)", // yellow
-  },
-  {
     href: "/",
     icon: Globe2,
-    label: "ana sayfa",
-    color: "var(--accent-2)", // mint
+    label: "küre",
+    color: "var(--accent-2)",
   },
   {
-    href: "/profil",
-    icon: UserCircle2,
-    label: "profil",
-    color: "var(--accent-4)", // lavender
+    href: "/album",
+    icon: Images,
+    label: "albüm",
+    color: "var(--accent-3)",
+  },
+  {
+    href: "/akis",
+    icon: Heart,
+    label: "akış",
+    color: "var(--accent)",
   },
 ] as const;
 

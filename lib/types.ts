@@ -8,6 +8,7 @@ export type Member = {
   created_at: string;
   is_active: boolean;
   color: string | null;
+  bio: string | null;
   // password_hash is intentionally NOT in this type — it's server-only and
   // never sent down to the client. Server reads via raw db.from('members').
 };
@@ -36,9 +37,6 @@ export type Trip = {
   cover_url: string | null;
   start_date: string | null;
   end_date: string | null;
-  center_lat: number | null;
-  center_lng: number | null;
-  sort_order: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -63,7 +61,7 @@ export type LocationStatus = "want" | "visited";
 
 export type Location = {
   id: string;
-  trip_id: string;
+  trip_id: string | null;
   name: string;
   address: string | null;
   lat: number;
@@ -80,8 +78,7 @@ export type Location = {
   rating: number | null;
   rating_count: number | null;
   sort_order: number;
-  amount: number | null;
-  currency: string | null;
+  is_public: boolean;
   added_by: string | null;
   created_at: string;
   updated_at: string;
@@ -137,6 +134,8 @@ export type VisitedCity = {
   updated_at: string;
   sort_order: number;
   cover_photo_id: string | null;
+  trip_id: string | null;
+  is_public: boolean;
 };
 
 export type CityPhoto = {
@@ -148,36 +147,54 @@ export type CityPhoto = {
   added_at: string;
 };
 
-export type ExpenseSplitMode = "half" | "full" | "custom";
+export type PostRefType = "city" | "location" | "trip";
 
-export type Expense = {
-  id: string;
-  group_id: string;
-  trip_id: string;
+export type PostSnapshot = {
   title: string;
-  amount: number;
-  currency: string;
-  paid_by: string;
-  split_mode: ExpenseSplitMode;
-  /** when split_mode='custom', maps memberId → that member's share in `currency` */
-  shares: Record<string, number> | null;
+  subtitle?: string | null;
+  country_code?: string | null;
+  photo_urls: string[];
+};
+
+export type Post = {
+  id: string;
+  author_id: string;
+  group_id: string;
+  caption: string | null;
+  ref_type: PostRefType;
+  city_id: string | null;
   location_id: string | null;
-  spent_at: string;
-  note: string | null;
-  created_by: string | null;
+  trip_id: string | null;
+  snapshot: PostSnapshot;
   created_at: string;
 };
 
-export type Settlement = {
-  id: string;
-  group_id: string;
-  trip_id: string;
-  from_member: string;
-  to_member: string;
-  amount: number;
-  currency: string;
-  settled_at: string;
-  note: string | null;
-  created_by: string | null;
+export type PostReaction = {
+  post_id: string;
+  member_id: string;
   created_at: string;
 };
+
+export type PostComment = {
+  id: string;
+  post_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type Follow = {
+  follower_id: string;
+  followed_id: string;
+  created_at: string;
+};
+
+export type FeedMode = "discover" | "following";
+
+export type FeedPost = Post & {
+  author: Pick<Member, "id" | "name" | "surname" | "color">;
+  reactions_count: number;
+  comments_count: number;
+  i_reacted: boolean;
+};
+

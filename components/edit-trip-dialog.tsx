@@ -15,9 +15,6 @@ export function EditTripButton({ trip }: { trip: Trip }) {
     trip.cover_url
   );
   const [coverCleared, setCoverCleared] = useState(false);
-  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
-    null
-  );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,10 +37,6 @@ export function EditTripButton({ trip }: { trip: Trip }) {
     const fd = new FormData(e.currentTarget);
     fd.set("id", trip.id);
     if (coverFile) fd.set("cover_file", coverFile);
-    if (center) {
-      fd.set("center_lat", String(center.lat));
-      fd.set("center_lng", String(center.lng));
-    }
 
     startTransition(async () => {
       await updateTrip(fd);
@@ -87,11 +80,7 @@ export function EditTripButton({ trip }: { trip: Trip }) {
             <span className="label" style={{ fontSize: "0.62rem" }}>
               nereye
             </span>
-            <DestinationInput
-              defaultValue={trip.name}
-              onPick={(lat, lng) => setCenter({ lat, lng })}
-              onClear={() => setCenter(null)}
-            />
+            <DestinationInput defaultValue={trip.name} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="label" style={{ fontSize: "0.62rem" }}>
@@ -178,8 +167,8 @@ export function EditTripButton({ trip }: { trip: Trip }) {
               className="mb-5 text-[0.95rem] leading-relaxed"
               style={{ color: "var(--text)" }}
             >
-              &ldquo;{trip.name}&rdquo; silinecek. tüm yerler, harcamalar ve
-              fotoğraflar da gider. emin misin?
+              &ldquo;{trip.name}&rdquo; silinecek. tüm yerler ve fotoğraflar da
+              gider. emin misin?
             </p>
             <div className="flex gap-2">
               <button

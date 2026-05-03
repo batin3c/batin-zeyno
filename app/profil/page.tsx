@@ -6,9 +6,12 @@ import {
   getCurrentGroup,
 } from "@/lib/dal";
 import { db } from "@/lib/supabase";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { SettingsClient } from "@/components/settings-client";
 import { LogoutLargeButton } from "@/components/logout-button";
+import { BioEditor } from "@/components/bio-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +40,31 @@ export default async function ProfilPage() {
     <>
       <AppHeader member={me} title="profil" />
       <main className="flex-1 max-w-2xl w-full mx-auto p-4 pb-32">
+        <section
+          className="flex flex-col gap-3 mb-6 p-4"
+          style={{
+            background: "var(--surface)",
+            border: "2px solid var(--ink)",
+            borderRadius: "20px",
+            boxShadow: "var(--shadow-pop)",
+          }}
+        >
+          <BioEditor initialBio={me.bio} />
+          <Link
+            href={`/u/${me.id}`}
+            className="flex items-center justify-center gap-1.5 text-[0.85rem] font-semibold"
+            style={{
+              padding: "0.55rem 0.9rem",
+              background: "var(--accent-3-soft)",
+              border: "2px solid var(--ink)",
+              borderRadius: 999,
+              color: "var(--ink)",
+            }}
+          >
+            <ExternalLink size={13} strokeWidth={2.5} />
+            herkesin gördüğü profile bak
+          </Link>
+        </section>
         <SettingsClient
           members={members}
           currentMemberId={me.id}

@@ -1,20 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Map as MapIcon, List, Wallet } from "lucide-react";
+import { Map as MapIcon, List } from "lucide-react";
 import { MapView } from "./map-view";
 import { LocationList } from "./location-list";
 import { AddLocationButton } from "./add-location";
 import { ImportKmlButton } from "./import-kml-dialog";
-import { ExpensesTab } from "./expenses/expenses-tab";
 import { CATEGORIES } from "@/lib/types";
-import type {
-  Location,
-  Member,
-  Category,
-  Expense,
-  Settlement,
-} from "@/lib/types";
+import type { Location, Member, Category } from "@/lib/types";
 
 type SortKey = "manual" | "rating" | "visit_date" | "created";
 type StatusFilter = "all" | "want" | "visited";
@@ -24,17 +17,13 @@ export function TripDetailClient({
   locations,
   members,
   currentMemberId,
-  expenses,
-  settlements,
 }: {
   tripId: string;
   locations: Location[];
   members: Member[];
   currentMemberId: string;
-  expenses: Expense[];
-  settlements: Settlement[];
 }) {
-  const [tab, setTab] = useState<"map" | "list" | "expenses">("list");
+  const [tab, setTab] = useState<"map" | "list">("list");
   const [cats, setCats] = useState<Set<Category>>(new Set());
   const [statusF, setStatusF] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortKey>("manual");
@@ -70,7 +59,7 @@ export function TripDetailClient({
           if (!da && !db) return 0;
           if (!da) return 1;
           if (!db) return -1;
-          return db.localeCompare(da); // newest first
+          return db.localeCompare(da);
         });
         break;
       case "created":
@@ -99,16 +88,10 @@ export function TripDetailClient({
             <TabBtn active={tab === "map"} onClick={() => setTab("map")}>
               <MapIcon size={14} strokeWidth={2} /> harita
             </TabBtn>
-            <TabBtn
-              active={tab === "expenses"}
-              onClick={() => setTab("expenses")}
-            >
-              <Wallet size={14} strokeWidth={2} /> hesap
-            </TabBtn>
           </div>
-          {tab !== "expenses" && <ImportKmlButton tripId={tripId} />}
+          <ImportKmlButton tripId={tripId} />
         </div>
-        {tab !== "expenses" && locations.length > 0 && (
+        {locations.length > 0 && (
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <span className="pill pill-mint">
               <span style={{ fontWeight: 700 }}>{locations.length}</span> yer
@@ -150,15 +133,6 @@ export function TripDetailClient({
           >
             <MapView locations={locations} members={members} />
           </div>
-        ) : tab === "expenses" ? (
-          <ExpensesTab
-            tripId={tripId}
-            members={members}
-            currentMemberId={currentMemberId}
-            locations={locations}
-            expenses={expenses}
-            settlements={settlements}
-          />
         ) : (
           <LocationList
             locations={filteredSorted}
@@ -170,7 +144,7 @@ export function TripDetailClient({
         )}
       </main>
 
-      {tab !== "expenses" && <AddLocationButton tripId={tripId} />}
+      <AddLocationButton tripId={tripId} />
     </>
   );
 }

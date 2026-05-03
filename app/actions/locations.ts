@@ -535,3 +535,47 @@ export async function removeLocationPhotosBulk(
   revalidatePath(`/trips/${tripId}`);
   return { ok: true };
 }
+
+/**
+ * Toggle the community-visibility flag on a single location. The location
+ * must belong to a trip in the caller's active group; tripId is taken as the
+ * authorisation hint, then verified against group membership.
+ */
+export async function setLocationIsPublic(
+  id: string,
+  tripId: string | null,
+  isPublic: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  await requireCurrentMember();
+  const groupId = await requireActiveGroupId();
+  if (!id) return { ok: false, error: "id yok" };
+  if (tripId) {
+    if (!(await tripBelongsToActiveGroup(tripId, groupId))) {
+      return { ok: false, error: "yetkisiz" };
+    }
+  } else {
+    // location with no trip — verify added_by belongs to a group_members row
+    // in this group (cloned-from-community case)
+    const { data: row } = await db
+      .from("locations")
+      .select("added_by")
+      .eq("id", id)
+      .maybeSingle();
+    if (!row) return { ok: false, error: "yer yok" };
+    const { data: gm } = await db
+      .from("group_members")
+      .select("member_id")
+      .eq("group_id", groupId)
+      .eq("member_id", row.added_by as string)
+      .maybeSingle();
+    if (!gm) return { ok: false, error: "yetkisiz" };
+  }
+  const { error } = await db
+    .from("locations")
+    .update({ is_public: !!isPublic, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  if (tripId) revalidatePath(`/trips/${tripId}`);
+  return { ok: true };
+}
+
