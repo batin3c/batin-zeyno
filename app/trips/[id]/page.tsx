@@ -57,8 +57,12 @@ export default async function TripPage({
               existingPhotos={
                 tripTyped.cover_url ? [{ url: tripTyped.cover_url }] : []
               }
-              label=""
-              buttonClassName="btn-icon"
+              label="paylaş"
+              buttonClassName="btn-chip"
+              buttonStyle={{
+                background: "var(--accent)",
+                fontWeight: 700,
+              }}
             />
             <EditTripButton trip={tripTyped} />
           </>

@@ -22,6 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { isoToFlag } from "@/lib/country-codes";
 import { reorderVisitedCities } from "@/app/actions/cities";
 import type { VisitedCity, CityPhoto } from "@/lib/types";
+import { SharePostButton } from "./share-post-dialog";
 
 type Props = {
   cities: VisitedCity[];
@@ -267,6 +268,26 @@ function AlbumCard({
               {cityPhotos.length}
             </div>
           )}
+          <div
+            className="absolute top-3 right-3"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <SharePostButton
+              refType="city"
+              refId={city.id}
+              existingPhotos={cityPhotos.map((p) => ({ id: p.id, url: p.url }))}
+              label="paylaş"
+              buttonClassName="btn-chip"
+              buttonStyle={{
+                background: "var(--accent)",
+                fontWeight: 700,
+                boxShadow: "var(--shadow-pop-sm)",
+              }}
+            />
+          </div>
         </div>
         <div className="flex items-center gap-3 px-4 py-3">
           <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>{flag}</span>
