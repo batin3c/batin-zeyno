@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Trip } from "@/lib/types";
 import { TripDeleteButton } from "./trip-delete-button";
-import { SharePostButton } from "./share-post-dialog";
+import { TripShareOverlay } from "./trip-share-overlay";
 
 const PILL_COLORS = [
   "var(--accent-soft)",
@@ -74,28 +74,7 @@ export function TripCard({
             {locationCount}
           </div>
           <TripDeleteButton tripId={trip.id} tripName={trip.name} />
-          <div
-            className="absolute top-3 left-3"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <SharePostButton
-              refType="trip"
-              refId={trip.id}
-              existingPhotos={
-                trip.cover_url ? [{ url: trip.cover_url }] : []
-              }
-              label="paylaş"
-              buttonClassName="btn-chip"
-              buttonStyle={{
-                background: "var(--accent)",
-                fontWeight: 700,
-                boxShadow: "var(--shadow-pop-sm)",
-              }}
-            />
-          </div>
+          <TripShareOverlay tripId={trip.id} coverUrl={trip.cover_url} />
         </div>
         <div className="flex items-start justify-between gap-3 px-4 py-3">
           <div className="flex flex-col gap-0.5 min-w-0">
