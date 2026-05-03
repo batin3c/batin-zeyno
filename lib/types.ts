@@ -154,6 +154,17 @@ export type PostSnapshot = {
   subtitle?: string | null;
   country_code?: string | null;
   photo_urls: string[];
+  // location-specific
+  category?: Category | null;
+  rating?: number | null;
+  city_name?: string | null;
+  trip_name?: string | null;
+  // trip-specific
+  start_date?: string | null;
+  end_date?: string | null;
+  description?: string | null;
+  location_count?: number | null;
+  city_count?: number | null;
 };
 
 export type Post = {

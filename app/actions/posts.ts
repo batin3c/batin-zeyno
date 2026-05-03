@@ -12,6 +12,7 @@ import type {
   FeedPost,
   FeedMode,
   Member,
+  Category,
 } from "@/lib/types";
 
 const FEED_PAGE = 20;
@@ -61,19 +62,40 @@ async function buildSnapshot(
   if (refType === "location") {
     const { data: loc } = await db
       .from("locations")
-      .select("name, address, photo_urls, google_photo_urls, trip_id")
+      .select(
+        "name, address, photo_urls, google_photo_urls, trip_id, category, rating, lat, lng"
+      )
       .eq("id", refId)
       .maybeSingle();
     if (!loc) return { error: "yer yok" };
-    // verify the parent trip is in the active group (locations are scoped via
-    // trip_id; nullable trip_ids can't be shared right now)
+    let tripName: string | null = null;
     if (loc.trip_id) {
       const { data: trip } = await db
         .from("trips")
-        .select("group_id")
+        .select("name, group_id")
         .eq("id", loc.trip_id)
         .maybeSingle();
       if (!trip || trip.group_id !== groupId) return { error: "yetkisiz" };
+      tripName = trip.name as string;
+    }
+    // best-effort city resolution: nearest visited_city in the same group by
+    // bounding box (~30km). cheap heuristic, no PostGIS.
+    let cityName: string | null = null;
+    let cityCountry: string | null = null;
+    if (typeof loc.lat === "number" && typeof loc.lng === "number") {
+      const { data: nearby } = await db
+        .from("visited_cities")
+        .select("name, country_code, lat, lng")
+        .eq("group_id", groupId)
+        .gte("lat", (loc.lat as number) - 0.3)
+        .lte("lat", (loc.lat as number) + 0.3)
+        .gte("lng", (loc.lng as number) - 0.3)
+        .lte("lng", (loc.lng as number) + 0.3)
+        .limit(1);
+      if (nearby && nearby[0]) {
+        cityName = nearby[0].name as string;
+        cityCountry = (nearby[0].country_code as string | null) ?? null;
+      }
     }
     const dbUrls = [
       ...((loc.photo_urls as string[] | null) ?? []),
@@ -84,7 +106,12 @@ async function buildSnapshot(
       snapshot: {
         title: loc.name as string,
         subtitle: (loc.address as string | null) ?? null,
+        country_code: cityCountry,
         photo_urls: photo_urls.slice(0, 10),
+        category: (loc.category as Category | null) ?? null,
+        rating: (loc.rating as number | null) ?? null,
+        city_name: cityName,
+        trip_name: tripName,
       },
     };
   }
@@ -92,7 +119,9 @@ async function buildSnapshot(
   // trip
   const { data: trip } = await db
     .from("trips")
-    .select("name, cover_url, group_id")
+    .select(
+      "name, cover_url, group_id, description, start_date, end_date"
+    )
     .eq("id", refId)
     .maybeSingle();
   if (!trip || trip.group_id !== groupId) return { error: "yetkisiz" };
@@ -102,10 +131,46 @@ async function buildSnapshot(
       : trip.cover_url
         ? [trip.cover_url as string]
         : [];
+
+  // count locations + distinct cities (via lat/lng dedupe by visited_cities
+  // proximity isn't worth it — just count locations and distinct trip-tagged
+  // cities)
+  const [{ count: locCount }, { data: cityRows }] = await Promise.all([
+    db
+      .from("locations")
+      .select("id", { count: "exact", head: true })
+      .eq("trip_id", refId),
+    db
+      .from("visited_cities")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("trip_id", refId),
+  ]);
+  const desc = trip.description as string | null;
+  const trimmedDesc =
+    desc && desc.length > 140 ? desc.slice(0, 140).trimEnd() + "…" : desc;
+
+  // try to infer a country flag from any tagged city
+  let tripCountry: string | null = null;
+  if (cityRows && cityRows.length > 0) {
+    const { data: oneCity } = await db
+      .from("visited_cities")
+      .select("country_code")
+      .eq("id", cityRows[0].id as string)
+      .maybeSingle();
+    tripCountry = (oneCity?.country_code as string | null) ?? null;
+  }
+
   return {
     snapshot: {
       title: trip.name as string,
+      country_code: tripCountry,
       photo_urls: photo_urls.slice(0, 10),
+      description: trimmedDesc ?? null,
+      start_date: (trip.start_date as string | null) ?? null,
+      end_date: (trip.end_date as string | null) ?? null,
+      location_count: locCount ?? 0,
+      city_count: cityRows?.length ?? 0,
     },
   };
 }

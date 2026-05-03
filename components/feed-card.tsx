@@ -7,7 +7,8 @@ import { Heart, MessageCircle, Trash2, ChevronLeft, ChevronRight } from "lucide-
 import { isoToFlag } from "@/lib/country-codes";
 import { toggleReaction, deletePost } from "@/app/actions/posts";
 import { CommentsAccordion } from "./comments-accordion";
-import type { FeedPost } from "@/lib/types";
+import { CATEGORIES, type FeedPost } from "@/lib/types";
+import { formatDateRange, formatRating, plural } from "@/lib/format";
 
 export function FeedCard({
   post,
@@ -178,23 +179,7 @@ export function FeedCard({
       )}
 
       <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          {flag && <span style={{ fontSize: "1.1rem" }}>{flag}</span>}
-          <h3
-            className="font-bold tracking-tight"
-            style={{ fontSize: "1.05rem", color: "var(--ink)" }}
-          >
-            {post.snapshot.title}
-          </h3>
-          {post.snapshot.subtitle && (
-            <span
-              className="text-[0.82rem]"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {post.snapshot.subtitle}
-            </span>
-          )}
-        </div>
+        <PostBody post={post} flag={flag} />
         {post.caption && (
           <p
             className="text-[0.93rem] leading-relaxed whitespace-pre-wrap"
@@ -258,6 +243,138 @@ export function FeedCard({
         )}
       </div>
     </article>
+  );
+}
+
+function PostBody({
+  post,
+  flag,
+}: {
+  post: FeedPost;
+  flag: string | null;
+}) {
+  if (post.ref_type === "city") {
+    return (
+      <div className="flex items-baseline gap-2 flex-wrap">
+        {flag && <span style={{ fontSize: "1.1rem" }}>{flag}</span>}
+        <h3
+          className="font-bold tracking-tight"
+          style={{ fontSize: "1.15rem", color: "var(--ink)" }}
+        >
+          {post.snapshot.title}
+        </h3>
+      </div>
+    );
+  }
+
+  if (post.ref_type === "location") {
+    const cat = post.snapshot.category
+      ? CATEGORIES.find((c) => c.key === post.snapshot.category)
+      : null;
+    const rating = formatRating(post.snapshot.rating);
+    const meta: React.ReactNode[] = [];
+    if (flag && post.snapshot.city_name) {
+      meta.push(
+        <span key="city">
+          {flag} {post.snapshot.city_name}
+        </span>
+      );
+    } else if (post.snapshot.city_name) {
+      meta.push(<span key="city">{post.snapshot.city_name}</span>);
+    }
+    if (rating) meta.push(<span key="rating">{rating}</span>);
+    if (post.snapshot.trip_name) {
+      meta.push(
+        <span key="trip">{post.snapshot.trip_name.toLowerCase()} tatilinde</span>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline gap-1.5 flex-wrap">
+          {cat && <span style={{ fontSize: "1.05rem" }}>{cat.emoji}</span>}
+          <h3
+            className="font-bold tracking-tight"
+            style={{ fontSize: "1.05rem", color: "var(--ink)" }}
+          >
+            {post.snapshot.title}
+          </h3>
+        </div>
+        {meta.length > 0 && (
+          <MetaRow items={meta} />
+        )}
+        {post.snapshot.subtitle && (
+          <p
+            className="text-[0.82rem] truncate"
+            style={{ color: "var(--text-dim)" }}
+          >
+            {post.snapshot.subtitle}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // trip
+  const range = formatDateRange(post.snapshot.start_date, post.snapshot.end_date);
+  const meta: React.ReactNode[] = [];
+  if (range) meta.push(<span key="range">{range}</span>);
+  if (post.snapshot.location_count != null && post.snapshot.location_count > 0) {
+    meta.push(
+      <span key="loc">{plural(post.snapshot.location_count, "yer")}</span>
+    );
+  }
+  if (post.snapshot.city_count != null && post.snapshot.city_count > 0) {
+    meta.push(
+      <span key="city">{plural(post.snapshot.city_count, "şehir")}</span>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-baseline gap-2 flex-wrap">
+        {flag && <span style={{ fontSize: "1.1rem" }}>{flag}</span>}
+        <h3
+          className="font-bold tracking-tight"
+          style={{ fontSize: "1.15rem", color: "var(--ink)" }}
+        >
+          {post.snapshot.title}
+        </h3>
+      </div>
+      {meta.length > 0 && <MetaRow items={meta} />}
+      {post.snapshot.description && (
+        <p
+          className="text-[0.88rem] leading-relaxed"
+          style={{
+            color: "var(--text-muted)",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {post.snapshot.description}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MetaRow({ items }: { items: React.ReactNode[] }) {
+  return (
+    <div
+      className="flex items-center gap-1.5 flex-wrap text-[0.82rem]"
+      style={{ color: "var(--text-muted)" }}
+    >
+      {items.map((item, i) => (
+        <span key={i} className="flex items-center gap-1.5">
+          {i > 0 && (
+            <span style={{ color: "var(--text-dim)" }} aria-hidden>
+              ·
+            </span>
+          )}
+          {item}
+        </span>
+      ))}
+    </div>
   );
 }
 
