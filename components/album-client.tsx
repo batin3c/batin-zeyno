@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Settings2 } from "lucide-react";
 import { AlbumGrid } from "./album-grid";
 import { CitySheet } from "./city-sheet";
 import { CreateTripInlineButton } from "./create-trip-dialog";
@@ -51,8 +53,20 @@ export function AlbumClient({
               flexShrink: 0,
             }}
           />
+          {trips.length > 0 && (
+            <Link
+              href="/tatiller"
+              className="btn-chip"
+              style={{ flexShrink: 0 }}
+              aria-label="tatilleri yönet"
+              title="tatilleri yönet"
+            >
+              <Settings2 size={13} strokeWidth={2.5} />
+              yönet
+            </Link>
+          )}
           <span
-            className="text-[0.78rem]"
+            className="text-[0.78rem] truncate"
             style={{ color: "var(--text-dim)" }}
           >
             şehirleri tatile etiketle, gruplandır
