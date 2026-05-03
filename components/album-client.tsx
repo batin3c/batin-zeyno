@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlbumGrid } from "./album-grid";
 import { CitySheet } from "./city-sheet";
+import { CreateTripInlineButton } from "./create-trip-dialog";
 import type { VisitedCity, CityPhoto, Trip } from "@/lib/types";
 
 type Filter = "all" | "untagged" | { tripId: string };
@@ -40,8 +41,24 @@ export function AlbumClient({
 
   return (
     <>
-      {trips.length > 0 && (
-        <div className="max-w-3xl w-full mx-auto px-4 pt-3">
+      <div className="max-w-3xl w-full mx-auto px-4 pt-3 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <CreateTripInlineButton
+            className="btn-chip"
+            style={{
+              background: "var(--accent-3)",
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          />
+          <span
+            className="text-[0.78rem]"
+            style={{ color: "var(--text-dim)" }}
+          >
+            şehirleri tatile etiketle, gruplandır
+          </span>
+        </div>
+        {trips.length > 0 && (
           <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1">
             <Chip
               active={filter === "all"}
@@ -69,8 +86,8 @@ export function AlbumClient({
               />
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
       <div className="max-w-3xl w-full mx-auto px-4 pt-4 pb-24">
         <AlbumGrid
           cities={filteredCities}

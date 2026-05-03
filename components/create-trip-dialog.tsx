@@ -8,8 +8,13 @@ import { createTrip } from "@/app/actions/trips";
 
 const LIBRARIES: ("places")[] = ["places"];
 
-export function CreateTripButton() {
-  const [open, setOpen] = useState(false);
+function CreateTripDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const [pending, startTransition] = useTransition();
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -29,12 +34,54 @@ export function CreateTripButton() {
   };
 
   const onCloseDialog = () => {
-    setOpen(false);
+    onClose();
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverFile(null);
     setCoverPreview(null);
   };
 
+  return (
+    <SimpleDialog open={open} onClose={onCloseDialog} title="yeni plan aç">
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <CoverUpload
+          preview={coverPreview}
+          inputRef={coverInputRef}
+          onPick={onCoverPick}
+        />
+        <Field label="nereye">
+          <DestinationInput />
+        </Field>
+        <Field label="açıklama">
+          <textarea
+            name="description"
+            rows={2}
+            placeholder="birkaç not düş, neye gidiyoruz lan?"
+            className="field-textarea"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="başlangıç">
+            <input type="date" name="start_date" className="field-input" />
+          </Field>
+          <Field label="bitiş">
+            <input type="date" name="end_date" className="field-input" />
+          </Field>
+        </div>
+        <button
+          type="submit"
+          disabled={pending}
+          className="btn-primary w-full mt-2"
+          style={{ padding: "0.95rem 1.25rem" }}
+        >
+          {pending ? "açıyor…" : "aç gitsin"}
+        </button>
+      </form>
+    </SimpleDialog>
+  );
+}
+
+export function CreateTripButton() {
+  const [open, setOpen] = useState(false);
   return (
     <>
       <button
@@ -45,47 +92,33 @@ export function CreateTripButton() {
         <Plus size={18} strokeWidth={2.5} />
         yeni tatil
       </button>
+      <CreateTripDialog open={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
 
-      <SimpleDialog
-        open={open}
-        onClose={onCloseDialog}
-        title="yeni plan aç"
+export function CreateTripInlineButton({
+  className,
+  style,
+  label = "yeni tatil",
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+  label?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={className ?? "btn-chip"}
+        style={style}
       >
-        <form onSubmit={onSubmit} className="flex flex-col gap-5">
-          <CoverUpload
-            preview={coverPreview}
-            inputRef={coverInputRef}
-            onPick={onCoverPick}
-          />
-          <Field label="nereye">
-            <DestinationInput />
-          </Field>
-          <Field label="açıklama">
-            <textarea
-              name="description"
-              rows={2}
-              placeholder="birkaç not düş, neye gidiyoruz lan?"
-              className="field-textarea"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="başlangıç">
-              <input type="date" name="start_date" className="field-input" />
-            </Field>
-            <Field label="bitiş">
-              <input type="date" name="end_date" className="field-input" />
-            </Field>
-          </div>
-          <button
-            type="submit"
-            disabled={pending}
-            className="btn-primary w-full mt-2"
-            style={{ padding: "0.95rem 1.25rem" }}
-          >
-            {pending ? "açıyor…" : "aç gitsin"}
-          </button>
-        </form>
-      </SimpleDialog>
+        <Plus size={14} strokeWidth={2.5} />
+        {label}
+      </button>
+      <CreateTripDialog open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

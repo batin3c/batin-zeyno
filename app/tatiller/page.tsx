@@ -25,7 +25,7 @@ async function loadHome(groupId: string): Promise<{
     .from("trips")
     .select("*")
     .eq("group_id", groupId)
-    .order("sort_order", { ascending: true })
+    .order("start_date", { ascending: false, nullsFirst: false })
     .order("updated_at", { ascending: false });
   if (error) throw error;
   const list = (trips ?? []) as Trip[];

@@ -7,7 +7,7 @@ import {
 } from "@/lib/dal";
 import { db } from "@/lib/supabase";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Briefcase } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { SettingsClient } from "@/components/settings-client";
 import { LogoutLargeButton } from "@/components/logout-button";
@@ -50,20 +50,36 @@ export default async function ProfilPage() {
           }}
         >
           <BioEditor initialBio={me.bio} />
-          <Link
-            href={`/u/${me.id}`}
-            className="flex items-center justify-center gap-1.5 text-[0.85rem] font-semibold"
-            style={{
-              padding: "0.55rem 0.9rem",
-              background: "var(--accent-3-soft)",
-              border: "2px solid var(--ink)",
-              borderRadius: 999,
-              color: "var(--ink)",
-            }}
-          >
-            <ExternalLink size={13} strokeWidth={2.5} />
-            herkesin gördüğü profile bak
-          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href={`/u/${me.id}`}
+              className="flex items-center justify-center gap-1.5 text-[0.85rem] font-semibold"
+              style={{
+                padding: "0.55rem 0.7rem",
+                background: "var(--accent-3-soft)",
+                border: "2px solid var(--ink)",
+                borderRadius: 999,
+                color: "var(--ink)",
+              }}
+            >
+              <ExternalLink size={13} strokeWidth={2.5} />
+              public profil
+            </Link>
+            <Link
+              href="/tatiller"
+              className="flex items-center justify-center gap-1.5 text-[0.85rem] font-semibold"
+              style={{
+                padding: "0.55rem 0.7rem",
+                background: "var(--accent-2-soft)",
+                border: "2px solid var(--ink)",
+                borderRadius: 999,
+                color: "var(--ink)",
+              }}
+            >
+              <Briefcase size={13} strokeWidth={2.5} />
+              tatillerim
+            </Link>
+          </div>
         </section>
         <SettingsClient
           members={members}
