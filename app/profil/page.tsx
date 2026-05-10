@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/app-header";
 import { SettingsClient } from "@/components/settings-client";
 import { LogoutLargeButton } from "@/components/logout-button";
 import { BioEditor } from "@/components/bio-editor";
+import { PasswordChanger } from "@/components/password-changer";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,17 @@ export default async function ProfilPage() {
           myGroups={myGroups}
           myRole={myRole}
         />
+        <section
+          className="flex flex-col gap-3 mt-6 p-4"
+          style={{
+            background: "var(--surface)",
+            border: "2px solid var(--ink)",
+            borderRadius: "20px",
+            boxShadow: "var(--shadow-pop)",
+          }}
+        >
+          <PasswordChanger />
+        </section>
         <div className="mt-8">
           <LogoutLargeButton />
         </div>

@@ -216,6 +216,46 @@ export async function joinGroup(input: {
   return { ok: true };
 }
 
+/**
+ * Change the signed-in user's password. Requires the current password
+ * (prevents someone with a hijacked session from locking the real owner out).
+ */
+export async function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const me = await requireCurrentMember();
+  const currentPassword =
+    typeof input.currentPassword === "string" ? input.currentPassword : "";
+  const newPassword =
+    typeof input.newPassword === "string" ? input.newPassword : "";
+
+  if (newPassword.length < MIN_PASSWORD) {
+    return { ok: false, error: `şifre en az ${MIN_PASSWORD} karakter` };
+  }
+  if (newPassword === currentPassword) {
+    return { ok: false, error: "yeni şifre eski şifreyle aynı olamaz" };
+  }
+
+  const { data } = await db
+    .from("members")
+    .select("password_hash")
+    .eq("id", me.id)
+    .maybeSingle();
+  const row = data as { password_hash: string } | null;
+  if (!row || !verifyPassword(currentPassword, row.password_hash)) {
+    return { ok: false, error: "mevcut şifre yanlış" };
+  }
+
+  const password_hash = hashPassword(newPassword);
+  const { error } = await db
+    .from("members")
+    .update({ password_hash })
+    .eq("id", me.id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function logout() {
   await destroySession();
   redirect("/giris");
